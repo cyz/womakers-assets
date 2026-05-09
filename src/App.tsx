@@ -39,6 +39,9 @@ type EditorState = {
   eventCity: string
   eventDate: string
   eventLocation: string
+  showAnnualCta: boolean
+  annualCtaCaption: string
+  annualCta: string
   speakerName: string
   speakerRole: string
   speakerTalk: string
@@ -78,6 +81,9 @@ const initialEditorState: EditorState = {
   eventCity: 'Porto Alegre',
   eventDate: '28 de março',
   eventLocation: 'Arena CMPC Tecnopuc',
+  showAnnualCta: false,
+  annualCtaCaption: 'Legenda CTA',
+  annualCta: 'Inscreva-se',
   speakerName: 'Aryanne Silva',
   speakerRole: 'Senior Developer na Thoughtworks',
   speakerTalk: 'Painel: O Futuro das Carreiras Tech',
@@ -138,6 +144,9 @@ const isEditorStateEqual = (left: EditorState, right: EditorState) =>
   left.eventCity === right.eventCity &&
   left.eventDate === right.eventDate &&
   left.eventLocation === right.eventLocation &&
+  left.showAnnualCta === right.showAnnualCta &&
+  left.annualCtaCaption === right.annualCtaCaption &&
+  left.annualCta === right.annualCta &&
   left.speakerName === right.speakerName &&
   left.speakerRole === right.speakerRole &&
   left.speakerTalk === right.speakerTalk &&
@@ -165,13 +174,15 @@ const parseEditorStateCandidate = (parsed: Partial<EditorState> | null | undefin
     'eventCity',
     'eventDate',
     'eventLocation',
+    'annualCtaCaption',
+    'annualCta',
     'speakerName',
     'speakerRole',
     'speakerTalk',
     'speakerImageUrl',
   ]
 
-  if (textFields.some((field) => typeof parsed[field] !== 'string')) {
+  if (typeof parsed.showAnnualCta !== 'boolean' || textFields.some((field) => typeof parsed[field] !== 'string')) {
     return null
   }
 
@@ -183,6 +194,9 @@ const parseEditorStateCandidate = (parsed: Partial<EditorState> | null | undefin
     eventCity: parsed.eventCity ?? '',
     eventDate: parsed.eventDate ?? '',
     eventLocation: parsed.eventLocation ?? '',
+    showAnnualCta: parsed.showAnnualCta ?? false,
+    annualCtaCaption: parsed.annualCtaCaption ?? '',
+    annualCta: parsed.annualCta ?? '',
     speakerName: parsed.speakerName ?? '',
     speakerRole: parsed.speakerRole ?? '',
     speakerTalk: parsed.speakerTalk ?? '',
@@ -495,6 +509,9 @@ function App() {
     eventCity,
     eventDate,
     eventLocation,
+    showAnnualCta,
+    annualCtaCaption,
+    annualCta,
     speakerName,
     speakerRole,
     speakerTalk,
@@ -743,6 +760,7 @@ function App() {
   const isPocketSpeakerLayout =
     isPocketLayout && selectedVariation === 'Palestrante'
   const hasEventDetails = eventDate.trim() || eventLocation.trim()
+  const hasAnnualCta = isAnnualLayout && showAnnualCta && (annualCtaCaption.trim() || annualCta.trim())
 
   const preset = platformPresets[selectedPlatform]
   const previewBackgroundAsset =
@@ -751,7 +769,10 @@ function App() {
       : 'bg-code.png'
   const previewStyle = {
     '--preview-aspect-ratio': `${preset.width} / ${preset.height}`,
-    backgroundImage: `linear-gradient(180deg, rgba(4, 4, 7, 0.12), rgba(4, 4, 7, 0.58)), url(${import.meta.env.BASE_URL}src/assets/themes/${previewBackgroundAsset})`,
+    backgroundImage: `url(${import.meta.env.BASE_URL}src/assets/themes/${previewBackgroundAsset})`,
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: '100% 100%',
   } as CSSProperties
 
   const speakerInitials = speakerName
@@ -907,6 +928,44 @@ function App() {
             value={eventLocation}
             onChange={(event) => updateField('eventLocation', event.target.value)}
           />
+
+          {isAnnualLayout ? (
+            <>
+              <label className="checkbox-field" htmlFor="annual-cta-toggle">
+                <input
+                  id="annual-cta-toggle"
+                  type="checkbox"
+                  checked={showAnnualCta}
+                  onChange={(event) => updateField('showAnnualCta', event.target.checked)}
+                />
+                <span>Incluir CTA no rodapé do Encontro Anual</span>
+              </label>
+
+              {showAnnualCta ? (
+                <>
+                  <label className="field-label" htmlFor="annual-cta-caption">
+                    Legenda CTA
+                  </label>
+                  <input
+                    id="annual-cta-caption"
+                    type="text"
+                    value={annualCtaCaption}
+                    onChange={(event) => updateField('annualCtaCaption', event.target.value)}
+                  />
+
+                  <label className="field-label" htmlFor="annual-cta">
+                    CTA
+                  </label>
+                  <input
+                    id="annual-cta"
+                    type="text"
+                    value={annualCta}
+                    onChange={(event) => updateField('annualCta', event.target.value)}
+                  />
+                </>
+              ) : null}
+            </>
+          ) : null}
         </section>
 
         <section className="control-section muted-card">
@@ -1050,7 +1109,6 @@ function App() {
             style={previewStyle}
             ref={previewFrameRef}
           >
-            <div className="preview-overlay" />
             <div className="preview-content">
               <header className="event-header">
                 <h2 className={`event-title ${isAnnualLayout ? 'is-annual-layout' : ''}`}>
@@ -1134,6 +1192,17 @@ function App() {
               {speakerTalk.trim() ? (
                 <footer className="talk-footer">
                   <p>{speakerTalk}</p>
+                </footer>
+              ) : null}
+
+              {hasAnnualCta ? (
+                <footer className="annual-cta-footer">
+                  <span className="event-dot" aria-hidden="true" />
+                  <p>
+                    {annualCtaCaption.trim() ? <span>{annualCtaCaption.trim()} </span> : null}
+                    {annualCta.trim() ? <strong>{annualCta.trim()}</strong> : null}
+                  </p>
+                  <span className="event-dot" aria-hidden="true" />
                 </footer>
               ) : null}
 
