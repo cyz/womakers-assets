@@ -98,7 +98,9 @@ function App() {
   const [quoteBackgroundFeedback, setQuoteBackgroundFeedback] = useState('')
   const [meetupBackgroundFeedback, setMeetupBackgroundFeedback] = useState('')
   const [meetupLogoFeedback, setMeetupLogoFeedback] = useState('')
+  const [workshopPartnerLogoFeedback, setWorkshopPartnerLogoFeedback] = useState('')
   const [sponsorCarouselImageFeedback, setSponsorCarouselImageFeedback] = useState('')
+  const [secondPhotoFeedback, setSecondPhotoFeedback] = useState('')
   const bannerMenuRef = useRef<HTMLDivElement | null>(null)
   const primaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const quoteSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
@@ -116,6 +118,21 @@ function App() {
     selectedVariation,
     selectedPlatform,
     eventTitle,
+    workshopAccentColor,
+    workshopBadge,
+    workshopTitle,
+    workshopHighlight,
+    workshopDescription,
+    workshopBulletOne,
+    workshopBulletTwo,
+    workshopBulletThree,
+    workshopFooterLeftLineOne,
+    workshopFooterLeftLineTwo,
+    workshopFooterTag,
+    workshopPartnerLogoUrl,
+    workshopSecondSpeakerName,
+    workshopSecondSpeakerRole,
+    workshopSecondSpeakerImageUrl,
     meetupSupportText,
     meetupCta,
     eventCity,
@@ -276,6 +293,8 @@ function App() {
       | 'sponsorCarouselImageUrl'
       | 'quoteBackgroundImageUrl'
       | 'meetupBackgroundImageUrl'
+      | 'workshopPartnerLogoUrl'
+      | 'workshopSecondSpeakerImageUrl'
       | 'meetupPartnerLogoPrimaryUrl'
       | 'meetupPartnerLogoSecondaryUrl',
     setFeedback: (message: string) => void,
@@ -316,6 +335,15 @@ function App() {
     await uploadEditorImage(event, 'speakerImageUrl', setPhotoFeedback, 'Foto carregada')
   }
 
+  const handleSecondSpeakerPhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    await uploadEditorImage(
+      event,
+      'workshopSecondSpeakerImageUrl',
+      setSecondPhotoFeedback,
+      'Segunda foto carregada',
+    )
+  }
+
   const handleSponsorLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     await uploadEditorImage(event, 'sponsorLogoUrl', setSponsorFeedback, 'Logo do patrocinador carregada')
   }
@@ -333,6 +361,15 @@ function App() {
     await uploadEditorImage(event, 'meetupBackgroundImageUrl', setMeetupBackgroundFeedback, 'Fundo carregado')
   }
 
+  const handleWorkshopPartnerLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    await uploadEditorImage(
+      event,
+      'workshopPartnerLogoUrl',
+      setWorkshopPartnerLogoFeedback,
+      'Marca parceira carregada',
+    )
+  }
+
   const handleQuoteBackgroundUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     await uploadEditorImage(event, 'quoteBackgroundImageUrl', setQuoteBackgroundFeedback, 'Fundo carregado')
   }
@@ -348,6 +385,11 @@ function App() {
     setPhotoFeedback('Foto removida.')
   }
 
+  const handleRemoveSecondSpeakerPhoto = () => {
+    updateField('workshopSecondSpeakerImageUrl', '')
+    setSecondPhotoFeedback('Segunda foto removida.')
+  }
+
   const handleRemoveSponsorLogo = () => {
     updateField('sponsorLogoUrl', '')
     setSponsorFeedback('Logo do patrocinador removida.')
@@ -361,6 +403,11 @@ function App() {
   const handleRemoveMeetupBackground = () => {
     updateField('meetupBackgroundImageUrl', '')
     setMeetupBackgroundFeedback('Fundo removido.')
+  }
+
+  const handleRemoveWorkshopPartnerLogo = () => {
+    updateField('workshopPartnerLogoUrl', '')
+    setWorkshopPartnerLogoFeedback('Marca parceira removida.')
   }
 
   const handleRemoveQuoteBackground = () => {
@@ -518,6 +565,8 @@ function App() {
     setMeetupBackgroundFeedback('')
     setMeetupLogoFeedback('')
     setSponsorCarouselImageFeedback('')
+    setWorkshopPartnerLogoFeedback('')
+    setSecondPhotoFeedback('')
   }
 
   const handleUndo = () => {
@@ -549,10 +598,11 @@ function App() {
   const canUndo = undoStack.length > 0
   const canRedo = redoStack.length > 0
   const canReset = !isEditorStateEqual(editorState, initialEditorState)
+  const isWorkshopLayout = selectedType === 'Workshop'
+  const isWorkshopDualSpeakerLayout = isWorkshopLayout && selectedVariation === 'Palestrantes'
   const isOtherEventLayout =
     selectedType === 'Meetup Presencial' ||
     selectedType === 'Live' ||
-    selectedType === 'Workshop' ||
     selectedType === 'Imersão'
   const isAnnualLayout = selectedType === 'Encontro Anual'
   const isPocketLayout = selectedType === 'Encontro Pocket'
@@ -574,6 +624,7 @@ function App() {
   const preset = platformPresets[selectedPlatform]
   const activeBannerModule = getBannerTypeModule(selectedType)
   const quoteModule = activeBannerModule?.type === 'Quote' ? activeBannerModule : null
+  const workshopModule = activeBannerModule?.type === 'Workshop' ? activeBannerModule : null
   const previewBackgroundAsset =
     selectedType === 'Encontro Anual' && (selectedVariation === 'Palestrante' || isAnnualSponsorLayout)
       ? 'bg-matrix.png'
@@ -609,6 +660,30 @@ function App() {
         speakerRole,
       })
     : null
+  const workshopDerivedState = workshopModule
+    ? workshopModule.getDerivedState({
+        isDualSpeaker: isWorkshopDualSpeakerLayout,
+        preset,
+        speakerName,
+        speakerRole,
+        speakerImageUrl,
+        workshopAccentColor,
+        workshopBadge,
+        workshopBulletOne,
+        workshopBulletThree,
+        workshopBulletTwo,
+        workshopDescription,
+        workshopFooterLeftLineOne,
+        workshopFooterLeftLineTwo,
+        workshopFooterTag,
+        workshopHighlight,
+        workshopPartnerLogoUrl,
+        workshopSecondSpeakerImageUrl,
+        workshopSecondSpeakerName,
+        workshopSecondSpeakerRole,
+        workshopTitle,
+      })
+    : null
   const hasQuoteSecondSlide = quoteDerivedState?.hasSecondSlide ?? false
   const hasArticleSecondSlide = isArticleLayout
   const hasSponsorCarouselSecondSlide = isSponsorCarouselLayout
@@ -616,10 +691,10 @@ function App() {
     hasQuoteSecondSlide || hasArticleSecondSlide || hasSponsorCarouselSecondSlide
   const previewStyle = {
     '--preview-aspect-ratio': `${preset.width} / ${preset.height}`,
-    backgroundImage: isArticleLayout
+    backgroundImage: isArticleLayout || isWorkshopLayout || isOtherEventLayout
       ? 'none'
       : `url(${import.meta.env.BASE_URL}src/assets/themes/${previewBackgroundAsset})`,
-    backgroundColor: isOtherEventLayout
+    backgroundColor: isOtherEventLayout || isWorkshopLayout
       ? '#040404'
       : isArticleLayout
         ? '#16181b'
@@ -738,7 +813,7 @@ function App() {
             <span className="badge-icon" aria-hidden="true">
               <AppIcon name="spark" />
             </span>
-            <span>WoMakers Social Assets</span>
+            <strong>WoMakers Social Assets</strong>
           </div>
         </div>
 
@@ -759,7 +834,7 @@ function App() {
             onToggle={() => setIsBannerMenuOpen((open) => !open)}
           />
           <p className="field-hint">
-            Encontro Pocket e Encontro Anual incluem Palestrante, Patrocinador Single Image e Patrocinador Carousel. {getBannerOptionGroupLabel(selectedType) === 'Outros eventos' ? 'Outros eventos usam um layout único.' : 'Quote e Artigo usam um layout único.'}
+            Encontro Pocket e Encontro Anual incluem Palestrante, Patrocinador Single Image e Patrocinador Carousel. {selectedType === 'Workshop' ? 'Workshop inclui as variações Palestrante e Palestrantes.' : getBannerOptionGroupLabel(selectedType) === 'Outros eventos' ? 'Outros eventos usam um layout único.' : 'Quote e Artigo usam um layout único.'}
           </p>
         </section>
 
@@ -780,7 +855,7 @@ function App() {
             <span className="section-icon" aria-hidden="true">
               <AppIcon name="text" />
             </span>
-            <p className="section-label">{isQuoteLayout ? 'Conteudo da citacao' : isArticleLayout ? 'Trecho do artigo' : 'Conteudo do evento'}</p>
+            <p className="section-label">{isQuoteLayout ? 'Conteudo da citacao' : isArticleLayout ? 'Trecho do artigo' : isWorkshopLayout ? 'Conteudo do workshop' : 'Conteudo do evento'}</p>
           </div>
 
           {isQuoteLayout || isArticleLayout ? (
@@ -833,6 +908,32 @@ function App() {
                 </>
               ) : null}
             </>
+          ) : workshopModule ? (
+            <workshopModule.ContentFields
+              isDualSpeaker={isWorkshopDualSpeakerLayout}
+              onWorkshopAccentColorChange={(value) => updateField('workshopAccentColor', value)}
+              onWorkshopBadgeChange={(value) => updateField('workshopBadge', value)}
+              onWorkshopBulletOneChange={(value) => updateField('workshopBulletOne', value)}
+              onWorkshopBulletThreeChange={(value) => updateField('workshopBulletThree', value)}
+              onWorkshopBulletTwoChange={(value) => updateField('workshopBulletTwo', value)}
+              onWorkshopDescriptionChange={(value) => updateField('workshopDescription', value)}
+              onWorkshopFooterLeftLineOneChange={(value) => updateField('workshopFooterLeftLineOne', value)}
+              onWorkshopFooterLeftLineTwoChange={(value) => updateField('workshopFooterLeftLineTwo', value)}
+              onWorkshopFooterTagChange={(value) => updateField('workshopFooterTag', value)}
+              onWorkshopHighlightChange={(value) => updateField('workshopHighlight', value)}
+              onWorkshopTitleChange={(value) => updateField('workshopTitle', value)}
+              workshopAccentColor={workshopAccentColor}
+              workshopBadge={workshopBadge}
+              workshopBulletOne={workshopBulletOne}
+              workshopBulletThree={workshopBulletThree}
+              workshopBulletTwo={workshopBulletTwo}
+              workshopDescription={workshopDescription}
+              workshopFooterLeftLineOne={workshopFooterLeftLineOne}
+              workshopFooterLeftLineTwo={workshopFooterLeftLineTwo}
+              workshopFooterTag={workshopFooterTag}
+              workshopHighlight={workshopHighlight}
+              workshopTitle={workshopTitle}
+            />
           ) : isOtherEventLayout ? (
             <>
               <label className="field-label" htmlFor="event-date">
@@ -877,7 +978,7 @@ function App() {
             </>
           ) : null}
 
-          {!isQuoteLayout && !isArticleLayout ? (
+          {!isQuoteLayout && !isArticleLayout && !isWorkshopLayout ? (
             <>
               <label className="field-label" htmlFor="event-title">
                 Nome do evento
@@ -891,7 +992,7 @@ function App() {
             </>
           ) : null}
 
-          {!isOtherEventLayout && !isQuoteLayout && !isArticleLayout ? (
+          {!isOtherEventLayout && !isQuoteLayout && !isArticleLayout && !isWorkshopLayout ? (
             <>
               <label className="field-label" htmlFor="event-city">
                 Cidade em destaque
@@ -975,6 +1076,30 @@ function App() {
             photoFeedback={photoFeedback}
             quoteBackgroundFeedback={quoteBackgroundFeedback}
             quoteBackgroundImageUrl={quoteBackgroundImageUrl}
+            speakerImageUrl={speakerImageUrl}
+            speakerName={speakerName}
+            speakerRole={speakerRole}
+          />
+        ) : workshopModule ? (
+          <workshopModule.MediaFields
+            isDualSpeaker={isWorkshopDualSpeakerLayout}
+            onPartnerLogoUpload={handleWorkshopPartnerLogoUpload}
+            onRemovePartnerLogo={handleRemoveWorkshopPartnerLogo}
+            onRemoveSpeakerPhoto={handleRemoveSpeakerPhoto}
+            onRemoveSecondSpeakerPhoto={handleRemoveSecondSpeakerPhoto}
+            onSpeakerNameChange={(value) => updateField('speakerName', value)}
+            onSpeakerPhotoUpload={handleSpeakerPhotoUpload}
+            onSpeakerRoleChange={(value) => updateField('speakerRole', value)}
+            onSecondSpeakerNameChange={(value) => updateField('workshopSecondSpeakerName', value)}
+            onSecondSpeakerPhotoUpload={handleSecondSpeakerPhotoUpload}
+            onSecondSpeakerRoleChange={(value) => updateField('workshopSecondSpeakerRole', value)}
+            partnerLogoFeedback={workshopPartnerLogoFeedback}
+            partnerLogoUrl={workshopPartnerLogoUrl}
+            photoFeedback={photoFeedback}
+            secondPhotoFeedback={secondPhotoFeedback}
+            secondSpeakerImageUrl={workshopSecondSpeakerImageUrl}
+            secondSpeakerName={workshopSecondSpeakerName}
+            secondSpeakerRole={workshopSecondSpeakerRole}
             speakerImageUrl={speakerImageUrl}
             speakerName={speakerName}
             speakerRole={speakerRole}
@@ -1169,7 +1294,7 @@ function App() {
             {isSponsorCarouselLayout ? (
               <>
                 <label className="field-label" htmlFor="sponsor-carousel-lead-text">
-                  Texto principal da segunda arte
+                  Texto 1 da segunda arte
                 </label>
                 <RichTextEditor
                   editorClassName="sponsor-carousel-editor"
@@ -1192,8 +1317,8 @@ function App() {
                       sponsorCarouselLeadEditorRef.current,
                     )
                   }
-                  placeholder="Digite o texto principal da segunda arte"
-                  toolbarLabel="Formatacao do texto principal da segunda arte"
+                  placeholder="Digite o texto 1 da segunda arte"
+                  toolbarLabel="Formatacao do texto 1 da segunda arte"
                 />
 
                 <label className="field-label" htmlFor="sponsor-carousel-image-upload">
@@ -1207,7 +1332,7 @@ function App() {
                 />
                 <div className="photo-actions-row">
                   <p className="field-hint">
-                    A imagem aparece em um quadro de destaque com proporcao aproximada de 725x325.
+                    A imagem aparece inteira no quadro de destaque, com altura ajustada de forma proporcional.
                   </p>
                   {sponsorCarouselImageUrl ? (
                     <button type="button" className="secondary-inline-action" onClick={handleRemoveSponsorCarouselImage}>
@@ -1220,7 +1345,7 @@ function App() {
                 ) : null}
 
                 <label className="field-label" htmlFor="sponsor-carousel-body-text">
-                  Texto complementar da segunda arte
+                  Texto 2 da segunda arte
                 </label>
                 <RichTextEditor
                   editorClassName="sponsor-carousel-editor sponsor-carousel-editor-secondary"
@@ -1243,12 +1368,12 @@ function App() {
                       sponsorCarouselBodyEditorRef.current,
                     )
                   }
-                  placeholder="Digite o texto complementar da segunda arte"
-                  toolbarLabel="Formatacao do texto complementar da segunda arte"
+                  placeholder="Digite o texto 2 da segunda arte"
+                  toolbarLabel="Formatacao do texto 2 da segunda arte"
                 />
 
                 <label className="field-label" htmlFor="sponsor-carousel-cta">
-                  CTA opcional da segunda arte
+                  CTA da segunda arte
                 </label>
                 <input
                   id="sponsor-carousel-cta"
@@ -1660,7 +1785,7 @@ function App() {
                 <div className="sponsor-carousel-preview-panel-toolbar">
                   <div>
                     <p className="toolbar-kicker">Imagem 2</p>
-                    <p className="toolbar-copy">Segunda arte do carousel com texto, mídia e CTA opcional.</p>
+                    <p className="toolbar-copy">Segunda arte do carousel com bloco estático, texto, imagem e CTA.</p>
                   </div>
                   <button
                     type="button"
@@ -1699,7 +1824,7 @@ function App() {
                           )}
                         />
 
-                        <div className="sponsor-carousel-image-shell">
+                        <figure className="sponsor-carousel-image-shell">
                           {sponsorCarouselImageUrl ? (
                             <img
                               src={sponsorCarouselImageUrl}
@@ -1711,7 +1836,7 @@ function App() {
                               Imagem de destaque do patrocinador
                             </div>
                           )}
-                        </div>
+                        </figure>
 
                         <div
                           className="sponsor-carousel-richtext sponsor-carousel-richtext-body"
@@ -1721,11 +1846,11 @@ function App() {
                           )}
                         />
 
-                        {hasSponsorCarouselCta ? (
-                          <footer className="sponsor-carousel-cta-row">
-                            <p className="sponsor-carousel-cta-pill">{sponsorCarouselCta.trim()}</p>
-                          </footer>
-                        ) : null}
+                        <footer className="sponsor-carousel-cta-row">
+                          <p className={`sponsor-carousel-cta-pill ${hasSponsorCarouselCta ? '' : 'is-placeholder'}`.trim()}>
+                            {hasSponsorCarouselCta ? sponsorCarouselCta.trim() : 'CTA'}
+                          </p>
+                        </footer>
                       </section>
                     </article>
                   </div>
@@ -1734,12 +1859,26 @@ function App() {
             </div>
           ) : (
             <div
-              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isOtherEventLayout ? 'is-meetup-layout' : ''} ${isArticleLayout ? 'is-article-layout' : ''}`}
-              style={previewStyle}
+              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isOtherEventLayout ? 'is-meetup-layout' : ''} ${isWorkshopLayout ? 'is-workshop-layout' : ''} ${isArticleLayout ? 'is-article-layout' : ''}`}
+              style={workshopDerivedState?.previewStyle ?? previewStyle}
               ref={primaryPreviewFrameRef}
             >
               <div className="preview-content">
-                {isOtherEventLayout ? (
+                {workshopModule && workshopDerivedState ? (
+                  <workshopModule.Preview
+                    isDualSpeaker={workshopDerivedState.isDualSpeaker}
+                    speakerCards={workshopDerivedState.speakerCards}
+                    workshopBadge={workshopDerivedState.workshopBadge}
+                    workshopBullets={workshopDerivedState.workshopBullets}
+                    workshopDescription={workshopDerivedState.workshopDescription}
+                    workshopFooterLeftLineOne={workshopDerivedState.workshopFooterLeftLineOne}
+                    workshopFooterLeftLineTwo={workshopDerivedState.workshopFooterLeftLineTwo}
+                    workshopFooterTag={workshopDerivedState.workshopFooterTag}
+                    workshopHighlight={workshopDerivedState.workshopHighlight}
+                    workshopPartnerLogoUrl={workshopDerivedState.workshopPartnerLogoUrl}
+                    workshopTitle={workshopDerivedState.workshopTitle}
+                  />
+                ) : isOtherEventLayout ? (
                   <div className="meetup-preview-layout">
                     <header className="meetup-logos-header">
                       <div

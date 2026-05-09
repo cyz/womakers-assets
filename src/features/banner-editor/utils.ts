@@ -16,6 +16,8 @@ import {
   type Platform,
   type SavedBannerAsset,
   type SponsorVariation,
+  type WorkshopAccentColor,
+  workshopAccentColors,
 } from './model'
 
 export const getPlatformLabel = (platform: Platform) => platform.replace(/\s*\([^)]*\)$/, '')
@@ -108,6 +110,21 @@ export const isEditorStateEqual = (left: EditorState, right: EditorState) =>
   left.selectedVariation === right.selectedVariation &&
   left.selectedPlatform === right.selectedPlatform &&
   left.eventTitle === right.eventTitle &&
+  left.workshopAccentColor === right.workshopAccentColor &&
+  left.workshopBadge === right.workshopBadge &&
+  left.workshopTitle === right.workshopTitle &&
+  left.workshopHighlight === right.workshopHighlight &&
+  left.workshopDescription === right.workshopDescription &&
+  left.workshopBulletOne === right.workshopBulletOne &&
+  left.workshopBulletTwo === right.workshopBulletTwo &&
+  left.workshopBulletThree === right.workshopBulletThree &&
+  left.workshopFooterLeftLineOne === right.workshopFooterLeftLineOne &&
+  left.workshopFooterLeftLineTwo === right.workshopFooterLeftLineTwo &&
+  left.workshopFooterTag === right.workshopFooterTag &&
+  left.workshopPartnerLogoUrl === right.workshopPartnerLogoUrl &&
+  left.workshopSecondSpeakerName === right.workshopSecondSpeakerName &&
+  left.workshopSecondSpeakerRole === right.workshopSecondSpeakerRole &&
+  left.workshopSecondSpeakerImageUrl === right.workshopSecondSpeakerImageUrl &&
   left.meetupHeadline === right.meetupHeadline &&
   left.meetupSupportText === right.meetupSupportText &&
   left.meetupCta === right.meetupCta &&
@@ -143,6 +160,9 @@ export const isAssetVariation = (value: string): value is AssetVariation =>
 
 export const isPlatform = (value: string): value is Platform => platforms.includes(value as Platform)
 
+export const isWorkshopAccentColor = (value: string): value is WorkshopAccentColor =>
+  workshopAccentColors.includes(value as WorkshopAccentColor)
+
 export const parseEditorStateCandidate = (
   parsed: Partial<EditorState> | null | undefined,
 ): EditorState | null => {
@@ -150,7 +170,8 @@ export const parseEditorStateCandidate = (
     !parsed ||
     !isImageType(parsed.selectedType ?? '') ||
     !isAssetVariation(parsed.selectedVariation ?? '') ||
-    !isPlatform(parsed.selectedPlatform ?? '')
+    !isPlatform(parsed.selectedPlatform ?? '') ||
+    !isWorkshopAccentColor(parsed.workshopAccentColor ?? initialEditorState.workshopAccentColor)
   ) {
     return null
   }
@@ -187,6 +208,27 @@ export const parseEditorStateCandidate = (
     selectedVariation: parsed.selectedVariation as AssetVariation,
     selectedPlatform: parsed.selectedPlatform as Platform,
     eventTitle: parsed.eventTitle ?? '',
+    workshopAccentColor:
+      (parsed.workshopAccentColor as WorkshopAccentColor | undefined) ??
+      initialEditorState.workshopAccentColor,
+    workshopBadge: parsed.workshopBadge ?? initialEditorState.workshopBadge,
+    workshopTitle: parsed.workshopTitle ?? initialEditorState.workshopTitle,
+    workshopHighlight: parsed.workshopHighlight ?? initialEditorState.workshopHighlight,
+    workshopDescription: parsed.workshopDescription ?? initialEditorState.workshopDescription,
+    workshopBulletOne: parsed.workshopBulletOne ?? initialEditorState.workshopBulletOne,
+    workshopBulletTwo: parsed.workshopBulletTwo ?? initialEditorState.workshopBulletTwo,
+    workshopBulletThree: parsed.workshopBulletThree ?? initialEditorState.workshopBulletThree,
+    workshopFooterLeftLineOne:
+      parsed.workshopFooterLeftLineOne ?? initialEditorState.workshopFooterLeftLineOne,
+    workshopFooterLeftLineTwo:
+      parsed.workshopFooterLeftLineTwo ?? initialEditorState.workshopFooterLeftLineTwo,
+    workshopFooterTag: parsed.workshopFooterTag ?? initialEditorState.workshopFooterTag,
+    workshopPartnerLogoUrl: parsed.workshopPartnerLogoUrl ?? '',
+    workshopSecondSpeakerName:
+      parsed.workshopSecondSpeakerName ?? initialEditorState.workshopSecondSpeakerName,
+    workshopSecondSpeakerRole:
+      parsed.workshopSecondSpeakerRole ?? initialEditorState.workshopSecondSpeakerRole,
+    workshopSecondSpeakerImageUrl: parsed.workshopSecondSpeakerImageUrl ?? '',
     meetupHeadline: parsed.meetupHeadline ?? '',
     meetupSupportText: parsed.meetupSupportText ?? '',
     meetupCta: parsed.meetupCta ?? initialEditorState.meetupCta,
@@ -308,6 +350,8 @@ export const buildBannerFileName = (state: EditorState) => {
     hasTypeVariations(state.selectedType) ? state.selectedVariation : '',
     state.selectedType === 'Meetup Presencial'
       ? state.eventTitle
+      : state.selectedType === 'Workshop'
+        ? state.workshopTitle
       : state.selectedType === 'Quote' || state.selectedType === 'Artigo'
         ? state.speakerName
         : state.eventCity,

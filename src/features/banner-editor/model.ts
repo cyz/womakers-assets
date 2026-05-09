@@ -16,13 +16,18 @@ export const imageTypes = [
 
 export const assetVariations = [
   'Palestrante',
+  'Palestrantes',
   'Agenda',
   'Patrocinador Single Image',
   'Patrocinador Carousel',
 ] as const
 
 export const sponsorVariations = ['Patrocinador Single Image', 'Patrocinador Carousel'] as const
-export const sidebarReadyVariations = ['Palestrante', 'Patrocinador Single Image'] as const
+export const sidebarReadyVariations = [
+  'Palestrante',
+  'Patrocinador Single Image',
+  'Patrocinador Carousel',
+] as const
 export const defaultAssetVariation = assetVariations[0]
 
 export const platforms = [
@@ -38,11 +43,30 @@ export type AssetVariation = (typeof assetVariations)[number]
 export type SponsorVariation = (typeof sponsorVariations)[number]
 export type Platform = (typeof platforms)[number]
 
+export const workshopAccentColors = ['Lima', 'Magenta', 'Ciano', 'Laranja'] as const
+
+export type WorkshopAccentColor = (typeof workshopAccentColors)[number]
+
 export type EditorState = {
   selectedType: ImageType
   selectedVariation: AssetVariation
   selectedPlatform: Platform
   eventTitle: string
+  workshopAccentColor: WorkshopAccentColor
+  workshopBadge: string
+  workshopTitle: string
+  workshopHighlight: string
+  workshopDescription: string
+  workshopBulletOne: string
+  workshopBulletTwo: string
+  workshopBulletThree: string
+  workshopFooterLeftLineOne: string
+  workshopFooterLeftLineTwo: string
+  workshopFooterTag: string
+  workshopPartnerLogoUrl: string
+  workshopSecondSpeakerName: string
+  workshopSecondSpeakerRole: string
+  workshopSecondSpeakerImageUrl: string
   meetupHeadline: string
   meetupSupportText: string
   meetupCta: string
@@ -101,15 +125,15 @@ export const bannerTypeVariations: Record<ImageType, AssetVariation[]> = {
   'Encontro Anual': [...sidebarReadyVariations],
   'Meetup Presencial': [defaultAssetVariation],
   Live: [defaultAssetVariation],
-  Workshop: [defaultAssetVariation],
+  Workshop: [defaultAssetVariation, 'Palestrantes'],
   Quote: [defaultAssetVariation],
   Artigo: [defaultAssetVariation],
   'Imersão': [defaultAssetVariation],
 }
 
 export const articlePreviewDefaults = {
-  speakerName: 'Roberta Piozzi',
-  speakerRole: 'Diretora de Projetos e Parcerias em Educação na Brasscom',
+  speakerName: 'Cynthia Zanoni',
+  speakerRole: 'Senior Developer Advocate na Microsoft',
   quoteText:
     'Não dá para falar de futuro do trabalho, tecnologia e cidadania digital se os estudantes não desenvolvem, ao longo da escola, letramento digital, pensamento computacional e uma relação mais crítica e produtiva com a tecnologia. A diretriz já existe, o que falta é virar realidade no chão da escola, com apoio a redes estaduais e municipais, formação de professores, materiais e infraestrutura mínima. [...]',
   speakerTalk: 'Leia a entrevista completa',
@@ -122,11 +146,44 @@ export const articleAdviceDefaults = {
   keyword: 'CARREIRA',
 } as const
 
+export const workshopPreviewDefaults = {
+  accentColor: workshopAccentColors[0],
+  badge: 'Workshop | 14-05 as 19h',
+  title: 'Infraestrutura de TI voltada para',
+  highlight: 'Data Center',
+  description: 'Reference site about Lorem Ipsum, giving information on its origins, as well as a random Lipsum generator',
+  bulletOne: 'Lorem Ipsum, giving information',
+  bulletTwo: 'Lorem Ipsum, giving information',
+  bulletThree: 'Lorem Ipsum, giving information',
+  footerLeftLineOne: 'Evento Online',
+  footerLeftLineTwo: 'Transmissão via Google Meet',
+  footerTag: 'Inscrições abertas',
+  speakerName: 'Nadav Peretz Mals',
+  speakerRole: 'Co-founder da mgmt.',
+  secondSpeakerName: 'Segunda palestrante',
+  secondSpeakerRole: 'Cargo da segunda palestrante',
+} as const
+
 export const initialEditorState: EditorState = {
   selectedType: imageTypes[0],
   selectedVariation: defaultAssetVariation,
   selectedPlatform: platforms[0],
   eventTitle: 'Encontro de Mulheres na Tecnologia:',
+  workshopAccentColor: workshopPreviewDefaults.accentColor,
+  workshopBadge: workshopPreviewDefaults.badge,
+  workshopTitle: workshopPreviewDefaults.title,
+  workshopHighlight: workshopPreviewDefaults.highlight,
+  workshopDescription: workshopPreviewDefaults.description,
+  workshopBulletOne: workshopPreviewDefaults.bulletOne,
+  workshopBulletTwo: workshopPreviewDefaults.bulletTwo,
+  workshopBulletThree: workshopPreviewDefaults.bulletThree,
+  workshopFooterLeftLineOne: workshopPreviewDefaults.footerLeftLineOne,
+  workshopFooterLeftLineTwo: workshopPreviewDefaults.footerLeftLineTwo,
+  workshopFooterTag: workshopPreviewDefaults.footerTag,
+  workshopPartnerLogoUrl: '',
+  workshopSecondSpeakerName: workshopPreviewDefaults.secondSpeakerName,
+  workshopSecondSpeakerRole: workshopPreviewDefaults.secondSpeakerRole,
+  workshopSecondSpeakerImageUrl: '',
   meetupHeadline: 'Presencial',
   meetupSupportText: '',
   meetupCta: 'Inscreva-se agora',
