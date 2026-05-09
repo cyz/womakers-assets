@@ -736,10 +736,12 @@ function App() {
   const canUndo = undoStack.length > 0
   const canRedo = redoStack.length > 0
   const canReset = !isEditorStateEqual(editorState, initialEditorState)
+  const isAnnualLayout = selectedType === 'Encontro Anual'
+  const isPocketLayout = selectedType === 'Encontro Pocket'
   const isAnnualSpeakerLayout =
-    selectedType === 'Encontro Anual' && selectedVariation === 'Palestrante'
+    isAnnualLayout && selectedVariation === 'Palestrante'
   const isPocketSpeakerLayout =
-    selectedType === 'Encontro Pocket' && selectedVariation === 'Palestrante'
+    isPocketLayout && selectedVariation === 'Palestrante'
   const hasEventDetails = eventDate.trim() || eventLocation.trim()
 
   const preset = platformPresets[selectedPlatform]
@@ -1044,16 +1046,27 @@ function App() {
 
         <section className="preview-stage" aria-label="Banner preview mockup">
           <div
-            className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''}`}
+            className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''}`}
             style={previewStyle}
             ref={previewFrameRef}
           >
             <div className="preview-overlay" />
             <div className="preview-content">
               <header className="event-header">
-                <h2 className="event-title">
-                  <span className="event-title-segment">{eventTitle}</span>
-                  {eventCity.trim() ? <span className="event-city event-title-segment"> {eventCity}</span> : null}
+                <h2 className={`event-title ${isAnnualLayout ? 'is-annual-layout' : ''}`}>
+                  {isAnnualLayout ? (
+                    <span className="event-title-icon-block" aria-hidden="true">
+                      <img
+                        src={`${import.meta.env.BASE_URL}src/assets/icons/arrow.png`}
+                        alt=""
+                        className="event-title-icon"
+                      />
+                    </span>
+                  ) : null}
+                  <span className="event-title-copy">
+                    <span className="event-title-segment">{eventTitle}</span>
+                    {eventCity.trim() ? <span className="event-city event-title-segment"> {eventCity}</span> : null}
+                  </span>
                 </h2>
 
                 {!isAnnualSpeakerLayout && hasEventDetails ? (
@@ -1122,6 +1135,16 @@ function App() {
                 <footer className="talk-footer">
                   <p>{speakerTalk}</p>
                 </footer>
+              ) : null}
+
+              {isPocketSpeakerLayout ? (
+                <div className="pocket-brand-footer">
+                  <img
+                    src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
+                    alt="WoMakers Code"
+                    className="pocket-brand"
+                  />
+                </div>
               ) : null}
             </div>
           </div>

@@ -664,6 +664,33 @@
   -webkit-line-clamp: 2;
 }
 
+.event-title-copy {
+  min-width: 0;
+}
+
+.event-title.is-annual-layout {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: 18px;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+}
+
+.event-title-icon-block {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 0.95em;
+}
+
+.event-title-icon {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
 .event-city {
   color: #ff609a;
 }
@@ -919,6 +946,28 @@
   font-size: 48px;
 }
 
+.preview-frame.is-pocket-speaker .event-title {
+  font-family: 'NextNew', var(--heading);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.preview-frame.is-pocket-layout .preview-overlay {
+  background: none;
+}
+
+.preview-frame.is-pocket-speaker .event-city {
+  font: inherit;
+  color: #ff609a;
+}
+
+.preview-frame.is-pocket-speaker .speaker-copy p,
+.preview-frame.is-pocket-speaker .talk-footer,
+.preview-frame.is-pocket-speaker .talk-footer p {
+  font-family: 'NextNew', var(--heading);
+  font-weight: 700;
+}
+
 .preview-frame.is-pocket-speaker .speaker-copy p {
   font-size: 32px;
 }
@@ -938,6 +987,20 @@
 
 .talk-footer p {
   margin: 0;
+}
+
+.pocket-brand-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: 40px;
+}
+
+.pocket-brand {
+  width: clamp(120px, 24vw, 176px);
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 
 .speaker-copy .inline-editable-shell,
@@ -991,10 +1054,30 @@
   max-width: none;
   width: 100%;
   font-family: var(--mono);
-  font-size: 46px;
+  font-size: 50px;
   line-height: 0.97;
   letter-spacing: -0.04em;
+  font-weight: 800;
   text-transform: none;
+}
+
+.preview-frame.is-annual-speaker .event-title.is-annual-layout {
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 10px;
+}
+
+.preview-frame.is-annual-speaker .event-title-copy {
+  display: block;
+}
+
+.preview-frame.is-annual-speaker .event-title-icon-block {
+  width: auto;
+  padding-top: 5px;
+}
+
+.preview-frame.is-annual-speaker .event-title-icon {
+  width: auto;
+  height: 40px;
 }
 
 .preview-frame.is-annual-speaker .event-city {
@@ -1035,7 +1118,7 @@
 }
 
 .preview-frame.is-annual-speaker .speaker-brand {
-  width: min(100%, 214px);
+  width: clamp(116px, 38%, 182px);
   height: auto;
   object-fit: contain;
 }
@@ -1161,6 +1244,10 @@
   .preview-frame.is-annual-speaker .event-title {
     max-width: none;
     font-size: 38px;
+  }
+
+  .preview-frame.is-annual-speaker .speaker-brand {
+    width: clamp(108px, 34vw, 152px);
   }
 
   .preview-frame.is-annual-speaker .speaker-section {

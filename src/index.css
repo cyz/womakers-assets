@@ -1,5 +1,50 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Space+Grotesk:wght@500;700&display=swap');
 
+@font-face {
+  font-family: 'NextNew';
+  src: url('/src/assets/fonts/NextNew-Extrabld.woff2') format('woff2'),
+    url('/src/assets/fonts/NextNew-Extrabld.woff') format('woff');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NextNew';
+  src: url('/src/assets/fonts/NextNew-Bold.woff2') format('woff2'),
+    url('/src/assets/fonts/NextNew-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NextNew';
+  src: url('/src/assets/fonts/NextNew-Light.woff2') format('woff2'),
+    url('/src/assets/fonts/NextNew-Light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NextNew';
+  src: url('/src/assets/fonts/NextNew-Regular.woff2') format('woff2'),
+    url('/src/assets/fonts/NextNew-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NextNew';
+  src: url('/src/assets/fonts/NextNew-Semibold.woff2') format('woff2'),
+    url('/src/assets/fonts/NextNew-Semibold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --app-bg: #05070a;
   --panel-bg: #101215;
