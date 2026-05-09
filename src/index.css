@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+:root {
+  --app-bg: #05070a;
+  --panel-bg: #101215;
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --field-bg: rgba(255, 255, 255, 0.04);
+  --field-border: rgba(255, 255, 255, 0.1);
+  --strong-text: #f3f7fb;
+  --soft-text: rgba(243, 247, 251, 0.72);
+  --muted-text: rgba(243, 247, 251, 0.46);
+  --focus-ring: rgba(53, 180, 255, 0.75);
+  --sans: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+  --heading: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  --mono: 'IBM Plex Sans', 'SFMono-Regular', monospace;
+  font-family: var(--sans);
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--strong-text);
+  background: var(--app-bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--app-bg);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--app-bg);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--heading);
+  letter-spacing: -0.03em;
+}
+
+#root {
+  min-height: 100vh;
+}
