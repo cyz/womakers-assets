@@ -1,14 +1,14 @@
 ---
 name: image-components
-description: "Use when adding or updating image generator components, banner formats, export flows, preview rendering, wizard steps, or history restore in this project. Good for new formats, input changes, step-flow changes, and export behavior updates in the React + TypeScript banner generator."
-argument-hint: "Describe the format briefly: name, size, key inputs, and anything unusual about steps or export."
+description: "Use when adding or updating the current image generator component, banner formats, preview rendering, export flows, or history restore in this project. Good for new formats, input changes, UI section changes, and export behavior updates in the React + TypeScript banner generator."
+argument-hint: "Describe the format briefly: name, size, key inputs, affected UI sections, and anything unusual about save or export."
 ---
 
 # Image Components
 
-Use this skill when adding a new image generator format or updating an existing one.
+Use this skill when adding the first image generator component, extending an existing format, or adjusting export and restore behavior in this project.
 
-Default to a short prompt. Infer project-standard behavior unless the request says otherwise.
+Default to a short prompt. Infer the current project behavior from `src/App.tsx` unless the request says otherwise.
 
 ## Mini Spec
 
@@ -17,17 +17,35 @@ Write this briefly before implementation:
 - Generator name:
 - Size:
 - Required inputs:
-- Visible steps:
+- UI sections used:
 - Notes only for non-default behavior:
 
 Ask before coding only if one of these is missing:
 
 - dimensions
 - required inputs
-- step flow
-- export behavior when it is not the default project export
+- which existing UI sections should change when it is not obvious
+- export behavior when it differs from current `Salvar versão` or `Baixar PNG`
 
-Do not ask for internal ids, blocker details, fallback behavior, filename patterns, or export scales unless the task depends on changing project defaults.
+Do not ask for internal ids, localStorage keys, filename patterns, fallback visuals, or export scale unless the task depends on changing current defaults.
+
+## Current Baseline
+
+The first component in this repo is the current editor in `src/App.tsx`. Treat it as the reference implementation.
+
+- Single-screen editor, not a multi-step wizard.
+- Main structure: `Estrutura`, `Formato`, `Conteudo do evento`, `Conteudo da palestrante`, `Resumo atual`.
+- Banner selection is driven by typed metadata: type, variation, platform and dimensions.
+- Current formats: `Encontro Pocket`, `Encontro Anual`, `Meetup Presencial`, `Live`, `Imersão`.
+- Current variation model: `Palestrante` and `Agenda`, but only Pocket and Anual expose both.
+- Current platform preset: `Instagram Feed (1080x1350)`.
+- Event inputs: title, city, date, location.
+- Speaker inputs: name, role, talk, optional photo.
+- Preview is DOM-based and exported with `html-to-image` via `toPng`.
+- Save flow stores image plus editor state in `localStorage`.
+- Restore flow must validate parsed JSON before trusting it.
+- Speaker photo upload accepts image files only and rejects files above 8 MB.
+- When the speaker photo is missing, preview falls back to initials.
 
 ## Fast Path
 
@@ -35,46 +53,45 @@ Do not ask for internal ids, blocker details, fallback behavior, filename patter
    - format name
    - width and height
    - key required inputs
-   - visible steps only if they differ from project defaults
-   - export behavior only if it differs from project defaults
+   - UI sections affected only if they differ from the current editor
+   - export behavior only if it differs from the current save/download flow
 2. Implement the smallest valid change:
    - update typed state and defaults only if needed
-   - register format metadata and selector UI
-   - wire visible steps and `canProceed`
-   - add or update the renderer branch
-   - wire export and history restore
+   - register new format metadata in the selector model
+   - add only the fields required by the new format
+   - update the preview branch in the existing editor flow
+   - keep save, download, undo/redo, reset and restore working
 3. Reuse project rules:
    - uploads must be image-only and `<= 8 MB`
-   - preview must survive missing optional images or backgrounds
-   - recent exports stay restorable from `localStorage`
+   - preview must survive missing optional images
+   - saved versions stay restorable from `localStorage`
+   - export output should match the on-screen preview
 4. Verify:
    - `npm run lint`
    - `npm run build`
-   - real browser flow for preview and export
+   - real browser flow for edit, preview, save, restore and export
 
 ## Default Assumptions
 
 - Stack: React 19, TypeScript, Vite.
-- UI: step wizard on the left, preview and history on the right.
-- Rendering: async canvas render from typed state.
-- Persistence: recent exports in `localStorage`.
-- Existing minimal formats use only Format, Event, Export.
-- `social_promo` skips Speakers.
-- `speaker_banner` and `social_promo` require organizer logo to leave Event.
-- Registration footer on `speaker_banner` or `social_promo` also requires registration URL.
-- Speaker-based exports may generate one file per named speaker.
-- Internal ids, fallback behavior, filename patterns, and export scales should follow existing project conventions unless the request says otherwise.
+- UI: editor panel on the left, preview and saved history on the right.
+- Rendering: DOM preview inside `previewFrameRef`, exported as PNG.
+- Persistence: current editor state and saved images live in `localStorage`.
+- Changes should stay centered in `src/App.tsx` unless the request clearly justifies extraction.
+- New formats should reuse current selectors, typed unions and normalization helpers when possible.
+- Export is one image at a time.
+- Internal ids, fallback behavior, filename patterns and export scale should follow current conventions unless the request says otherwise.
 
 ## Choose the Smallest Path
 
 - Small tweak: edit the current branch only. Do not refactor.
-- New format: extend the existing wizard and renderer. This is the default.
-- New generator surface: only when inputs or rendering differ enough that keeping everything in the current flow would make `App.tsx` harder to reason about.
+- New format: extend the existing selector model, editor state and preview inside `App.tsx`. This is the default.
+- New component extraction: only when the prompt explicitly asks for it or when the first component becomes materially harder to reason about without splitting view pieces.
 
 ## Non-Negotiables
 
 - Use explicit TypeScript types for new inputs.
-- Keep step visibility and Next blocking correct.
+- Keep selector state, normalization and restore compatibility correct.
 - Keep exports deterministic.
 - Keep history save and restore compatible.
 - Keep fallback rendering when optional assets fail.
@@ -82,18 +99,18 @@ Do not ask for internal ids, blocker details, fallback behavior, filename patter
 - Narrow `FileReader.result` before use.
 - Prefer derived values over sync effects.
 - Keep handlers simple.
-- Finish with lint, build, and browser verification if app code changed.
+- Finish with lint, build and browser verification if app code changed.
 
 ## Done When
 
-The format is selectable, preview renders with safe defaults, export matches preview, invalid uploads fail safely, history restore stays valid, and verification passes.
+The format is selectable, the editor inputs are enough to produce the layout, preview renders with safe defaults, export matches preview, invalid uploads fail safely, history restore stays valid, and verification passes.
 
 ## Prompt Shape
 
 Prefer prompts this short:
 
-"Add a new image format for LinkedIn event cards, 1200x627, with title, date, organizer logo, and optional background image. Keep the existing wizard flow and default export behavior."
+"Add a new image format for LinkedIn event cards, 1200x627, with title, date, organizer logo, and optional background image. Keep the current editor flow and default save/export behavior."
 
 Also acceptable:
 
-"Update social promo to support an optional sponsor badge without changing export behavior or history restore."
+"Update the current banner editor to support an optional sponsor badge without changing save, restore or export behavior."

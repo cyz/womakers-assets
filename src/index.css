@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Space+Grotesk:wght@500;700&display=swap');
 
 :root {
   --app-bg: #05070a;
@@ -12,7 +12,7 @@
   --focus-ring: rgba(53, 180, 255, 0.75);
   --sans: 'IBM Plex Sans', 'Segoe UI', sans-serif;
   --heading: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
-  --mono: 'IBM Plex Sans', 'SFMono-Regular', monospace;
+  --mono: 'JetBrains Mono', 'SFMono-Regular', monospace;
   font-family: var(--sans);
   line-height: 1.5;
   font-weight: 400;
