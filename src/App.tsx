@@ -25,6 +25,7 @@ import {
   createSavedBannerId,
   formatSavedAt,
   getBannerOptionLabel,
+  getBannerOptionGroupLabel,
   getPlatformDimensions,
   groupedBannerOptions,
   hasTypeVariations,
@@ -97,13 +98,17 @@ function App() {
   const [quoteBackgroundFeedback, setQuoteBackgroundFeedback] = useState('')
   const [meetupBackgroundFeedback, setMeetupBackgroundFeedback] = useState('')
   const [meetupLogoFeedback, setMeetupLogoFeedback] = useState('')
+  const [sponsorCarouselImageFeedback, setSponsorCarouselImageFeedback] = useState('')
   const bannerMenuRef = useRef<HTMLDivElement | null>(null)
   const primaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const quoteSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const articleSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
+  const sponsorCarouselSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const quoteEditorRef = useRef<HTMLDivElement | null>(null)
   const quoteSecondEditorRef = useRef<HTMLDivElement | null>(null)
   const articleSecondEditorRef = useRef<HTMLDivElement | null>(null)
+  const sponsorCarouselLeadEditorRef = useRef<HTMLDivElement | null>(null)
+  const sponsorCarouselBodyEditorRef = useRef<HTMLDivElement | null>(null)
   const selectedTheme = 'WoMakers'
 
   const {
@@ -121,6 +126,10 @@ function App() {
     annualCta,
     sponsorTitle,
     sponsorLogoUrl,
+    sponsorCarouselLeadText,
+    sponsorCarouselImageUrl,
+    sponsorCarouselBodyText,
+    sponsorCarouselCta,
     quoteText,
     quoteSecondText,
     articleSecondText,
@@ -190,6 +199,34 @@ function App() {
   }, [articleSecondText])
 
   useEffect(() => {
+    const editor = sponsorCarouselLeadEditorRef.current
+
+    if (!editor) {
+      return
+    }
+
+    const normalizedLeadText = sanitizeQuoteHtml(sponsorCarouselLeadText)
+
+    if (sanitizeQuoteHtml(editor.innerHTML) !== normalizedLeadText) {
+      editor.innerHTML = normalizedLeadText
+    }
+  }, [sponsorCarouselLeadText])
+
+  useEffect(() => {
+    const editor = sponsorCarouselBodyEditorRef.current
+
+    if (!editor) {
+      return
+    }
+
+    const normalizedBodyText = sanitizeQuoteHtml(sponsorCarouselBodyText)
+
+    if (sanitizeQuoteHtml(editor.innerHTML) !== normalizedBodyText) {
+      editor.innerHTML = normalizedBodyText
+    }
+  }, [sponsorCarouselBodyText])
+
+  useEffect(() => {
     const editor = quoteSecondEditorRef.current
 
     if (!editor) {
@@ -236,6 +273,7 @@ function App() {
     field:
       | 'speakerImageUrl'
       | 'sponsorLogoUrl'
+      | 'sponsorCarouselImageUrl'
       | 'quoteBackgroundImageUrl'
       | 'meetupBackgroundImageUrl'
       | 'meetupPartnerLogoPrimaryUrl'
@@ -282,6 +320,15 @@ function App() {
     await uploadEditorImage(event, 'sponsorLogoUrl', setSponsorFeedback, 'Logo do patrocinador carregada')
   }
 
+  const handleSponsorCarouselImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    await uploadEditorImage(
+      event,
+      'sponsorCarouselImageUrl',
+      setSponsorCarouselImageFeedback,
+      'Imagem da segunda arte carregada',
+    )
+  }
+
   const handleMeetupBackgroundUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     await uploadEditorImage(event, 'meetupBackgroundImageUrl', setMeetupBackgroundFeedback, 'Fundo carregado')
   }
@@ -304,6 +351,11 @@ function App() {
   const handleRemoveSponsorLogo = () => {
     updateField('sponsorLogoUrl', '')
     setSponsorFeedback('Logo do patrocinador removida.')
+  }
+
+  const handleRemoveSponsorCarouselImage = () => {
+    updateField('sponsorCarouselImageUrl', '')
+    setSponsorCarouselImageFeedback('Imagem da segunda arte removida.')
   }
 
   const handleRemoveMeetupBackground = () => {
@@ -465,6 +517,7 @@ function App() {
     setQuoteBackgroundFeedback('')
     setMeetupBackgroundFeedback('')
     setMeetupLogoFeedback('')
+    setSponsorCarouselImageFeedback('')
   }
 
   const handleUndo = () => {
@@ -496,12 +549,17 @@ function App() {
   const canUndo = undoStack.length > 0
   const canRedo = redoStack.length > 0
   const canReset = !isEditorStateEqual(editorState, initialEditorState)
+  const isOtherEventLayout =
+    selectedType === 'Meetup Presencial' ||
+    selectedType === 'Live' ||
+    selectedType === 'Workshop' ||
+    selectedType === 'Imersão'
   const isAnnualLayout = selectedType === 'Encontro Anual'
-  const isMeetupLayout = selectedType === 'Meetup Presencial'
   const isPocketLayout = selectedType === 'Encontro Pocket'
   const isQuoteLayout = selectedType === 'Quote'
   const isArticleLayout = selectedType === 'Artigo'
   const isSponsorLayout = (isPocketLayout || isAnnualLayout) && isSponsorVariation(selectedVariation)
+  const isSponsorCarouselLayout = isSponsorLayout && selectedVariation === 'Patrocinador Carousel'
   const isAnnualSponsorLayout = isAnnualLayout && isSponsorVariation(selectedVariation)
   const isAnnualSpeakerLayout =
     isAnnualLayout && selectedVariation === 'Palestrante'
@@ -511,6 +569,7 @@ function App() {
   const hasMeetupSupportText = meetupSupportText.trim().length > 0
   const hasMeetupCta = meetupCta.trim().length > 0
   const hasAnnualCta = isAnnualLayout && showAnnualCta && (annualCtaCaption.trim() || annualCta.trim())
+  const hasSponsorCarouselCta = sponsorCarouselCta.trim().length > 0
 
   const preset = platformPresets[selectedPlatform]
   const activeBannerModule = getBannerTypeModule(selectedType)
@@ -540,7 +599,6 @@ function App() {
       ? articleSecondText
       : articleAdviceDefaults.text
   const articleAdviceKeyword = articleSecondKeyword.trim() || articleAdviceDefaults.keyword
-  const articleMaskImageUrl = `${import.meta.env.BASE_URL}src/assets/themes/article-mask.png`
   const quoteDerivedState = quoteModule
     ? quoteModule.getDerivedState({
         initialSpeakerName: initialEditorState.speakerName,
@@ -553,13 +611,15 @@ function App() {
     : null
   const hasQuoteSecondSlide = quoteDerivedState?.hasSecondSlide ?? false
   const hasArticleSecondSlide = isArticleLayout
-  const hasIsolatedPreviewPanels = hasQuoteSecondSlide || hasArticleSecondSlide
+  const hasSponsorCarouselSecondSlide = isSponsorCarouselLayout
+  const hasIsolatedPreviewPanels =
+    hasQuoteSecondSlide || hasArticleSecondSlide || hasSponsorCarouselSecondSlide
   const previewStyle = {
     '--preview-aspect-ratio': `${preset.width} / ${preset.height}`,
     backgroundImage: isArticleLayout
       ? 'none'
       : `url(${import.meta.env.BASE_URL}src/assets/themes/${previewBackgroundAsset})`,
-    backgroundColor: isMeetupLayout
+    backgroundColor: isOtherEventLayout
       ? '#040404'
       : isArticleLayout
         ? '#16181b'
@@ -613,7 +673,15 @@ function App() {
     .map((part) => part[0]?.toUpperCase())
     .join('')
 
-  const syncRichEditorState = (field: 'quoteText' | 'quoteSecondText' | 'articleSecondText', editor: HTMLDivElement | null) => {
+  const syncRichEditorState = (
+    field:
+      | 'quoteText'
+      | 'quoteSecondText'
+      | 'articleSecondText'
+      | 'sponsorCarouselLeadText'
+      | 'sponsorCarouselBodyText',
+    editor: HTMLDivElement | null,
+  ) => {
     if (!editor) {
       return
     }
@@ -624,7 +692,12 @@ function App() {
   }
 
   const applyRichTextFormatting = (
-    field: 'quoteText' | 'quoteSecondText' | 'articleSecondText',
+    field:
+      | 'quoteText'
+      | 'quoteSecondText'
+      | 'articleSecondText'
+      | 'sponsorCarouselLeadText'
+      | 'sponsorCarouselBodyText',
     editor: HTMLDivElement | null,
     command: 'bold',
   ) => {
@@ -643,7 +716,12 @@ function App() {
 
   const handleRichEditorPaste = (
     event: React.ClipboardEvent<HTMLDivElement>,
-    field: 'quoteText' | 'quoteSecondText' | 'articleSecondText',
+    field:
+      | 'quoteText'
+      | 'quoteSecondText'
+      | 'articleSecondText'
+      | 'sponsorCarouselLeadText'
+      | 'sponsorCarouselBodyText',
     editor: HTMLDivElement | null,
   ) => {
     event.preventDefault()
@@ -681,7 +759,7 @@ function App() {
             onToggle={() => setIsBannerMenuOpen((open) => !open)}
           />
           <p className="field-hint">
-            Encontro Pocket e Encontro Anual incluem Palestrante e Patrocinador Single Image. Meetup Presencial, Quote e Artigo usam um layout único.
+            Encontro Pocket e Encontro Anual incluem Palestrante, Patrocinador Single Image e Patrocinador Carousel. {getBannerOptionGroupLabel(selectedType) === 'Outros eventos' ? 'Outros eventos usam um layout único.' : 'Quote e Artigo usam um layout único.'}
           </p>
         </section>
 
@@ -722,6 +800,20 @@ function App() {
 
               {isArticleLayout ? (
                 <>
+                  <label className="field-label" htmlFor="article-highlight-text">
+                    Trecho em destaque
+                  </label>
+                  <RichTextEditor
+                    editorClassName="article-highlight-editor"
+                    editorRef={quoteEditorRef}
+                    id="article-highlight-text"
+                    onBold={() => applyRichTextFormatting('quoteText', quoteEditorRef.current, 'bold')}
+                    onInput={() => syncRichEditorState('quoteText', quoteEditorRef.current)}
+                    onPaste={(event) => handleRichEditorPaste(event, 'quoteText', quoteEditorRef.current)}
+                    placeholder="Digite o trecho em destaque da primeira tela"
+                    toolbarLabel="Formatação do destaque do artigo"
+                  />
+
                   <label className="field-label" htmlFor="article-second-text">
                     Conteúdo da segunda tela
                   </label>
@@ -741,7 +833,7 @@ function App() {
                 </>
               ) : null}
             </>
-          ) : isMeetupLayout ? (
+          ) : isOtherEventLayout ? (
             <>
               <label className="field-label" htmlFor="event-date">
                 Data e horario
@@ -799,7 +891,7 @@ function App() {
             </>
           ) : null}
 
-          {!isMeetupLayout && !isQuoteLayout && !isArticleLayout ? (
+          {!isOtherEventLayout && !isQuoteLayout && !isArticleLayout ? (
             <>
               <label className="field-label" htmlFor="event-city">
                 Cidade em destaque
@@ -957,7 +1049,7 @@ function App() {
             </div>
             {photoFeedback ? <p className="field-hint upload-feedback">{photoFeedback}</p> : null}
           </section>
-        ) : isMeetupLayout ? (
+        ) : isOtherEventLayout ? (
           <section className="control-section muted-card">
             <div className="section-heading">
               <span className="section-icon" aria-hidden="true">
@@ -1073,6 +1165,100 @@ function App() {
               ) : null}
             </div>
             {sponsorFeedback ? <p className="field-hint upload-feedback">{sponsorFeedback}</p> : null}
+
+            {isSponsorCarouselLayout ? (
+              <>
+                <label className="field-label" htmlFor="sponsor-carousel-lead-text">
+                  Texto principal da segunda arte
+                </label>
+                <RichTextEditor
+                  editorClassName="sponsor-carousel-editor"
+                  editorRef={sponsorCarouselLeadEditorRef}
+                  id="sponsor-carousel-lead-text"
+                  onBold={() =>
+                    applyRichTextFormatting(
+                      'sponsorCarouselLeadText',
+                      sponsorCarouselLeadEditorRef.current,
+                      'bold',
+                    )
+                  }
+                  onInput={() =>
+                    syncRichEditorState('sponsorCarouselLeadText', sponsorCarouselLeadEditorRef.current)
+                  }
+                  onPaste={(event) =>
+                    handleRichEditorPaste(
+                      event,
+                      'sponsorCarouselLeadText',
+                      sponsorCarouselLeadEditorRef.current,
+                    )
+                  }
+                  placeholder="Digite o texto principal da segunda arte"
+                  toolbarLabel="Formatacao do texto principal da segunda arte"
+                />
+
+                <label className="field-label" htmlFor="sponsor-carousel-image-upload">
+                  Imagem da segunda arte
+                </label>
+                <input
+                  id="sponsor-carousel-image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleSponsorCarouselImageUpload}
+                />
+                <div className="photo-actions-row">
+                  <p className="field-hint">
+                    A imagem aparece em um quadro de destaque com proporcao aproximada de 725x325.
+                  </p>
+                  {sponsorCarouselImageUrl ? (
+                    <button type="button" className="secondary-inline-action" onClick={handleRemoveSponsorCarouselImage}>
+                      Remover imagem
+                    </button>
+                  ) : null}
+                </div>
+                {sponsorCarouselImageFeedback ? (
+                  <p className="field-hint upload-feedback">{sponsorCarouselImageFeedback}</p>
+                ) : null}
+
+                <label className="field-label" htmlFor="sponsor-carousel-body-text">
+                  Texto complementar da segunda arte
+                </label>
+                <RichTextEditor
+                  editorClassName="sponsor-carousel-editor sponsor-carousel-editor-secondary"
+                  editorRef={sponsorCarouselBodyEditorRef}
+                  id="sponsor-carousel-body-text"
+                  onBold={() =>
+                    applyRichTextFormatting(
+                      'sponsorCarouselBodyText',
+                      sponsorCarouselBodyEditorRef.current,
+                      'bold',
+                    )
+                  }
+                  onInput={() =>
+                    syncRichEditorState('sponsorCarouselBodyText', sponsorCarouselBodyEditorRef.current)
+                  }
+                  onPaste={(event) =>
+                    handleRichEditorPaste(
+                      event,
+                      'sponsorCarouselBodyText',
+                      sponsorCarouselBodyEditorRef.current,
+                    )
+                  }
+                  placeholder="Digite o texto complementar da segunda arte"
+                  toolbarLabel="Formatacao do texto complementar da segunda arte"
+                />
+
+                <label className="field-label" htmlFor="sponsor-carousel-cta">
+                  CTA opcional da segunda arte
+                </label>
+                <input
+                  id="sponsor-carousel-cta"
+                  type="text"
+                  value={sponsorCarouselCta}
+                  onChange={(event) => updateField('sponsorCarouselCta', event.target.value)}
+                  placeholder="Ex.: Saiba mais no nosso site"
+                />
+              </>
+            ) : null}
           </section>
         ) : (
           <section className="control-section muted-card">
@@ -1257,18 +1443,16 @@ function App() {
                   <div className="preview-content">
                     <article className="article-slide article-slide-primary">
                       <div className="article-primary-layout">
-                        <section className="article-highlight-section">
-                          <blockquote className="article-quote-block">
-                            <p className="article-quote-copy" dangerouslySetInnerHTML={renderRichText(articleQuoteText, articlePreviewDefaults.quoteText)} />
-                          </blockquote>
-                        </section>
-
                         <div className="article-preview-layout">
                           <section className="article-copy-column">
                             <header className="article-heading-block">
                               <h2 className="article-name">{articleSpeakerName}</h2>
                               <p className="article-role">{articleSpeakerRole}</p>
                             </header>
+
+                            <blockquote className="article-quote-block">
+                              <p className="article-quote-copy" dangerouslySetInnerHTML={renderRichText(articleQuoteText, articlePreviewDefaults.quoteText)} />
+                            </blockquote>
 
                             <footer className="article-footer">
                               <div className="article-cta-card">
@@ -1289,19 +1473,7 @@ function App() {
                           <section className="article-portrait-column" aria-label={articleSpeakerName}>
                             <div className="article-photo-shell">
                               <div className="article-photo-frame">
-                                <div
-                                  className="article-photo-media"
-                                  style={{
-                                    WebkitMaskImage: `url(${articleMaskImageUrl})`,
-                                    maskImage: `url(${articleMaskImageUrl})`,
-                                    WebkitMaskPosition: 'center',
-                                    maskPosition: 'center',
-                                    WebkitMaskRepeat: 'no-repeat',
-                                    maskRepeat: 'no-repeat',
-                                    WebkitMaskSize: '100% 100%',
-                                    maskSize: '100% 100%',
-                                  }}
-                                >
+                                <div className="article-photo-media">
                                   {speakerImageUrl ? (
                                     <img src={speakerImageUrl} alt={articleSpeakerName} className="article-photo" />
                                   ) : (
@@ -1310,12 +1482,6 @@ function App() {
                                     </div>
                                   )}
                                 </div>
-                                <img
-                                  src={articleMaskImageUrl}
-                                  alt=""
-                                  aria-hidden="true"
-                                  className="article-photo-mask"
-                                />
                               </div>
                             </div>
                           </section>
@@ -1377,14 +1543,203 @@ function App() {
                 </div>
               </article>
             </div>
+          ) : isSponsorCarouselLayout ? (
+            <div className="sponsor-carousel-preview-stack" aria-label="Imagens do patrocinador carousel">
+              <article className="sponsor-carousel-preview-panel">
+                <div className="sponsor-carousel-preview-panel-toolbar">
+                  <div>
+                    <p className="toolbar-kicker">Imagem 1</p>
+                    <p className="toolbar-copy">Primeira arte do carousel com a logo do patrocinador.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => handleDownloadQuoteFrame(primaryPreviewFrameRef.current, 'imagem-1')}
+                    disabled={isExporting}
+                  >
+                    <AppIcon name="download" className="button-icon" />
+                    {isExporting ? 'Gerando...' : 'Baixar PNG'}
+                  </button>
+                </div>
+
+                <div
+                  className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketLayout ? 'is-pocket-sponsor' : ''}`}
+                  style={previewStyle}
+                  ref={primaryPreviewFrameRef}
+                >
+                  <div className="preview-content">
+                    <header className="event-header">
+                      <h2 className={`event-title ${isAnnualLayout ? 'is-annual-layout' : ''}`}>
+                        {isAnnualLayout ? (
+                          <span className="event-title-icon-block" aria-hidden="true">
+                            <img
+                              src={`${import.meta.env.BASE_URL}src/assets/icons/arrow.png`}
+                              alt=""
+                              className="event-title-icon"
+                            />
+                          </span>
+                        ) : null}
+                        <span className="event-title-copy">
+                          <span className="event-title-segment">{eventTitle}</span>
+                          {eventCity.trim() ? <span className="event-city event-title-segment"> {eventCity}</span> : null}
+                        </span>
+                      </h2>
+
+                      {(!isAnnualSponsorLayout || isPocketLayout) && hasEventDetails ? (
+                        <div className="event-details-pill">
+                          {eventDate.trim() ? (
+                            <span className="event-detail-item">
+                              <span className="event-dot" aria-hidden="true" />
+                              <span>{eventDate}</span>
+                            </span>
+                          ) : null}
+                          {eventLocation.trim() ? (
+                            <span className="event-detail-item">
+                              <span className="event-dot" aria-hidden="true" />
+                              <span>{eventLocation}</span>
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </header>
+
+                    <section className="pocket-sponsor-section" aria-label={selectedVariation}>
+                      <h3 className="pocket-sponsor-title">
+                        <img
+                          src={`${import.meta.env.BASE_URL}src/assets/icons/spark-pink.png`}
+                          alt=""
+                          aria-hidden="true"
+                          className="pocket-sponsor-spark"
+                        />
+                        <span>{sponsorTitle.trim() || initialEditorState.sponsorTitle}</span>
+                        <img
+                          src={`${import.meta.env.BASE_URL}src/assets/icons/spark-pink.png`}
+                          alt=""
+                          aria-hidden="true"
+                          className="pocket-sponsor-spark"
+                        />
+                      </h3>
+                      <div className="pocket-sponsor-frame">
+                        {sponsorLogoUrl ? (
+                          <img src={sponsorLogoUrl} alt="Logo do patrocinador" className="pocket-sponsor-logo" />
+                        ) : (
+                          <div className="pocket-sponsor-placeholder">Logo do patrocinador</div>
+                        )}
+                      </div>
+                    </section>
+
+                    {isAnnualSponsorLayout && hasEventDetails ? (
+                      <div className="event-details-pill">
+                        {eventDate.trim() ? (
+                          <span className="event-detail-item">
+                            <span className="event-dot" aria-hidden="true" />
+                            <span>{eventDate}</span>
+                          </span>
+                        ) : null}
+                        {eventLocation.trim() ? (
+                          <span className="event-detail-item">
+                            <span className="event-dot" aria-hidden="true" />
+                            <span>{eventLocation}</span>
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    <div className="pocket-brand-footer">
+                      <img
+                        src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
+                        alt="WoMakers Code"
+                        className="pocket-brand"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article className="sponsor-carousel-preview-panel">
+                <div className="sponsor-carousel-preview-panel-toolbar">
+                  <div>
+                    <p className="toolbar-kicker">Imagem 2</p>
+                    <p className="toolbar-copy">Segunda arte do carousel com texto, mídia e CTA opcional.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => handleDownloadQuoteFrame(sponsorCarouselSecondaryPreviewFrameRef.current, 'imagem-2')}
+                    disabled={isExporting}
+                  >
+                    <AppIcon name="download" className="button-icon" />
+                    {isExporting ? 'Gerando...' : 'Baixar PNG'}
+                  </button>
+                </div>
+
+                <div
+                  className={`preview-frame theme-${selectedTheme.toLowerCase()} is-sponsor-carousel-secondary-frame`}
+                  style={{
+                    ...previewStyle,
+                    backgroundImage: 'none',
+                    backgroundColor: '#ffffff',
+                  }}
+                  ref={sponsorCarouselSecondaryPreviewFrameRef}
+                >
+                  <div className="preview-content">
+                    <article className="sponsor-carousel-slide-secondary">
+                      <section className="sponsor-carousel-card">
+                        <div className="sponsor-carousel-dots" aria-hidden="true">
+                          <span />
+                          <span />
+                          <span />
+                        </div>
+
+                        <div
+                          className="sponsor-carousel-richtext sponsor-carousel-richtext-lead"
+                          dangerouslySetInnerHTML={renderRichText(
+                            sponsorCarouselLeadText,
+                            initialEditorState.sponsorCarouselLeadText,
+                          )}
+                        />
+
+                        <div className="sponsor-carousel-image-shell">
+                          {sponsorCarouselImageUrl ? (
+                            <img
+                              src={sponsorCarouselImageUrl}
+                              alt="Imagem da segunda arte do patrocinador"
+                              className="sponsor-carousel-image"
+                            />
+                          ) : (
+                            <div className="sponsor-carousel-image-placeholder">
+                              Imagem de destaque do patrocinador
+                            </div>
+                          )}
+                        </div>
+
+                        <div
+                          className="sponsor-carousel-richtext sponsor-carousel-richtext-body"
+                          dangerouslySetInnerHTML={renderRichText(
+                            sponsorCarouselBodyText,
+                            initialEditorState.sponsorCarouselBodyText,
+                          )}
+                        />
+
+                        {hasSponsorCarouselCta ? (
+                          <footer className="sponsor-carousel-cta-row">
+                            <p className="sponsor-carousel-cta-pill">{sponsorCarouselCta.trim()}</p>
+                          </footer>
+                        ) : null}
+                      </section>
+                    </article>
+                  </div>
+                </div>
+              </article>
+            </div>
           ) : (
             <div
-              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isMeetupLayout ? 'is-meetup-layout' : ''} ${isArticleLayout ? 'is-article-layout' : ''}`}
+              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isOtherEventLayout ? 'is-meetup-layout' : ''} ${isArticleLayout ? 'is-article-layout' : ''}`}
               style={previewStyle}
               ref={primaryPreviewFrameRef}
             >
               <div className="preview-content">
-                {isMeetupLayout ? (
+                {isOtherEventLayout ? (
                   <div className="meetup-preview-layout">
                     <header className="meetup-logos-header">
                       <div

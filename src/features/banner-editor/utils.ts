@@ -66,9 +66,41 @@ export const bannerOptions: BannerOption[] = imageTypes.flatMap((type) =>
   ),
 )
 
-export const groupedBannerOptions = imageTypes.map((type) => ({
-  type,
-  options: bannerOptions.filter((option) => option.type === type),
+const bannerOptionGroups = [
+  {
+    label: 'Encontro Pocket',
+    types: ['Encontro Pocket'],
+  },
+  {
+    label: 'Encontro Anual',
+    types: ['Encontro Anual'],
+  },
+  {
+    label: 'Outros eventos',
+    types: ['Meetup Presencial', 'Live', 'Workshop', 'Imersão'],
+  },
+  {
+    label: 'Quote',
+    types: ['Quote'],
+  },
+  {
+    label: 'Artigo',
+    types: ['Artigo'],
+  },
+] as const satisfies ReadonlyArray<{
+  label: string
+  types: readonly ImageType[]
+}>
+
+export const getBannerOptionGroupLabel = (type: ImageType) =>
+  bannerOptionGroups.find((group) => group.types.some((groupType) => groupType === type))?.label ??
+  type
+
+export const groupedBannerOptions = bannerOptionGroups.map((group) => ({
+  label: group.label,
+  options: bannerOptions.filter((option) =>
+    group.types.some((groupType) => groupType === option.type),
+  ),
 }))
 
 export const isEditorStateEqual = (left: EditorState, right: EditorState) =>
@@ -87,6 +119,10 @@ export const isEditorStateEqual = (left: EditorState, right: EditorState) =>
   left.annualCta === right.annualCta &&
   left.sponsorTitle === right.sponsorTitle &&
   left.sponsorLogoUrl === right.sponsorLogoUrl &&
+  left.sponsorCarouselLeadText === right.sponsorCarouselLeadText &&
+  left.sponsorCarouselImageUrl === right.sponsorCarouselImageUrl &&
+  left.sponsorCarouselBodyText === right.sponsorCarouselBodyText &&
+  left.sponsorCarouselCta === right.sponsorCarouselCta &&
   left.quoteText === right.quoteText &&
   left.quoteSecondText === right.quoteSecondText &&
   left.articleSecondText === right.articleSecondText &&
@@ -123,6 +159,12 @@ export const parseEditorStateCandidate = (
     'eventTitle',
     'annualCtaCaption',
     'annualCta',
+    'sponsorTitle',
+    'sponsorLogoUrl',
+    'sponsorCarouselLeadText',
+    'sponsorCarouselImageUrl',
+    'sponsorCarouselBodyText',
+    'sponsorCarouselCta',
     'quoteText',
     'quoteSecondText',
     'articleSecondText',
@@ -156,6 +198,12 @@ export const parseEditorStateCandidate = (
     annualCta: parsed.annualCta ?? '',
     sponsorTitle: parsed.sponsorTitle ?? initialEditorState.sponsorTitle,
     sponsorLogoUrl: parsed.sponsorLogoUrl ?? '',
+    sponsorCarouselLeadText:
+      parsed.sponsorCarouselLeadText ?? initialEditorState.sponsorCarouselLeadText,
+    sponsorCarouselImageUrl: parsed.sponsorCarouselImageUrl ?? '',
+    sponsorCarouselBodyText:
+      parsed.sponsorCarouselBodyText ?? initialEditorState.sponsorCarouselBodyText,
+    sponsorCarouselCta: parsed.sponsorCarouselCta ?? initialEditorState.sponsorCarouselCta,
     quoteText: parsed.quoteText ?? initialEditorState.quoteText,
     quoteSecondText: parsed.quoteSecondText ?? initialEditorState.quoteSecondText,
     articleSecondText: parsed.articleSecondText ?? initialEditorState.articleSecondText,

@@ -7,10 +7,11 @@ export const imageTypes = [
   'Encontro Pocket',
   'Encontro Anual',
   'Meetup Presencial',
+  'Live',
+  'Workshop',
   'Quote',
   'Artigo',
-  // 'Live',
-  // 'Imersão',
+  'Imersão',
 ] as const
 
 export const assetVariations = [
@@ -53,6 +54,10 @@ export type EditorState = {
   annualCta: string
   sponsorTitle: string
   sponsorLogoUrl: string
+  sponsorCarouselLeadText: string
+  sponsorCarouselImageUrl: string
+  sponsorCarouselBodyText: string
+  sponsorCarouselCta: string
   quoteText: string
   quoteSecondText: string
   articleSecondText: string
@@ -95,8 +100,11 @@ export const bannerTypeVariations: Record<ImageType, AssetVariation[]> = {
   'Encontro Pocket': [...sidebarReadyVariations],
   'Encontro Anual': [...sidebarReadyVariations],
   'Meetup Presencial': [defaultAssetVariation],
+  Live: [defaultAssetVariation],
+  Workshop: [defaultAssetVariation],
   Quote: [defaultAssetVariation],
   Artigo: [defaultAssetVariation],
+  'Imersão': [defaultAssetVariation],
 }
 
 export const articlePreviewDefaults = {
@@ -130,6 +138,12 @@ export const initialEditorState: EditorState = {
   annualCta: 'Inscreva-se',
   sponsorTitle: 'Patrocínio',
   sponsorLogoUrl: '',
+  sponsorCarouselLeadText:
+    'Conte para a comunidade como sua marca impulsiona iniciativas para mulheres na tecnologia e destaque os pontos que merecem atenção neste slide.',
+  sponsorCarouselImageUrl: '',
+  sponsorCarouselBodyText:
+    'Use este segundo trecho para complementar a mensagem com detalhes, benefícios, contexto da parceria ou convite para conhecer mais.',
+  sponsorCarouselCta: '',
   quoteText:
     'A maternidade traz uma camada essencial para o exercicio da lideranca, <strong>especialmente na forma como organizamos prioridades e tomamos decisoes.</strong> O tempo passa a ser um recurso ainda mais valioso.',
   quoteSecondText: '',

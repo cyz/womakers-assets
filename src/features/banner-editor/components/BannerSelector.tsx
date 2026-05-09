@@ -1,11 +1,11 @@
 import type { RefObject } from 'react'
 
 import type { BannerOption } from '../model'
-import { getBannerOptionLabel } from '../utils'
+import { getBannerOptionGroupLabel, getBannerOptionLabel } from '../utils'
 import { AppIcon } from './AppIcon'
 
 type BannerOptionGroup = {
-  type: BannerOption['type']
+  label: string
   options: BannerOption[]
 }
 
@@ -44,7 +44,9 @@ export function BannerSelector({
             <AppIcon name="calendar" />
           </span>
           <span className="banner-select-copy">
-            <span className="banner-select-category">{selectedBannerOption.type}</span>
+            <span className="banner-select-category">
+              {getBannerOptionGroupLabel(selectedBannerOption.type)}
+            </span>
             <span className="banner-select-value">
               {getBannerOptionLabel(
                 selectedBannerOption.type,
@@ -62,8 +64,8 @@ export function BannerSelector({
         {isBannerMenuOpen ? (
           <div className="banner-select-menu" role="listbox" aria-label="Tipo de banner">
             {groupedBannerOptions.map((group) => (
-              <div key={group.type} className="banner-select-group">
-                <p className="banner-select-group-label">{group.type}</p>
+              <div key={group.label} className="banner-select-group">
+                <p className="banner-select-group-label">{group.label}</p>
                 {group.options.map((option) => {
                   const isSelected = option.id === selectedBannerOption.id
 
@@ -77,7 +79,7 @@ export function BannerSelector({
                       onClick={() => onSelect(option)}
                     >
                       <span className="banner-option-name">
-                        {getBannerOptionLabel(option.type, option.variation, option.platform)}
+                        {option.type} · {getBannerOptionLabel(option.type, option.variation, option.platform)}
                       </span>
                       <span className="banner-option-dimensions">({option.dimensions})</span>
                     </button>
