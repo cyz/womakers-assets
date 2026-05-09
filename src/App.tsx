@@ -430,15 +430,15 @@ function AppIcon({ name, className }: { name: IconName; className?: string }) {
     case 'undo':
       return (
         <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="M9 7 4 12l5 5" />
-          <path d="M20 7v6a4 4 0 0 1-4 4H4" />
+          <path d="M10 8 5 12l5 4" />
+          <path d="M6 12h8a5 5 0 1 1 0 10h-2" />
         </svg>
       )
     case 'redo':
       return (
         <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="m15 7 5 5-5 5" />
-          <path d="M4 7v6a4 4 0 0 0 4 4h12" />
+          <path d="m14 8 5 4-5 4" />
+          <path d="M18 12h-8a5 5 0 1 0 0 10h2" />
         </svg>
       )
     case 'pin':
