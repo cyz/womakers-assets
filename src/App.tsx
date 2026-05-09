@@ -1,318 +1,47 @@
 import type { ChangeEvent, CSSProperties } from 'react'
 import { toPng } from 'html-to-image'
 import { useEffect, useRef, useState } from 'react'
+import { AppIcon } from './features/banner-editor/components/AppIcon'
+import { getBannerTypeModule } from './features/banner-editor/banner-types/registry'
+import { BannerSelector } from './features/banner-editor/components/BannerSelector'
+import { RichTextEditor } from './features/banner-editor/components/RichTextEditor'
+import {
+  MAX_IMAGE_FILE_SIZE,
+  MAX_SAVED_EXPORTED_IMAGES,
+  articleAdviceDefaults,
+  articlePreviewDefaults,
+  initialEditorState,
+  platformPresets,
+  SAVED_EDITOR_STATE_KEY,
+  SAVED_EXPORTED_IMAGES_KEY,
+  type BannerOption,
+  type EditorState,
+  type MeetupLogoAsset,
+  type SavedBannerAsset,
+} from './features/banner-editor/model'
+import {
+  bannerOptions,
+  buildBannerFileName,
+  createSavedBannerId,
+  formatSavedAt,
+  getBannerOptionLabel,
+  getPlatformDimensions,
+  groupedBannerOptions,
+  hasTypeVariations,
+  isEditorStateEqual,
+  isSponsorVariation,
+  loadSavedBannerAssets,
+  loadSavedEditorState,
+  normalizeEditorState,
+  sanitizeQuoteHtml,
+} from './features/banner-editor/utils'
 import './App.css'
-
-const SAVED_EDITOR_STATE_KEY = 'womakers-assets:last-saved-banner'
-const SAVED_EXPORTED_IMAGES_KEY = 'womakers-assets:saved-exported-images'
-const MAX_IMAGE_FILE_SIZE = 8 * 1024 * 1024
-const MAX_SAVED_EXPORTED_IMAGES = 8
-
-const imageTypes = [
-  'Encontro Pocket',
-  'Encontro Anual',
-  'Meetup Presencial',
-  'Live',
-  'Imersão',
-] as const
-
-const assetVariations = ['Palestrante', 'Agenda'] as const
-const defaultAssetVariation = assetVariations[0]
-
-const platforms = [
-  'Instagram Feed (1080x1350)',
-] as const
-
-const platformPresets: Record<(typeof platforms)[number], { width: number; height: number }> = {
-  'Instagram Feed (1080x1350)': { width: 1080, height: 1350 },
-}
-
-type ImageType = (typeof imageTypes)[number]
-type AssetVariation = (typeof assetVariations)[number]
-type Platform = (typeof platforms)[number]
-
-type EditorState = {
-  selectedType: ImageType
-  selectedVariation: AssetVariation
-  selectedPlatform: Platform
-  eventTitle: string
-  eventCity: string
-  eventDate: string
-  eventLocation: string
-  showAnnualCta: boolean
-  annualCtaCaption: string
-  annualCta: string
-  speakerName: string
-  speakerRole: string
-  speakerTalk: string
-  speakerImageUrl: string
-}
-
-type BannerOption = {
-  id: string
-  type: ImageType
-  variation: AssetVariation
-  platform: Platform
-  platformLabel: string
-  dimensions: string
-}
-
-type SavedBannerAsset = {
-  id: string
-  fileName: string
-  imageDataUrl: string
-  savedAt: string
-  editorState: EditorState
-}
-
-const bannerTypeVariations: Record<ImageType, AssetVariation[]> = {
-  'Encontro Pocket': [...assetVariations],
-  'Encontro Anual': [...assetVariations],
-  'Meetup Presencial': [defaultAssetVariation],
-  Live: [defaultAssetVariation],
-  'Imersão': [defaultAssetVariation],
-}
-
-const initialEditorState: EditorState = {
-  selectedType: imageTypes[0],
-  selectedVariation: defaultAssetVariation,
-  selectedPlatform: platforms[0],
-  eventTitle: 'Encontro de Mulheres na Tecnologia:',
-  eventCity: 'Porto Alegre',
-  eventDate: '28 de março',
-  eventLocation: 'Arena CMPC Tecnopuc',
-  showAnnualCta: false,
-  annualCtaCaption: 'Legenda CTA',
-  annualCta: 'Inscreva-se',
-  speakerName: 'Aryanne Silva',
-  speakerRole: 'Senior Developer na Thoughtworks',
-  speakerTalk: 'Painel: O Futuro das Carreiras Tech',
-  speakerImageUrl: '',
-}
-
-const getPlatformLabel = (platform: Platform) => platform.replace(/\s*\([^)]*\)$/, '')
-
-const getPlatformDimensions = (platform: Platform) => {
-  const preset = platformPresets[platform]
-  return `${preset.width}x${preset.height}`
-}
-
-const getTypeVariations = (type: ImageType) => bannerTypeVariations[type]
-
-const hasTypeVariations = (type: ImageType) => getTypeVariations(type).length > 1
-
-const getBannerOptionLabel = (type: ImageType, variation: AssetVariation, platform: Platform) => {
-  const platformLabel = getPlatformLabel(platform)
-
-  return hasTypeVariations(type) ? `${variation} · ${platformLabel}` : platformLabel
-}
-
-const normalizeEditorState = (state: EditorState): EditorState => {
-  const supportedVariations = getTypeVariations(state.selectedType)
-
-  return {
-    ...state,
-    selectedVariation: supportedVariations.includes(state.selectedVariation)
-      ? state.selectedVariation
-      : supportedVariations[0],
-  }
-}
-
-const bannerOptions: BannerOption[] = imageTypes.flatMap((type) =>
-  getTypeVariations(type).flatMap((variation) =>
-    platforms.map((platform) => ({
-      id: `${type}::${variation}::${platform}`,
-      type,
-      variation,
-      platform,
-      platformLabel: getPlatformLabel(platform),
-      dimensions: getPlatformDimensions(platform),
-    })),
-  ),
-)
-
-const groupedBannerOptions = imageTypes.map((type) => ({
-  type,
-  options: bannerOptions.filter((option) => option.type === type),
-}))
-
-const isEditorStateEqual = (left: EditorState, right: EditorState) =>
-  left.selectedType === right.selectedType &&
-  left.selectedVariation === right.selectedVariation &&
-  left.selectedPlatform === right.selectedPlatform &&
-  left.eventTitle === right.eventTitle &&
-  left.eventCity === right.eventCity &&
-  left.eventDate === right.eventDate &&
-  left.eventLocation === right.eventLocation &&
-  left.showAnnualCta === right.showAnnualCta &&
-  left.annualCtaCaption === right.annualCtaCaption &&
-  left.annualCta === right.annualCta &&
-  left.speakerName === right.speakerName &&
-  left.speakerRole === right.speakerRole &&
-  left.speakerTalk === right.speakerTalk &&
-  left.speakerImageUrl === right.speakerImageUrl
-
-const isImageType = (value: string): value is ImageType => imageTypes.includes(value as ImageType)
-
-const isAssetVariation = (value: string): value is AssetVariation =>
-  assetVariations.includes(value as AssetVariation)
-
-const isPlatform = (value: string): value is Platform => platforms.includes(value as Platform)
-
-const parseEditorStateCandidate = (parsed: Partial<EditorState> | null | undefined): EditorState | null => {
-  if (
-    !parsed ||
-    !isImageType(parsed.selectedType ?? '') ||
-    !isAssetVariation(parsed.selectedVariation ?? '') ||
-    !isPlatform(parsed.selectedPlatform ?? '')
-  ) {
-    return null
-  }
-
-  const textFields: Array<keyof Omit<EditorState, 'selectedType' | 'selectedVariation' | 'selectedPlatform'>> = [
-    'eventTitle',
-    'eventCity',
-    'eventDate',
-    'eventLocation',
-    'annualCtaCaption',
-    'annualCta',
-    'speakerName',
-    'speakerRole',
-    'speakerTalk',
-    'speakerImageUrl',
-  ]
-
-  if (typeof parsed.showAnnualCta !== 'boolean' || textFields.some((field) => typeof parsed[field] !== 'string')) {
-    return null
-  }
-
-  return {
-    selectedType: parsed.selectedType as ImageType,
-    selectedVariation: parsed.selectedVariation as AssetVariation,
-    selectedPlatform: parsed.selectedPlatform as Platform,
-    eventTitle: parsed.eventTitle ?? '',
-    eventCity: parsed.eventCity ?? '',
-    eventDate: parsed.eventDate ?? '',
-    eventLocation: parsed.eventLocation ?? '',
-    showAnnualCta: parsed.showAnnualCta ?? false,
-    annualCtaCaption: parsed.annualCtaCaption ?? '',
-    annualCta: parsed.annualCta ?? '',
-    speakerName: parsed.speakerName ?? '',
-    speakerRole: parsed.speakerRole ?? '',
-    speakerTalk: parsed.speakerTalk ?? '',
-    speakerImageUrl: parsed.speakerImageUrl ?? '',
-  }
-}
-
-const parseSavedEditorState = (rawValue: string | null): EditorState | null => {
-  if (!rawValue) {
-    return null
-  }
-
-  try {
-    return parseEditorStateCandidate(JSON.parse(rawValue) as Partial<EditorState>)
-  } catch {
-    return null
-  }
-}
-
-const parseSavedBannerAssets = (rawValue: string | null): SavedBannerAsset[] => {
-  if (!rawValue) {
-    return []
-  }
-
-  try {
-    const parsed = JSON.parse(rawValue)
-
-    if (!Array.isArray(parsed)) {
-      return []
-    }
-
-    return parsed
-      .flatMap((item) => {
-        if (!item || typeof item !== 'object') {
-          return []
-        }
-
-        const candidate = item as Partial<SavedBannerAsset>
-        const editorState = parseEditorStateCandidate(candidate.editorState as Partial<EditorState>)
-
-        if (
-          !editorState ||
-          typeof candidate.id !== 'string' ||
-          typeof candidate.fileName !== 'string' ||
-          typeof candidate.imageDataUrl !== 'string' ||
-          typeof candidate.savedAt !== 'string'
-        ) {
-          return []
-        }
-
-        return [{
-          id: candidate.id,
-          fileName: candidate.fileName,
-          imageDataUrl: candidate.imageDataUrl,
-          savedAt: candidate.savedAt,
-          editorState,
-        }]
-      })
-      .slice(0, MAX_SAVED_EXPORTED_IMAGES)
-  } catch {
-    return []
-  }
-}
-
-const loadSavedEditorState = () => {
-  if (typeof window === 'undefined') {
-    return initialEditorState
-  }
-
-  const savedState = parseSavedEditorState(window.localStorage.getItem(SAVED_EDITOR_STATE_KEY))
-
-  return savedState ? normalizeEditorState(savedState) : initialEditorState
-}
-
-const loadSavedBannerAssets = () => {
-  if (typeof window === 'undefined') {
-    return []
-  }
-
-  return parseSavedBannerAssets(window.localStorage.getItem(SAVED_EXPORTED_IMAGES_KEY))
-}
-
-const slugify = (value: string) =>
-  value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-
-const buildBannerFileName = (state: EditorState) => {
-  const parts = [
-    state.selectedType,
-    hasTypeVariations(state.selectedType) ? state.selectedVariation : '',
-    state.eventCity,
-  ]
-    .map(slugify)
-    .filter(Boolean)
-
-  return `${parts.join('-') || 'banner'}-${Date.now()}.png`
-}
-
 const downloadImage = (imageDataUrl: string, fileName: string) => {
   const link = document.createElement('a')
   link.href = imageDataUrl
   link.download = fileName
   link.click()
 }
-
-const formatSavedAt = (savedAt: string) =>
-  new Date(savedAt).toLocaleString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 
 const convertImageFileToDataUrl = async (file: File) => {
   const fileDataUrl = await new Promise<string>((resolve, reject) => {
@@ -355,139 +84,6 @@ const convertImageFileToDataUrl = async (file: File) => {
   return canvas.toDataURL('image/webp', 0.88)
 }
 
-type IconName =
-  | 'spark'
-  | 'calendar'
-  | 'layout'
-  | 'swatch'
-  | 'text'
-  | 'download'
-  | 'chevronDown'
-  | 'layers'
-  | 'refresh'
-  | 'undo'
-  | 'redo'
-  | 'pin'
-  | 'image'
-  | 'close'
-  | 'save'
-
-function AppIcon({ name, className }: { name: IconName; className?: string }) {
-  switch (name) {
-    case 'spark':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="M12 2 13.9 7.1 19 9l-5.1 1.9L12 16l-1.9-5.1L5 9l5.1-1.9L12 2Z" />
-          <path d="M18.5 15 19.4 17.6 22 18.5l-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6Z" />
-        </svg>
-      )
-    case 'calendar':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <rect x="3" y="5" width="18" height="16" rx="3" />
-          <path d="M16 3v4M8 3v4M3 10h18" />
-        </svg>
-      )
-    case 'layout':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <rect x="3" y="4" width="18" height="16" rx="3" />
-          <path d="M9 4v16M9 10h12" />
-        </svg>
-      )
-    case 'swatch':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="M12 3a9 9 0 1 0 9 9c0-1.6-1.1-2.7-2.7-2.7h-2.1a1.7 1.7 0 0 1 0-3.3H15A3 3 0 0 0 12 3Z" />
-          <circle cx="7.5" cy="11" r="1" />
-          <circle cx="10" cy="7.5" r="1" />
-          <circle cx="14" cy="7.5" r="1" />
-        </svg>
-      )
-    case 'text':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="M4 6h16M8 6v12M16 6v12M6 18h12" />
-        </svg>
-      )
-    case 'download':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="M12 4v11" />
-          <path d="m7 11 5 5 5-5" />
-          <path d="M5 20h14" />
-        </svg>
-      )
-    case 'chevronDown':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      )
-    case 'layers':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="m12 4 8 4-8 4-8-4 8-4Z" />
-          <path d="m4 12 8 4 8-4" />
-          <path d="m4 16 8 4 8-4" />
-        </svg>
-      )
-    case 'refresh':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="M20 11a8 8 0 0 0-14-4" />
-          <path d="M4 4v5h5" />
-          <path d="M4 13a8 8 0 0 0 14 4" />
-          <path d="M20 20v-5h-5" />
-        </svg>
-      )
-    case 'undo':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="M10 8 5 12l5 4" />
-          <path d="M6 12h8a5 5 0 1 1 0 10h-2" />
-        </svg>
-      )
-    case 'redo':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="m14 8 5 4-5 4" />
-          <path d="M18 12h-8a5 5 0 1 0 0 10h2" />
-        </svg>
-      )
-    case 'pin':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="M12 21s6-5.33 6-11a6 6 0 1 0-12 0c0 5.67 6 11 6 11Z" />
-          <circle cx="12" cy="10" r="2.5" />
-        </svg>
-      )
-    case 'image':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <rect x="3" y="5" width="18" height="14" rx="2" />
-          <circle cx="9" cy="10" r="1.5" />
-          <path d="m21 16-5.5-5.5L7 19" />
-        </svg>
-      )
-    case 'close':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="M6 6 18 18" />
-          <path d="M18 6 6 18" />
-        </svg>
-      )
-    case 'save':
-      return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-          <path d="M5 4h11l3 3v13H5z" />
-          <path d="M8 4v6h8" />
-          <path d="M9 20v-6h6v6" />
-        </svg>
-      )
-  }
-}
-
 function App() {
   const [editorState, setEditorState] = useState<EditorState>(() => loadSavedEditorState())
   const [undoStack, setUndoStack] = useState<EditorState[]>([])
@@ -497,8 +93,17 @@ function App() {
   const [savedBannerAssets, setSavedBannerAssets] = useState<SavedBannerAsset[]>(() => loadSavedBannerAssets())
   const [saveFeedback, setSaveFeedback] = useState('')
   const [photoFeedback, setPhotoFeedback] = useState('')
+  const [sponsorFeedback, setSponsorFeedback] = useState('')
+  const [quoteBackgroundFeedback, setQuoteBackgroundFeedback] = useState('')
+  const [meetupBackgroundFeedback, setMeetupBackgroundFeedback] = useState('')
+  const [meetupLogoFeedback, setMeetupLogoFeedback] = useState('')
   const bannerMenuRef = useRef<HTMLDivElement | null>(null)
-  const previewFrameRef = useRef<HTMLDivElement | null>(null)
+  const primaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
+  const quoteSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
+  const articleSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
+  const quoteEditorRef = useRef<HTMLDivElement | null>(null)
+  const quoteSecondEditorRef = useRef<HTMLDivElement | null>(null)
+  const articleSecondEditorRef = useRef<HTMLDivElement | null>(null)
   const selectedTheme = 'WoMakers'
 
   const {
@@ -506,16 +111,28 @@ function App() {
     selectedVariation,
     selectedPlatform,
     eventTitle,
+    meetupSupportText,
+    meetupCta,
     eventCity,
     eventDate,
     eventLocation,
     showAnnualCta,
     annualCtaCaption,
     annualCta,
+    sponsorTitle,
+    sponsorLogoUrl,
+    quoteText,
+    quoteSecondText,
+    articleSecondText,
+    articleSecondKeyword,
+    quoteBackgroundImageUrl,
     speakerName,
     speakerRole,
     speakerTalk,
     speakerImageUrl,
+    meetupBackgroundImageUrl,
+    meetupPartnerLogoPrimaryUrl,
+    meetupPartnerLogoSecondaryUrl,
   } = editorState
 
   useEffect(() => {
@@ -543,6 +160,48 @@ function App() {
       window.removeEventListener('keydown', handleEscape)
     }
   }, [isBannerMenuOpen])
+
+  useEffect(() => {
+    const editor = quoteEditorRef.current
+
+    if (!editor) {
+      return
+    }
+
+    const normalizedQuote = sanitizeQuoteHtml(quoteText)
+
+    if (sanitizeQuoteHtml(editor.innerHTML) !== normalizedQuote) {
+      editor.innerHTML = normalizedQuote
+    }
+  }, [quoteText])
+
+  useEffect(() => {
+    const editor = articleSecondEditorRef.current
+
+    if (!editor) {
+      return
+    }
+
+    const normalizedAdvice = sanitizeQuoteHtml(articleSecondText)
+
+    if (sanitizeQuoteHtml(editor.innerHTML) !== normalizedAdvice) {
+      editor.innerHTML = normalizedAdvice
+    }
+  }, [articleSecondText])
+
+  useEffect(() => {
+    const editor = quoteSecondEditorRef.current
+
+    if (!editor) {
+      return
+    }
+
+    const normalizedSecondQuote = sanitizeQuoteHtml(quoteSecondText)
+
+    if (sanitizeQuoteHtml(editor.innerHTML) !== normalizedSecondQuote) {
+      editor.innerHTML = normalizedSecondQuote
+    }
+  }, [quoteSecondText])
 
   const commitState = (updater: EditorState | ((current: EditorState) => EditorState)) => {
     setEditorState((current) => {
@@ -572,7 +231,18 @@ function App() {
     })
   }
 
-  const handleSpeakerPhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+  const uploadEditorImage = async (
+    event: ChangeEvent<HTMLInputElement>,
+    field:
+      | 'speakerImageUrl'
+      | 'sponsorLogoUrl'
+      | 'quoteBackgroundImageUrl'
+      | 'meetupBackgroundImageUrl'
+      | 'meetupPartnerLogoPrimaryUrl'
+      | 'meetupPartnerLogoSecondaryUrl',
+    setFeedback: (message: string) => void,
+    successMessage: string,
+  ) => {
     const file = event.target.files?.[0]
 
     if (!file) {
@@ -580,23 +250,23 @@ function App() {
     }
 
     if (!file.type.startsWith('image/')) {
-      setPhotoFeedback('Selecione apenas arquivos de imagem.')
+      setFeedback('Selecione apenas arquivos de imagem.')
       event.target.value = ''
       return
     }
 
     if (file.size > MAX_IMAGE_FILE_SIZE) {
-      setPhotoFeedback('A imagem deve ter no maximo 8 MB.')
+      setFeedback('A imagem deve ter no maximo 8 MB.')
       event.target.value = ''
       return
     }
 
     try {
       const dataUrl = await convertImageFileToDataUrl(file)
-      updateField('speakerImageUrl', dataUrl)
-      setPhotoFeedback(`Foto carregada: ${file.name}`)
+      updateField(field, dataUrl)
+      setFeedback(`${successMessage}: ${file.name}`)
     } catch (error) {
-      setPhotoFeedback(
+      setFeedback(
         error instanceof Error ? error.message : 'Nao foi possivel carregar a foto selecionada.',
       )
     }
@@ -604,29 +274,76 @@ function App() {
     event.target.value = ''
   }
 
+  const handleSpeakerPhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    await uploadEditorImage(event, 'speakerImageUrl', setPhotoFeedback, 'Foto carregada')
+  }
+
+  const handleSponsorLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    await uploadEditorImage(event, 'sponsorLogoUrl', setSponsorFeedback, 'Logo do patrocinador carregada')
+  }
+
+  const handleMeetupBackgroundUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    await uploadEditorImage(event, 'meetupBackgroundImageUrl', setMeetupBackgroundFeedback, 'Fundo carregado')
+  }
+
+  const handleQuoteBackgroundUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    await uploadEditorImage(event, 'quoteBackgroundImageUrl', setQuoteBackgroundFeedback, 'Fundo carregado')
+  }
+
+  const handleMeetupPartnerLogoUpload =
+    (field: 'meetupPartnerLogoPrimaryUrl' | 'meetupPartnerLogoSecondaryUrl', setFeedback: (message: string) => void, label: string) =>
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      await uploadEditorImage(event, field, setFeedback, label)
+    }
+
   const handleRemoveSpeakerPhoto = () => {
     updateField('speakerImageUrl', '')
     setPhotoFeedback('Foto removida.')
   }
 
-  const exportCurrentBannerImage = async () => {
-    if (!previewFrameRef.current) {
+  const handleRemoveSponsorLogo = () => {
+    updateField('sponsorLogoUrl', '')
+    setSponsorFeedback('Logo do patrocinador removida.')
+  }
+
+  const handleRemoveMeetupBackground = () => {
+    updateField('meetupBackgroundImageUrl', '')
+    setMeetupBackgroundFeedback('Fundo removido.')
+  }
+
+  const handleRemoveQuoteBackground = () => {
+    updateField('quoteBackgroundImageUrl', '')
+    setQuoteBackgroundFeedback('Fundo removido.')
+  }
+
+  const handleRemoveMeetupPartnerLogo = (
+    field: 'meetupPartnerLogoPrimaryUrl' | 'meetupPartnerLogoSecondaryUrl',
+    label: string,
+  ) => {
+    updateField(field, '')
+    setMeetupLogoFeedback(`${label} removida.`)
+  }
+
+  const exportFrameImage = async (frameElement: HTMLDivElement | null) => {
+    if (!frameElement) {
       throw new Error('Nao foi possivel localizar a preview para exportacao.')
     }
 
     const pixelRatio = Math.min(
       3,
-      Math.max(1, preset.width / Math.max(previewFrameRef.current.clientWidth, 1)),
+      Math.max(1, preset.width / Math.max(frameElement.clientWidth, 1)),
     )
 
-    return toPng(previewFrameRef.current, {
+    return toPng(frameElement, {
       cacheBust: true,
       pixelRatio,
     })
   }
 
+  const exportCurrentBannerImage = async () => exportFrameImage(primaryPreviewFrameRef.current)
+
   const createSavedBannerAsset = async (): Promise<SavedBannerAsset> => ({
-    id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}`,
+    id: createSavedBannerId(),
     fileName: buildBannerFileName(editorState),
     imageDataUrl: await exportCurrentBannerImage(),
     savedAt: new Date().toISOString(),
@@ -661,6 +378,28 @@ function App() {
     try {
       const fileName = buildBannerFileName(editorState)
       const imageDataUrl = await exportCurrentBannerImage()
+      downloadImage(imageDataUrl, fileName)
+      setSaveFeedback('Download iniciado.')
+    } catch (error) {
+      setSaveFeedback(
+        error instanceof Error
+          ? error.message
+          : 'Nao foi possivel gerar o download da imagem.',
+      )
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleDownloadQuoteFrame = async (
+    frameElement: HTMLDivElement | null,
+    fileNameSuffix: string,
+  ) => {
+    setIsExporting(true)
+
+    try {
+      const fileName = buildBannerFileName(editorState).replace('.png', `-${fileNameSuffix}.png`)
+      const imageDataUrl = await exportFrameImage(frameElement)
       downloadImage(imageDataUrl, fileName)
       setSaveFeedback('Download iniciado.')
     } catch (error) {
@@ -722,6 +461,10 @@ function App() {
     setEditorState(initialEditorState)
     setIsBannerMenuOpen(false)
     setPhotoFeedback('')
+    setSponsorFeedback('')
+    setQuoteBackgroundFeedback('')
+    setMeetupBackgroundFeedback('')
+    setMeetupLogoFeedback('')
   }
 
   const handleUndo = () => {
@@ -754,26 +497,108 @@ function App() {
   const canRedo = redoStack.length > 0
   const canReset = !isEditorStateEqual(editorState, initialEditorState)
   const isAnnualLayout = selectedType === 'Encontro Anual'
+  const isMeetupLayout = selectedType === 'Meetup Presencial'
   const isPocketLayout = selectedType === 'Encontro Pocket'
+  const isQuoteLayout = selectedType === 'Quote'
+  const isArticleLayout = selectedType === 'Artigo'
+  const isSponsorLayout = (isPocketLayout || isAnnualLayout) && isSponsorVariation(selectedVariation)
+  const isAnnualSponsorLayout = isAnnualLayout && isSponsorVariation(selectedVariation)
   const isAnnualSpeakerLayout =
     isAnnualLayout && selectedVariation === 'Palestrante'
   const isPocketSpeakerLayout =
     isPocketLayout && selectedVariation === 'Palestrante'
   const hasEventDetails = eventDate.trim() || eventLocation.trim()
+  const hasMeetupSupportText = meetupSupportText.trim().length > 0
+  const hasMeetupCta = meetupCta.trim().length > 0
   const hasAnnualCta = isAnnualLayout && showAnnualCta && (annualCtaCaption.trim() || annualCta.trim())
 
   const preset = platformPresets[selectedPlatform]
+  const activeBannerModule = getBannerTypeModule(selectedType)
+  const quoteModule = activeBannerModule?.type === 'Quote' ? activeBannerModule : null
   const previewBackgroundAsset =
-    selectedType === 'Encontro Anual' && selectedVariation === 'Palestrante'
+    selectedType === 'Encontro Anual' && (selectedVariation === 'Palestrante' || isAnnualSponsorLayout)
       ? 'bg-matrix.png'
       : 'bg-code.png'
+  const articleSpeakerName =
+    speakerName.trim() && speakerName !== initialEditorState.speakerName
+      ? speakerName.trim()
+      : articlePreviewDefaults.speakerName
+  const articleSpeakerRole =
+    speakerRole.trim() && speakerRole !== initialEditorState.speakerRole
+      ? speakerRole.trim()
+      : articlePreviewDefaults.speakerRole
+  const articleQuoteText =
+    quoteText.trim() && quoteText !== initialEditorState.quoteText
+      ? quoteText
+      : articlePreviewDefaults.quoteText
+  const articleCta =
+    speakerTalk.trim() && speakerTalk !== initialEditorState.speakerTalk
+      ? speakerTalk.trim()
+      : articlePreviewDefaults.speakerTalk
+  const articleAdviceText =
+    articleSecondText.trim() && articleSecondText !== initialEditorState.articleSecondText
+      ? articleSecondText
+      : articleAdviceDefaults.text
+  const articleAdviceKeyword = articleSecondKeyword.trim() || articleAdviceDefaults.keyword
+  const articleMaskImageUrl = `${import.meta.env.BASE_URL}src/assets/themes/article-mask.png`
+  const quoteDerivedState = quoteModule
+    ? quoteModule.getDerivedState({
+        initialSpeakerName: initialEditorState.speakerName,
+        preset,
+        quoteBackgroundImageUrl,
+        quoteSecondText,
+        speakerName,
+        speakerRole,
+      })
+    : null
+  const hasQuoteSecondSlide = quoteDerivedState?.hasSecondSlide ?? false
+  const hasArticleSecondSlide = isArticleLayout
+  const hasIsolatedPreviewPanels = hasQuoteSecondSlide || hasArticleSecondSlide
   const previewStyle = {
     '--preview-aspect-ratio': `${preset.width} / ${preset.height}`,
-    backgroundImage: `url(${import.meta.env.BASE_URL}src/assets/themes/${previewBackgroundAsset})`,
+    backgroundImage: isArticleLayout
+      ? 'none'
+      : `url(${import.meta.env.BASE_URL}src/assets/themes/${previewBackgroundAsset})`,
+    backgroundColor: isMeetupLayout
+      ? '#040404'
+      : isArticleLayout
+        ? '#16181b'
+        : undefined,
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
-    backgroundSize: '100% 100%',
+    backgroundSize: isArticleLayout ? 'cover' : '100% 100%',
   } as CSSProperties
+
+  const meetupPhotoSectionStyle = {
+    backgroundImage: meetupBackgroundImageUrl
+      ? `linear-gradient(180deg, rgba(4, 4, 4, 0.02) 0%, rgba(4, 4, 4, 0.12) 100%), url(${meetupBackgroundImageUrl})`
+      : 'linear-gradient(180deg, rgba(30, 32, 36, 0.22), rgba(8, 8, 8, 0.38))',
+  } as CSSProperties
+
+  const meetupLogoAssets: MeetupLogoAsset[] = [
+    {
+      id: 'brand',
+      src: `${import.meta.env.BASE_URL}src/assets/themes/brand.png`,
+      alt: 'WoMakers Code',
+      className: 'meetup-brand-logo is-brand',
+    },
+    meetupPartnerLogoPrimaryUrl
+      ? {
+          id: 'partner-primary',
+          src: meetupPartnerLogoPrimaryUrl,
+          alt: 'Logo de parceiro 1',
+          className: 'meetup-brand-logo',
+        }
+      : null,
+    meetupPartnerLogoSecondaryUrl
+      ? {
+          id: 'partner-secondary',
+          src: meetupPartnerLogoSecondaryUrl,
+          alt: 'Logo de parceiro 2',
+          className: 'meetup-brand-logo',
+        }
+      : null,
+  ].filter((logo): logo is MeetupLogoAsset => logo !== null)
 
   const speakerInitials = speakerName
     .split(' ')
@@ -781,6 +606,51 @@ function App() {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('')
+  const articleInitials = articleSpeakerName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+
+  const syncRichEditorState = (field: 'quoteText' | 'quoteSecondText' | 'articleSecondText', editor: HTMLDivElement | null) => {
+    if (!editor) {
+      return
+    }
+
+    const nextValue = sanitizeQuoteHtml(editor.innerHTML)
+
+    updateField(field, nextValue)
+  }
+
+  const applyRichTextFormatting = (
+    field: 'quoteText' | 'quoteSecondText' | 'articleSecondText',
+    editor: HTMLDivElement | null,
+    command: 'bold',
+  ) => {
+    if (!editor) {
+      return
+    }
+
+    editor.focus()
+    document.execCommand(command)
+    syncRichEditorState(field, editor)
+  }
+
+  const renderRichText = (value: string, fallback = initialEditorState.quoteText) => ({
+    __html: sanitizeQuoteHtml(value.trim() || fallback),
+  })
+
+  const handleRichEditorPaste = (
+    event: React.ClipboardEvent<HTMLDivElement>,
+    field: 'quoteText' | 'quoteSecondText' | 'articleSecondText',
+    editor: HTMLDivElement | null,
+  ) => {
+    event.preventDefault()
+    const text = event.clipboardData.getData('text/plain')
+    document.execCommand('insertText', false, text)
+    syncRichEditorState(field, editor)
+  }
 
   return (
     <div className="app-shell">
@@ -802,70 +672,16 @@ function App() {
             <p className="section-label">Estrutura</p>
           </div>
 
-          <label className="field-label" htmlFor="banner-type-trigger">
-            Tipo de banner
-          </label>
-          <div className={`banner-select ${isBannerMenuOpen ? 'is-open' : ''}`} ref={bannerMenuRef}>
-            <button
-              type="button"
-              id="banner-type-trigger"
-              className="banner-select-trigger"
-              aria-haspopup="listbox"
-              aria-expanded={isBannerMenuOpen}
-              onClick={() => setIsBannerMenuOpen((open) => !open)}
-            >
-              <span className="select-leading-icon" aria-hidden="true">
-                <AppIcon name="calendar" />
-              </span>
-              <span className="banner-select-copy">
-                <span className="banner-select-category">{selectedBannerOption.type}</span>
-                <span className="banner-select-value">
-                  {getBannerOptionLabel(
-                    selectedBannerOption.type,
-                    selectedBannerOption.variation,
-                    selectedBannerOption.platform,
-                  )}
-                  <span className="banner-select-dimensions"> ({selectedBannerOption.dimensions})</span>
-                </span>
-              </span>
-              <span className="select-chevron" aria-hidden="true">
-                <AppIcon name="chevronDown" />
-              </span>
-            </button>
-
-            {isBannerMenuOpen ? (
-              <div className="banner-select-menu" role="listbox" aria-label="Tipo de banner">
-                {groupedBannerOptions.map((group) => (
-                  <div key={group.type} className="banner-select-group">
-                    <p className="banner-select-group-label">{group.type}</p>
-                    {group.options.map((option) => {
-                      const isSelected = option.id === selectedBannerOption.id
-
-                      return (
-                        <button
-                          key={option.id}
-                          type="button"
-                          className={`banner-option ${isSelected ? 'is-selected' : ''}`}
-                          role="option"
-                          aria-selected={isSelected}
-                          onClick={() => handleBannerSelect(option)}
-                        >
-                          <span className="banner-option-name">
-                            {getBannerOptionLabel(option.type, option.variation, option.platform)}
-                          </span>
-                          <span className="banner-option-dimensions">
-                            ({option.dimensions})
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          <BannerSelector
+            bannerMenuRef={bannerMenuRef}
+            groupedBannerOptions={groupedBannerOptions}
+            isBannerMenuOpen={isBannerMenuOpen}
+            selectedBannerOption={selectedBannerOption}
+            onSelect={handleBannerSelect}
+            onToggle={() => setIsBannerMenuOpen((open) => !open)}
+          />
           <p className="field-hint">
-            Encontro Pocket e Encontro Anual têm variações de Palestrante e Agenda. Meetup Presencial, Live e Imersão usam um layout único.
+            Encontro Pocket e Encontro Anual incluem Palestrante e Patrocinador Single Image. Meetup Presencial, Quote e Artigo usam um layout único.
           </p>
         </section>
 
@@ -886,50 +702,138 @@ function App() {
             <span className="section-icon" aria-hidden="true">
               <AppIcon name="text" />
             </span>
-            <p className="section-label">Conteudo do evento</p>
+            <p className="section-label">{isQuoteLayout ? 'Conteudo da citacao' : isArticleLayout ? 'Trecho do artigo' : 'Conteudo do evento'}</p>
           </div>
 
-          <label className="field-label" htmlFor="event-title">
-            Nome do evento
-          </label>
-          <input
-            id="event-title"
-            type="text"
-            value={eventTitle}
-            onChange={(event) => updateField('eventTitle', event.target.value)}
-          />
+          {isQuoteLayout || isArticleLayout ? (
+            <>
+              {quoteModule ? (
+                <quoteModule.ContentFields
+                  onQuoteBold={() => applyRichTextFormatting('quoteText', quoteEditorRef.current, 'bold')}
+                  onQuoteInput={() => syncRichEditorState('quoteText', quoteEditorRef.current)}
+                  onQuotePaste={(event) => handleRichEditorPaste(event, 'quoteText', quoteEditorRef.current)}
+                  onQuoteSecondBold={() => applyRichTextFormatting('quoteSecondText', quoteSecondEditorRef.current, 'bold')}
+                  onQuoteSecondInput={() => syncRichEditorState('quoteSecondText', quoteSecondEditorRef.current)}
+                  onQuoteSecondPaste={(event) => handleRichEditorPaste(event, 'quoteSecondText', quoteSecondEditorRef.current)}
+                  quoteEditorRef={quoteEditorRef}
+                  quoteSecondEditorRef={quoteSecondEditorRef}
+                />
+              ) : null}
 
-          <label className="field-label" htmlFor="event-city">
-            Cidade em destaque
-          </label>
-          <input
-            id="event-city"
-            type="text"
-            value={eventCity}
-            onChange={(event) => updateField('eventCity', event.target.value)}
-          />
+              {isArticleLayout ? (
+                <>
+                  <label className="field-label" htmlFor="article-second-text">
+                    Conteúdo da segunda tela
+                  </label>
+                  <RichTextEditor
+                    editorClassName="article-second-editor"
+                    editorRef={articleSecondEditorRef}
+                    id="article-second-text"
+                    onBold={() => applyRichTextFormatting('articleSecondText', articleSecondEditorRef.current, 'bold')}
+                    onInput={() => syncRichEditorState('articleSecondText', articleSecondEditorRef.current)}
+                    onPaste={(event) => handleRichEditorPaste(event, 'articleSecondText', articleSecondEditorRef.current)}
+                    placeholder="Digite o conselho da segunda tela"
+                    toolbarLabel="Formatação da segunda tela do artigo"
+                  />
+                  <p className="field-hint">
+                    Essa segunda tela aparece ao lado da primeira na preview e pode ser vista com scroll horizontal.
+                  </p>
+                </>
+              ) : null}
+            </>
+          ) : isMeetupLayout ? (
+            <>
+              <label className="field-label" htmlFor="event-date">
+                Data e horario
+              </label>
+              <input
+                id="event-date"
+                type="text"
+                value={eventDate}
+                onChange={(event) => updateField('eventDate', event.target.value)}
+              />
 
-          <label className="field-label" htmlFor="event-date">
-            Data
-          </label>
-          <input
-            id="event-date"
-            type="text"
-            value={eventDate}
-            onChange={(event) => updateField('eventDate', event.target.value)}
-          />
+              <label className="field-label" htmlFor="event-location">
+                Local
+              </label>
+              <input
+                id="event-location"
+                type="text"
+                value={eventLocation}
+                onChange={(event) => updateField('eventLocation', event.target.value)}
+              />
 
-          <label className="field-label" htmlFor="event-location">
-            Localização
-          </label>
-          <input
-            id="event-location"
-            type="text"
-            value={eventLocation}
-            onChange={(event) => updateField('eventLocation', event.target.value)}
-          />
+              <label className="field-label" htmlFor="meetup-support-text">
+                Frase de apoio
+              </label>
+              <input
+                id="meetup-support-text"
+                type="text"
+                value={meetupSupportText}
+                onChange={(event) => updateField('meetupSupportText', event.target.value)}
+              />
 
-          {isAnnualLayout ? (
+              <label className="field-label" htmlFor="meetup-cta">
+                CTA em destaque
+              </label>
+              <input
+                id="meetup-cta"
+                type="text"
+                value={meetupCta}
+                onChange={(event) => updateField('meetupCta', event.target.value)}
+              />
+            </>
+          ) : null}
+
+          {!isQuoteLayout && !isArticleLayout ? (
+            <>
+              <label className="field-label" htmlFor="event-title">
+                Nome do evento
+              </label>
+              <input
+                id="event-title"
+                type="text"
+                value={eventTitle}
+                onChange={(event) => updateField('eventTitle', event.target.value)}
+              />
+            </>
+          ) : null}
+
+          {!isMeetupLayout && !isQuoteLayout && !isArticleLayout ? (
+            <>
+              <label className="field-label" htmlFor="event-city">
+                Cidade em destaque
+              </label>
+              <input
+                id="event-city"
+                type="text"
+                value={eventCity}
+                onChange={(event) => updateField('eventCity', event.target.value)}
+              />
+
+              <label className="field-label" htmlFor="event-date">
+                Data
+              </label>
+              <input
+                id="event-date"
+                type="text"
+                value={eventDate}
+                onChange={(event) => updateField('eventDate', event.target.value)}
+              />
+
+              <label className="field-label" htmlFor="event-location">
+                Localização
+              </label>
+              <input
+                id="event-location"
+                type="text"
+                value={eventLocation}
+                onChange={(event) => updateField('eventLocation', event.target.value)}
+              />
+            </>
+          ) : null}
+
+          {isAnnualSpeakerLayout ? (
             <>
               <label className="checkbox-field" htmlFor="annual-cta-toggle">
                 <input
@@ -968,65 +872,269 @@ function App() {
           ) : null}
         </section>
 
-        <section className="control-section muted-card">
-          <div className="section-heading">
-            <span className="section-icon" aria-hidden="true">
-              <AppIcon name="image" />
-            </span>
-            <p className="section-label">Conteudo da palestrante</p>
-          </div>
-
-          <label className="field-label" htmlFor="speaker-name">
-            Nome
-          </label>
-          <input
-            id="speaker-name"
-            type="text"
-            value={speakerName}
-            onChange={(event) => updateField('speakerName', event.target.value)}
+        {quoteModule ? (
+          <quoteModule.MediaFields
+            onQuoteBackgroundUpload={handleQuoteBackgroundUpload}
+            onRemoveQuoteBackground={handleRemoveQuoteBackground}
+            onRemoveSpeakerPhoto={handleRemoveSpeakerPhoto}
+            onSpeakerNameChange={(value) => updateField('speakerName', value)}
+            onSpeakerPhotoUpload={handleSpeakerPhotoUpload}
+            onSpeakerRoleChange={(value) => updateField('speakerRole', value)}
+            photoFeedback={photoFeedback}
+            quoteBackgroundFeedback={quoteBackgroundFeedback}
+            quoteBackgroundImageUrl={quoteBackgroundImageUrl}
+            speakerImageUrl={speakerImageUrl}
+            speakerName={speakerName}
+            speakerRole={speakerRole}
           />
+        ) : isArticleLayout ? (
+          <section className="control-section muted-card">
+            <div className="section-heading">
+              <span className="section-icon" aria-hidden="true">
+                <AppIcon name="image" />
+              </span>
+              <p className="section-label">Autoria e retrato</p>
+            </div>
 
-          <label className="field-label" htmlFor="speaker-role">
-            Função
-          </label>
-          <input
-            id="speaker-role"
-            type="text"
-            value={speakerRole}
-            onChange={(event) => updateField('speakerRole', event.target.value)}
-          />
+            <label className="field-label" htmlFor="article-name">
+              Nome
+            </label>
+            <input
+              id="article-name"
+              type="text"
+              value={speakerName}
+              onChange={(event) => updateField('speakerName', event.target.value)}
+            />
 
-          <label className="field-label" htmlFor="speaker-talk">
-            Conteúdo
-          </label>
-          <input
-            id="speaker-talk"
-            type="text"
-            value={speakerTalk}
-            onChange={(event) => updateField('speakerTalk', event.target.value)}
-          />
+            <label className="field-label" htmlFor="article-role">
+              Cargo
+            </label>
+            <input
+              id="article-role"
+              type="text"
+              value={speakerRole}
+              onChange={(event) => updateField('speakerRole', event.target.value)}
+            />
 
-          <label className="field-label" htmlFor="speaker-image-upload">
-            Foto da palestrante
-          </label>
-          <input
-            id="speaker-image-upload"
-            type="file"
-            accept="image/*"
-            onChange={handleSpeakerPhotoUpload}
-          />
-          <div className="photo-actions-row">
-            <p className="field-hint">
-              Upload de imagem com ate 8 MB. Se ficar vazio, a preview mostra um placeholder com iniciais.
-            </p>
-            {speakerImageUrl ? (
-              <button type="button" className="secondary-inline-action" onClick={handleRemoveSpeakerPhoto}>
-                Remover foto
-              </button>
-            ) : null}
-          </div>
-          {photoFeedback ? <p className="field-hint upload-feedback">{photoFeedback}</p> : null}
-        </section>
+            <label className="field-label" htmlFor="article-cta">
+              CTA da primeira tela
+            </label>
+            <input
+              id="article-cta"
+              type="text"
+              value={speakerTalk}
+              onChange={(event) => updateField('speakerTalk', event.target.value)}
+            />
+
+            <label className="field-label" htmlFor="article-keyword">
+              Palavra-chave da segunda tela
+            </label>
+            <input
+              id="article-keyword"
+              type="text"
+              value={articleSecondKeyword}
+              onChange={(event) => updateField('articleSecondKeyword', event.target.value)}
+            />
+
+            <label className="field-label" htmlFor="article-image-upload">
+              Foto da entrevistada
+            </label>
+            <input
+              id="article-image-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleSpeakerPhotoUpload}
+            />
+            <div className="photo-actions-row">
+              <p className="field-hint">
+                Upload de imagem com ate 8 MB. Se ficar vazio, a preview usa um placeholder com iniciais.
+              </p>
+              {speakerImageUrl ? (
+                <button type="button" className="secondary-inline-action" onClick={handleRemoveSpeakerPhoto}>
+                  Remover foto
+                </button>
+              ) : null}
+            </div>
+            {photoFeedback ? <p className="field-hint upload-feedback">{photoFeedback}</p> : null}
+          </section>
+        ) : isMeetupLayout ? (
+          <section className="control-section muted-card">
+            <div className="section-heading">
+              <span className="section-icon" aria-hidden="true">
+                <AppIcon name="image" />
+              </span>
+              <p className="section-label">Background e logos</p>
+            </div>
+
+            <label className="field-label" htmlFor="meetup-background-upload">
+              Foto da seção inferior
+            </label>
+            <input
+              id="meetup-background-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleMeetupBackgroundUpload}
+            />
+            <div className="photo-actions-row">
+              <p className="field-hint">
+                A imagem fica concentrada na faixa inferior do banner, com corte automatico para preencher a seção.
+              </p>
+              {meetupBackgroundImageUrl ? (
+                <button type="button" className="secondary-inline-action" onClick={handleRemoveMeetupBackground}>
+                  Remover fundo
+                </button>
+              ) : null}
+            </div>
+            {meetupBackgroundFeedback ? <p className="field-hint upload-feedback">{meetupBackgroundFeedback}</p> : null}
+
+            <label className="field-label" htmlFor="meetup-partner-logo-primary">
+              Logo parceiro 1
+            </label>
+            <input
+              id="meetup-partner-logo-primary"
+              type="file"
+              accept="image/*"
+              onChange={handleMeetupPartnerLogoUpload('meetupPartnerLogoPrimaryUrl', setMeetupLogoFeedback, 'Logo parceiro 1 carregada')}
+            />
+
+            <label className="field-label" htmlFor="meetup-partner-logo-secondary">
+              Logo parceiro 2
+            </label>
+            <input
+              id="meetup-partner-logo-secondary"
+              type="file"
+              accept="image/*"
+              onChange={handleMeetupPartnerLogoUpload('meetupPartnerLogoSecondaryUrl', setMeetupLogoFeedback, 'Logo parceiro 2 carregada')}
+            />
+
+            <div className="photo-actions-row meetup-actions-row">
+              <p className="field-hint">
+                Os logos parceiros ficam ao lado da marca WoMakers e se ajustam de forma proporcional e centralizada.
+              </p>
+              <div className="inline-actions-group">
+                {meetupPartnerLogoPrimaryUrl ? (
+                  <button
+                    type="button"
+                    className="secondary-inline-action"
+                    onClick={() => handleRemoveMeetupPartnerLogo('meetupPartnerLogoPrimaryUrl', 'Logo parceiro 1')}
+                  >
+                    Remover logo 1
+                  </button>
+                ) : null}
+                {meetupPartnerLogoSecondaryUrl ? (
+                  <button
+                    type="button"
+                    className="secondary-inline-action"
+                    onClick={() => handleRemoveMeetupPartnerLogo('meetupPartnerLogoSecondaryUrl', 'Logo parceiro 2')}
+                  >
+                    Remover logo 2
+                  </button>
+                ) : null}
+              </div>
+            </div>
+            {meetupLogoFeedback ? <p className="field-hint upload-feedback">{meetupLogoFeedback}</p> : null}
+          </section>
+        ) : isSponsorLayout ? (
+          <section className="control-section muted-card">
+            <div className="section-heading">
+              <span className="section-icon" aria-hidden="true">
+                <AppIcon name="image" />
+              </span>
+              <p className="section-label">Conteúdo do patrocínio</p>
+            </div>
+
+            <label className="field-label" htmlFor="sponsor-title">
+              Título do bloco
+            </label>
+            <input
+              id="sponsor-title"
+              type="text"
+              value={sponsorTitle}
+              onChange={(event) => updateField('sponsorTitle', event.target.value)}
+            />
+
+            <label className="field-label" htmlFor="sponsor-logo-upload">
+              Logo do patrocinador
+            </label>
+            <input
+              id="sponsor-logo-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleSponsorLogoUpload}
+            />
+            <div className="photo-actions-row">
+              <p className="field-hint">
+                O logo fica centralizado em uma área branca de 864x480 com borda rosa na preview.
+              </p>
+              {sponsorLogoUrl ? (
+                <button type="button" className="secondary-inline-action" onClick={handleRemoveSponsorLogo}>
+                  Remover logo
+                </button>
+              ) : null}
+            </div>
+            {sponsorFeedback ? <p className="field-hint upload-feedback">{sponsorFeedback}</p> : null}
+          </section>
+        ) : (
+          <section className="control-section muted-card">
+            <div className="section-heading">
+              <span className="section-icon" aria-hidden="true">
+                <AppIcon name="image" />
+              </span>
+              <p className="section-label">Conteudo da palestrante</p>
+            </div>
+
+            <label className="field-label" htmlFor="speaker-name">
+              Nome
+            </label>
+            <input
+              id="speaker-name"
+              type="text"
+              value={speakerName}
+              onChange={(event) => updateField('speakerName', event.target.value)}
+            />
+
+            <label className="field-label" htmlFor="speaker-role">
+              Função
+            </label>
+            <input
+              id="speaker-role"
+              type="text"
+              value={speakerRole}
+              onChange={(event) => updateField('speakerRole', event.target.value)}
+            />
+
+            <label className="field-label" htmlFor="speaker-talk">
+              Conteúdo
+            </label>
+            <input
+              id="speaker-talk"
+              type="text"
+              value={speakerTalk}
+              onChange={(event) => updateField('speakerTalk', event.target.value)}
+            />
+
+            <label className="field-label" htmlFor="speaker-image-upload">
+              Foto da palestrante
+            </label>
+            <input
+              id="speaker-image-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleSpeakerPhotoUpload}
+            />
+            <div className="photo-actions-row">
+              <p className="field-hint">
+                Upload de imagem com ate 8 MB. Se ficar vazio, a preview mostra um placeholder com iniciais.
+              </p>
+              {speakerImageUrl ? (
+                <button type="button" className="secondary-inline-action" onClick={handleRemoveSpeakerPhoto}>
+                  Remover foto
+                </button>
+              ) : null}
+            </div>
+            {photoFeedback ? <p className="field-hint upload-feedback">{photoFeedback}</p> : null}
+          </section>
+        )}
 
         <section className="control-section setup-summary">
           <div className="section-heading">
@@ -1062,15 +1170,17 @@ function App() {
             </p>
           </div>
           <div className="toolbar-actions" aria-label="Preview actions">
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={handleDownloadCurrentBanner}
-              disabled={isExporting}
-            >
-              <AppIcon name="download" className="button-icon" />
-              {isExporting ? 'Gerando...' : 'Baixar PNG'}
-            </button>
+            {!hasIsolatedPreviewPanels ? (
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={handleDownloadCurrentBanner}
+                disabled={isExporting}
+              >
+                <AppIcon name="download" className="button-icon" />
+                {isExporting ? 'Gerando...' : 'Baixar PNG'}
+              </button>
+            ) : null}
             <button
               type="button"
               className="icon-button"
@@ -1103,120 +1213,374 @@ function App() {
           </div>
         </header>
 
-        <section className="preview-stage" aria-label="Banner preview mockup">
-          <div
-            className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''}`}
-            style={previewStyle}
-            ref={previewFrameRef}
-          >
-            <div className="preview-content">
-              <header className="event-header">
-                <h2 className={`event-title ${isAnnualLayout ? 'is-annual-layout' : ''}`}>
-                  {isAnnualLayout ? (
-                    <span className="event-title-icon-block" aria-hidden="true">
-                      <img
-                        src={`${import.meta.env.BASE_URL}src/assets/icons/arrow.png`}
-                        alt=""
-                        className="event-title-icon"
-                      />
-                    </span>
-                  ) : null}
-                  <span className="event-title-copy">
-                    <span className="event-title-segment">{eventTitle}</span>
-                    {eventCity.trim() ? <span className="event-city event-title-segment"> {eventCity}</span> : null}
-                  </span>
-                </h2>
-
-                {!isAnnualSpeakerLayout && hasEventDetails ? (
-                  <div className="event-details-pill">
-                    {eventDate.trim() ? (
-                      <span className="event-detail-item">
-                        <span className="event-dot" aria-hidden="true" />
-                        <span>{eventDate}</span>
-                      </span>
-                    ) : null}
-                    {eventLocation.trim() ? (
-                      <span className="event-detail-item">
-                        <span className="event-dot" aria-hidden="true" />
-                        <span>{eventLocation}</span>
-                      </span>
-                    ) : null}
+        <section className={`preview-stage ${hasIsolatedPreviewPanels ? 'is-preview-stack' : ''}`.trim()} aria-label="Banner preview mockup">
+          {quoteModule && quoteDerivedState ? (
+            <quoteModule.Preview
+              hasSecondSlide={quoteDerivedState.hasSecondSlide}
+              isExporting={isExporting}
+              onDownloadFrame={handleDownloadQuoteFrame}
+              primaryPreviewFrameRef={primaryPreviewFrameRef}
+              previewStyle={quoteDerivedState.previewStyle}
+              primaryQuoteHtml={renderRichText(quoteText, initialEditorState.quoteText).__html}
+              quoteDisplayName={quoteDerivedState.quoteDisplayName}
+              quoteDisplayRole={quoteDerivedState.quoteDisplayRole}
+              quoteSecondaryPreviewFrameRef={quoteSecondaryPreviewFrameRef}
+              secondaryQuoteHtml={renderRichText(quoteSecondText, quoteText || initialEditorState.quoteText).__html}
+              selectedTheme={selectedTheme}
+              speakerImageUrl={speakerImageUrl}
+              speakerInitials={quoteDerivedState.speakerInitials}
+            />
+          ) : isArticleLayout ? (
+            <div className="article-preview-stack" aria-label="Imagens do artigo">
+              <article className="article-preview-panel">
+                <div className="article-preview-panel-toolbar">
+                  <div>
+                    <p className="toolbar-kicker">Imagem 1</p>
+                    <p className="toolbar-copy">Download individual desta arte.</p>
                   </div>
-                ) : null}
-              </header>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => handleDownloadQuoteFrame(primaryPreviewFrameRef.current, 'imagem-1')}
+                    disabled={isExporting}
+                  >
+                    <AppIcon name="download" className="button-icon" />
+                    {isExporting ? 'Gerando...' : 'Baixar PNG'}
+                  </button>
+                </div>
 
-              <div className="speaker-section">
-                <div className="speaker-photo-shell">
-                  <div className="speaker-photo-ring" aria-hidden="true" />
-                  <div className="speaker-photo-frame">
-                    {speakerImageUrl ? (
-                      <img src={speakerImageUrl} alt={speakerName} className="speaker-photo" />
-                    ) : (
-                      <div className="speaker-photo-placeholder" aria-label="Speaker photo placeholder">
-                        {speakerInitials || 'WM'}
+                <div
+                  className={`preview-frame theme-${selectedTheme.toLowerCase()} is-article-layout is-article-primary-frame`}
+                  style={previewStyle}
+                  ref={primaryPreviewFrameRef}
+                >
+                  <div className="preview-content">
+                    <article className="article-slide article-slide-primary">
+                      <div className="article-primary-layout">
+                        <section className="article-highlight-section">
+                          <blockquote className="article-quote-block">
+                            <p className="article-quote-copy" dangerouslySetInnerHTML={renderRichText(articleQuoteText, articlePreviewDefaults.quoteText)} />
+                          </blockquote>
+                        </section>
+
+                        <div className="article-preview-layout">
+                          <section className="article-copy-column">
+                            <header className="article-heading-block">
+                              <h2 className="article-name">{articleSpeakerName}</h2>
+                              <p className="article-role">{articleSpeakerRole}</p>
+                            </header>
+
+                            <footer className="article-footer">
+                              <div className="article-cta-card">
+                                <span className="article-linkedin-badge" aria-hidden="true">
+                                  in
+                                </span>
+                                <p>{articleCta}</p>
+                              </div>
+
+                              <img
+                                src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
+                                alt="WoMakers Code"
+                                className="article-brand"
+                              />
+                            </footer>
+                          </section>
+
+                          <section className="article-portrait-column" aria-label={articleSpeakerName}>
+                            <div className="article-photo-shell">
+                              <div className="article-photo-frame">
+                                <div
+                                  className="article-photo-media"
+                                  style={{
+                                    WebkitMaskImage: `url(${articleMaskImageUrl})`,
+                                    maskImage: `url(${articleMaskImageUrl})`,
+                                    WebkitMaskPosition: 'center',
+                                    maskPosition: 'center',
+                                    WebkitMaskRepeat: 'no-repeat',
+                                    maskRepeat: 'no-repeat',
+                                    WebkitMaskSize: '100% 100%',
+                                    maskSize: '100% 100%',
+                                  }}
+                                >
+                                  {speakerImageUrl ? (
+                                    <img src={speakerImageUrl} alt={articleSpeakerName} className="article-photo" />
+                                  ) : (
+                                    <div className="article-photo-placeholder" aria-label="Article photo placeholder">
+                                      {articleInitials || 'RP'}
+                                    </div>
+                                  )}
+                                </div>
+                                <img
+                                  src={articleMaskImageUrl}
+                                  alt=""
+                                  aria-hidden="true"
+                                  className="article-photo-mask"
+                                />
+                              </div>
+                            </div>
+                          </section>
+                        </div>
                       </div>
-                    )}
+                    </article>
                   </div>
                 </div>
+              </article>
 
-                <div className="speaker-copy">
-                  {isAnnualSpeakerLayout ? (
-                    <img
-                      src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
-                      alt="WoMakers Code"
-                      className="speaker-brand"
-                    />
-                  ) : null}
-                  <h3>{speakerName}</h3>
-                  {speakerRole.trim() ? <p>{speakerRole}</p> : null}
+              <article className="article-preview-panel">
+                <div className="article-preview-panel-toolbar">
+                  <div>
+                    <p className="toolbar-kicker">Imagem 2</p>
+                    <p className="toolbar-copy">Download individual desta arte.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => handleDownloadQuoteFrame(articleSecondaryPreviewFrameRef.current, 'imagem-2')}
+                    disabled={isExporting}
+                  >
+                    <AppIcon name="download" className="button-icon" />
+                    {isExporting ? 'Gerando...' : 'Baixar PNG'}
+                  </button>
                 </div>
-              </div>
 
-              {isAnnualSpeakerLayout && hasEventDetails ? (
-                <div className="event-details-pill">
-                  {eventDate.trim() ? (
-                    <span className="event-detail-item">
-                      <span className="event-dot" aria-hidden="true" />
-                      <span>{eventDate}</span>
-                    </span>
-                  ) : null}
-                  {eventLocation.trim() ? (
-                    <span className="event-detail-item">
-                      <span className="event-dot" aria-hidden="true" />
-                      <span>{eventLocation}</span>
-                    </span>
-                  ) : null}
+                <div
+                  className={`preview-frame theme-${selectedTheme.toLowerCase()} is-article-layout is-article-secondary-frame`}
+                  style={previewStyle}
+                  ref={articleSecondaryPreviewFrameRef}
+                >
+                  <div className="preview-content">
+                    <article className="article-slide article-slide-advice">
+                      <div className="article-advice-layout">
+                        <header className="article-advice-header">
+                          <div className="article-advice-title-row">
+                            <h2 className="article-advice-title">{articleAdviceDefaults.title}</h2>
+                          </div>
+                          <p className="article-advice-subtitle">
+                            da <strong>{articleSpeakerName}</strong> para você
+                          </p>
+                        </header>
+
+                        <section className="article-advice-card">
+                          <div className="article-advice-copy" dangerouslySetInnerHTML={renderRichText(articleAdviceText, articleAdviceDefaults.text)} />
+                        </section>
+
+                        <footer className="article-advice-footer">
+                          <p>
+                            Comente <strong>{articleAdviceKeyword}</strong> para receber
+                            <br />
+                            o link da entrevista completa
+                          </p>
+                        </footer>
+                      </div>
+                    </article>
+                  </div>
                 </div>
-              ) : null}
-
-              {speakerTalk.trim() ? (
-                <footer className="talk-footer">
-                  <p>{speakerTalk}</p>
-                </footer>
-              ) : null}
-
-              {hasAnnualCta ? (
-                <footer className="annual-cta-footer">
-                  <span className="event-dot" aria-hidden="true" />
-                  <p>
-                    {annualCtaCaption.trim() ? <span>{annualCtaCaption.trim()} </span> : null}
-                    {annualCta.trim() ? <strong>{annualCta.trim()}</strong> : null}
-                  </p>
-                  <span className="event-dot" aria-hidden="true" />
-                </footer>
-              ) : null}
-
-              {isPocketSpeakerLayout ? (
-                <div className="pocket-brand-footer">
-                  <img
-                    src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
-                    alt="WoMakers Code"
-                    className="pocket-brand"
-                  />
-                </div>
-              ) : null}
+              </article>
             </div>
-          </div>
+          ) : (
+            <div
+              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isMeetupLayout ? 'is-meetup-layout' : ''} ${isArticleLayout ? 'is-article-layout' : ''}`}
+              style={previewStyle}
+              ref={primaryPreviewFrameRef}
+            >
+              <div className="preview-content">
+                {isMeetupLayout ? (
+                  <div className="meetup-preview-layout">
+                    <header className="meetup-logos-header">
+                      <div
+                        className="meetup-logo-row"
+                        style={{ '--meetup-logo-count': `${meetupLogoAssets.length}` } as CSSProperties}
+                      >
+                        {meetupLogoAssets.map((logo) => (
+                          <div key={logo.id} className="meetup-logo-slot">
+                            <img src={logo.src} alt={logo.alt} className={logo.className} />
+                          </div>
+                        ))}
+                      </div>
+                    </header>
+
+                    <section className="meetup-copy-block">
+                      <h2 className="meetup-event-name">{eventTitle.trim() || 'Nome do evento'}</h2>
+
+                      {hasEventDetails ? (
+                        <div className="meetup-meta-row">
+                          {eventDate.trim() ? <span>{eventDate.trim()}</span> : null}
+                          {eventDate.trim() && eventLocation.trim() ? <span className="meetup-meta-dot" aria-hidden="true" /> : null}
+                          {eventLocation.trim() ? <span>{eventLocation.trim()}</span> : null}
+                        </div>
+                      ) : null}
+
+                      {hasMeetupSupportText ? (
+                        <p className="meetup-support-text">{meetupSupportText.trim()}</p>
+                      ) : null}
+
+                      {hasMeetupCta ? (
+                        <div className="meetup-cta-row">
+                          <p className="meetup-cta-pill">{meetupCta.trim()}</p>
+                        </div>
+                      ) : null}
+                    </section>
+
+                    <footer className="meetup-photo-section" style={meetupPhotoSectionStyle}>
+                      <div className="meetup-photo-gradient" aria-hidden="true" />
+                    </footer>
+                  </div>
+                ) : (
+                <>
+                  <header className="event-header">
+                    <h2 className={`event-title ${isAnnualLayout ? 'is-annual-layout' : ''}`}>
+                      {isAnnualLayout ? (
+                        <span className="event-title-icon-block" aria-hidden="true">
+                          <img
+                            src={`${import.meta.env.BASE_URL}src/assets/icons/arrow.png`}
+                            alt=""
+                            className="event-title-icon"
+                          />
+                        </span>
+                      ) : null}
+                      <span className="event-title-copy">
+                        <span className="event-title-segment">{eventTitle}</span>
+                        {eventCity.trim() ? <span className="event-city event-title-segment"> {eventCity}</span> : null}
+                      </span>
+                    </h2>
+
+                    {!isAnnualSpeakerLayout && (!isSponsorLayout || isPocketLayout) && hasEventDetails ? (
+                      <div className="event-details-pill">
+                        {eventDate.trim() ? (
+                          <span className="event-detail-item">
+                            <span className="event-dot" aria-hidden="true" />
+                            <span>{eventDate}</span>
+                          </span>
+                        ) : null}
+                        {eventLocation.trim() ? (
+                          <span className="event-detail-item">
+                            <span className="event-dot" aria-hidden="true" />
+                            <span>{eventLocation}</span>
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </header>
+
+                  {isSponsorLayout ? (
+                    <section className="pocket-sponsor-section" aria-label={selectedVariation}>
+                      <h3 className="pocket-sponsor-title">
+                        <img
+                          src={`${import.meta.env.BASE_URL}src/assets/icons/spark-pink.png`}
+                          alt=""
+                          aria-hidden="true"
+                          className="pocket-sponsor-spark"
+                        />
+                        <span>{sponsorTitle.trim() || initialEditorState.sponsorTitle}</span>
+                        <img
+                          src={`${import.meta.env.BASE_URL}src/assets/icons/spark-pink.png`}
+                          alt=""
+                          aria-hidden="true"
+                          className="pocket-sponsor-spark"
+                        />
+                      </h3>
+                      <div className="pocket-sponsor-frame">
+                        {sponsorLogoUrl ? (
+                          <img src={sponsorLogoUrl} alt="Logo do patrocinador" className="pocket-sponsor-logo" />
+                        ) : (
+                          <div className="pocket-sponsor-placeholder">Logo do patrocinador</div>
+                        )}
+                      </div>
+                    </section>
+                  ) : (
+                    <div className="speaker-section">
+                      <div className="speaker-photo-shell">
+                        <div className="speaker-photo-ring" aria-hidden="true" />
+                        <div className="speaker-photo-frame">
+                          {speakerImageUrl ? (
+                            <img src={speakerImageUrl} alt={speakerName} className="speaker-photo" />
+                          ) : (
+                            <div className="speaker-photo-placeholder" aria-label="Speaker photo placeholder">
+                              {speakerInitials || 'WM'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="speaker-copy">
+                        {isAnnualSpeakerLayout ? (
+                          <img
+                            src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
+                            alt="WoMakers Code"
+                            className="speaker-brand"
+                          />
+                        ) : null}
+                        <h3>{speakerName}</h3>
+                        {speakerRole.trim() ? <p>{speakerRole}</p> : null}
+                      </div>
+                    </div>
+                  )}
+
+                  {isAnnualSpeakerLayout && hasEventDetails ? (
+                    <div className="event-details-pill">
+                      {eventDate.trim() ? (
+                        <span className="event-detail-item">
+                          <span className="event-dot" aria-hidden="true" />
+                          <span>{eventDate}</span>
+                        </span>
+                      ) : null}
+                      {eventLocation.trim() ? (
+                        <span className="event-detail-item">
+                          <span className="event-dot" aria-hidden="true" />
+                          <span>{eventLocation}</span>
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {isAnnualSponsorLayout && hasEventDetails ? (
+                    <div className="event-details-pill">
+                      {eventDate.trim() ? (
+                        <span className="event-detail-item">
+                          <span className="event-dot" aria-hidden="true" />
+                          <span>{eventDate}</span>
+                        </span>
+                      ) : null}
+                      {eventLocation.trim() ? (
+                        <span className="event-detail-item">
+                          <span className="event-dot" aria-hidden="true" />
+                          <span>{eventLocation}</span>
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {!isSponsorLayout && speakerTalk.trim() ? (
+                    <footer className="talk-footer">
+                      <p>{speakerTalk}</p>
+                    </footer>
+                  ) : null}
+
+                  {hasAnnualCta ? (
+                    <footer className="annual-cta-footer">
+                      <span className="event-dot" aria-hidden="true" />
+                      <p>
+                        {annualCtaCaption.trim() ? <span>{annualCtaCaption.trim()} </span> : null}
+                        {annualCta.trim() ? <strong>{annualCta.trim()}</strong> : null}
+                      </p>
+                      <span className="event-dot" aria-hidden="true" />
+                    </footer>
+                  ) : null}
+
+                  {isPocketLayout || isAnnualSponsorLayout ? (
+                    <div className="pocket-brand-footer">
+                      <img
+                        src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
+                        alt="WoMakers Code"
+                        className="pocket-brand"
+                      />
+                    </div>
+                  ) : null}
+                </>
+              )}
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="saved-assets-section" aria-label="Imagens salvas">
@@ -1242,7 +1606,10 @@ function App() {
                   <div className="saved-asset-copy">
                     <p className="saved-asset-title">{asset.editorState.selectedType}</p>
                     <p className="saved-asset-meta">
-                      {asset.editorState.eventCity || 'Sem cidade'} · {formatSavedAt(asset.savedAt)}
+                      {(asset.editorState.selectedType === 'Quote' || asset.editorState.selectedType === 'Artigo'
+                        ? asset.editorState.speakerName
+                        : asset.editorState.eventCity) || 'Sem identificador'}{' '}
+                      · {formatSavedAt(asset.savedAt)}
                     </p>
                   </div>
                   <div className="saved-asset-actions">
