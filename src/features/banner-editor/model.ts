@@ -18,14 +18,12 @@ export const assetVariations = [
   'Palestrante',
   'Palestrantes',
   'Agenda',
-  'Patrocinador Single Image',
   'Patrocinador Carousel',
 ] as const
 
-export const sponsorVariations = ['Patrocinador Single Image', 'Patrocinador Carousel'] as const
+export const sponsorVariations = ['Patrocinador Carousel'] as const
 export const sidebarReadyVariations = [
   'Palestrante',
-  'Patrocinador Single Image',
   'Patrocinador Carousel',
 ] as const
 export const defaultAssetVariation = assetVariations[0]
@@ -94,6 +92,16 @@ export type EditorState = {
   meetupBackgroundImageUrl: string
   meetupPartnerLogoPrimaryUrl: string
   meetupPartnerLogoSecondaryUrl: string
+  liveSupportText: string
+  liveSupportTextBold: boolean
+  liveSupportTextCapslock: boolean
+  liveFooterLeftText: string
+  liveFooterRightText: string
+  liveSecondSpeakerName: string
+  liveSecondSpeakerRole: string
+  liveSecondSpeakerImageUrl: string
+  livePartnerLogoUrl1: string
+  livePartnerLogoUrl2: string
 }
 
 export type BannerOption = {
@@ -214,4 +222,14 @@ export const initialEditorState: EditorState = {
   meetupBackgroundImageUrl: '',
   meetupPartnerLogoPrimaryUrl: '',
   meetupPartnerLogoSecondaryUrl: '',
+  liveSupportText: 'Frase de apoio para a live',
+  liveSupportTextBold: false,
+  liveSupportTextCapslock: false,
+  liveFooterLeftText: 'ao vivo e gratuito',
+  liveFooterRightText: 'com certificado',
+  liveSecondSpeakerName: 'Segunda palestrante',
+  liveSecondSpeakerRole: 'Cargo da segunda palestrante',
+  liveSecondSpeakerImageUrl: '',
+  livePartnerLogoUrl1: '',
+  livePartnerLogoUrl2: '',
 }

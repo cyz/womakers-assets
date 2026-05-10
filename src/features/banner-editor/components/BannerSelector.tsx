@@ -12,6 +12,7 @@ type BannerOptionGroup = {
 type BannerSelectorProps = {
   bannerMenuRef: RefObject<HTMLDivElement | null>
   groupedBannerOptions: BannerOptionGroup[]
+  hasSelectedBannerOption: boolean
   isBannerMenuOpen: boolean
   selectedBannerOption: BannerOption
   onSelect: (option: BannerOption) => void
@@ -21,6 +22,7 @@ type BannerSelectorProps = {
 export function BannerSelector({
   bannerMenuRef,
   groupedBannerOptions,
+  hasSelectedBannerOption,
   isBannerMenuOpen,
   selectedBannerOption,
   onSelect,
@@ -45,15 +47,23 @@ export function BannerSelector({
           </span>
           <span className="banner-select-copy">
             <span className="banner-select-category">
-              {getBannerOptionGroupLabel(selectedBannerOption.type)}
+              {hasSelectedBannerOption
+                ? getBannerOptionGroupLabel(selectedBannerOption.type)
+                : 'Escolha um formato'}
             </span>
             <span className="banner-select-value">
-              {getBannerOptionLabel(
-                selectedBannerOption.type,
-                selectedBannerOption.variation,
-                selectedBannerOption.platform,
+              {hasSelectedBannerOption ? (
+                <>
+                  {getBannerOptionLabel(
+                    selectedBannerOption.type,
+                    selectedBannerOption.variation,
+                    selectedBannerOption.platform,
+                  )}
+                  <span className="banner-select-dimensions"> ({selectedBannerOption.dimensions})</span>
+                </>
+              ) : (
+                'Veja todos os tipos na tela inicial e clique para começar.'
               )}
-              <span className="banner-select-dimensions"> ({selectedBannerOption.dimensions})</span>
             </span>
           </span>
           <span className="select-chevron" aria-hidden="true">

@@ -20,6 +20,16 @@ import {
   workshopAccentColors,
 } from './model'
 
+const LEGACY_SPONSOR_SINGLE_VARIATION = 'Patrocinador Single Image'
+
+const normalizeAssetVariation = (variation: string): AssetVariation | null => {
+  if (variation === LEGACY_SPONSOR_SINGLE_VARIATION) {
+    return 'Patrocinador Carousel'
+  }
+
+  return isAssetVariation(variation) ? variation : null
+}
+
 export const getPlatformLabel = (platform: Platform) => platform.replace(/\s*\([^)]*\)$/, '')
 
 export const getPlatformDimensions = (platform: Platform) => {
@@ -46,11 +56,12 @@ export const getBannerOptionLabel = (
 
 export const normalizeEditorState = (state: EditorState): EditorState => {
   const supportedVariations = getTypeVariations(state.selectedType)
+  const normalizedVariation = normalizeAssetVariation(state.selectedVariation)
 
   return {
     ...state,
-    selectedVariation: supportedVariations.includes(state.selectedVariation)
-      ? state.selectedVariation
+    selectedVariation: normalizedVariation && supportedVariations.includes(normalizedVariation)
+      ? normalizedVariation
       : supportedVariations[0],
   }
 }
@@ -79,20 +90,19 @@ const bannerOptionGroups = [
   },
   {
     label: 'Outros eventos',
-    types: ['Meetup Presencial', 'Live', 'Workshop', 'Imersão'],
+    types: ['Meetup Presencial', 'Workshop'], // Live e Imersão só aparecem como "em breve"
   },
   {
-    label: 'Quote',
-    types: ['Quote'],
-  },
-  {
-    label: 'Artigo',
-    types: ['Artigo'],
+    label: 'Citação',
+    types: ['Quote', 'Artigo'],
   },
 ] as const satisfies ReadonlyArray<{
   label: string
   types: readonly ImageType[]
 }>
+
+export const comingSoonTypes = ['Live', 'Imersão'] as const
+export type ComingSoonType = typeof comingSoonTypes[number]
 
 export const getBannerOptionGroupLabel = (type: ImageType) =>
   bannerOptionGroups.find((group) => group.types.some((groupType) => groupType === type))?.label ??
@@ -166,10 +176,12 @@ export const isWorkshopAccentColor = (value: string): value is WorkshopAccentCol
 export const parseEditorStateCandidate = (
   parsed: Partial<EditorState> | null | undefined,
 ): EditorState | null => {
+  const normalizedVariation = normalizeAssetVariation(parsed?.selectedVariation ?? '')
+
   if (
     !parsed ||
     !isImageType(parsed.selectedType ?? '') ||
-    !isAssetVariation(parsed.selectedVariation ?? '') ||
+    !normalizedVariation ||
     !isPlatform(parsed.selectedPlatform ?? '') ||
     !isWorkshopAccentColor(parsed.workshopAccentColor ?? initialEditorState.workshopAccentColor)
   ) {
@@ -205,7 +217,7 @@ export const parseEditorStateCandidate = (
 
   return {
     selectedType: parsed.selectedType as ImageType,
-    selectedVariation: parsed.selectedVariation as AssetVariation,
+    selectedVariation: normalizedVariation,
     selectedPlatform: parsed.selectedPlatform as Platform,
     eventTitle: parsed.eventTitle ?? '',
     workshopAccentColor:
@@ -258,6 +270,16 @@ export const parseEditorStateCandidate = (
     meetupBackgroundImageUrl: parsed.meetupBackgroundImageUrl ?? '',
     meetupPartnerLogoPrimaryUrl: parsed.meetupPartnerLogoPrimaryUrl ?? '',
     meetupPartnerLogoSecondaryUrl: parsed.meetupPartnerLogoSecondaryUrl ?? '',
+    liveSupportText: parsed.liveSupportText ?? initialEditorState.liveSupportText,
+    liveSupportTextBold: typeof parsed.liveSupportTextBold === 'boolean' ? parsed.liveSupportTextBold : initialEditorState.liveSupportTextBold,
+    liveSupportTextCapslock: typeof parsed.liveSupportTextCapslock === 'boolean' ? parsed.liveSupportTextCapslock : initialEditorState.liveSupportTextCapslock,
+    liveFooterLeftText: parsed.liveFooterLeftText ?? initialEditorState.liveFooterLeftText,
+    liveFooterRightText: parsed.liveFooterRightText ?? initialEditorState.liveFooterRightText,
+    liveSecondSpeakerName: parsed.liveSecondSpeakerName ?? initialEditorState.liveSecondSpeakerName,
+    liveSecondSpeakerRole: parsed.liveSecondSpeakerRole ?? initialEditorState.liveSecondSpeakerRole,
+    liveSecondSpeakerImageUrl: parsed.liveSecondSpeakerImageUrl ?? '',
+    livePartnerLogoUrl1: parsed.livePartnerLogoUrl1 ?? '',
+    livePartnerLogoUrl2: parsed.livePartnerLogoUrl2 ?? '',
   }
 }
 

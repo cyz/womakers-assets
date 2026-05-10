@@ -1,10 +1,11 @@
-import type { ChangeEvent, CSSProperties } from 'react'
+import type { ChangeEvent, ClipboardEvent, CSSProperties } from 'react'
 import { toPng } from 'html-to-image'
 import { useEffect, useRef, useState } from 'react'
 import { AppIcon } from './features/banner-editor/components/AppIcon'
 import { getBannerTypeModule } from './features/banner-editor/banner-types/registry'
 import { BannerSelector } from './features/banner-editor/components/BannerSelector'
 import { RichTextEditor } from './features/banner-editor/components/RichTextEditor'
+import { SavedBannersPage } from './features/banner-editor/components/SavedBannersPage'
 import {
   MAX_IMAGE_FILE_SIZE,
   MAX_SAVED_EXPORTED_IMAGES,
@@ -28,6 +29,7 @@ import {
   getBannerOptionGroupLabel,
   getPlatformDimensions,
   groupedBannerOptions,
+  comingSoonTypes,
   hasTypeVariations,
   isEditorStateEqual,
   isSponsorVariation,
@@ -85,8 +87,49 @@ const convertImageFileToDataUrl = async (file: File) => {
   return canvas.toDataURL('image/webp', 0.88)
 }
 
+const optimizeSavedPreviewDataUrl = async (imageDataUrl: string) => {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const nextImage = new Image()
+
+    nextImage.onload = () => resolve(nextImage)
+    nextImage.onerror = () => reject(new Error('Nao foi possivel preparar a previa para salvamento.'))
+    nextImage.src = imageDataUrl
+  })
+
+  const maxWidth = 720
+  const scale = Math.min(1, maxWidth / Math.max(image.width, 1))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(image.width * scale))
+  canvas.height = Math.max(1, Math.round(image.height * scale))
+
+  const context = canvas.getContext('2d')
+
+  if (!context) {
+    throw new Error('Nao foi possivel preparar a previa para salvamento.')
+  }
+
+  context.drawImage(image, 0, 0, canvas.width, canvas.height)
+  return canvas.toDataURL('image/webp', 0.8)
+}
+
+const isStorageQuotaExceeded = (error: unknown) =>
+  error instanceof DOMException && (
+    error.name === 'QuotaExceededError' ||
+    error.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+  )
+
 function App() {
+  // Navegação baseada em hash: #home, #editor, #salvos
+  const getInitialScreen = () => {
+    if (window.location.hash === '#salvos') return 'salvos'
+    if (window.location.hash === '#editor') return 'editor'
+    return 'home'
+  }
+  const [screen, setScreen] = useState(getInitialScreen())
   const [editorState, setEditorState] = useState<EditorState>(() => loadSavedEditorState())
+  const [hasSelectedBannerType, setHasSelectedBannerType] = useState(
+    () => !isEditorStateEqual(loadSavedEditorState(), initialEditorState),
+  )
   const [undoStack, setUndoStack] = useState<EditorState[]>([])
   const [redoStack, setRedoStack] = useState<EditorState[]>([])
   const [isBannerMenuOpen, setIsBannerMenuOpen] = useState(false)
@@ -101,6 +144,7 @@ function App() {
   const [workshopPartnerLogoFeedback, setWorkshopPartnerLogoFeedback] = useState('')
   const [sponsorCarouselImageFeedback, setSponsorCarouselImageFeedback] = useState('')
   const [secondPhotoFeedback, setSecondPhotoFeedback] = useState('')
+  const [livePartnerLogoFeedback, setLivePartnerLogoFeedback] = useState('')
   const bannerMenuRef = useRef<HTMLDivElement | null>(null)
   const primaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const quoteSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
@@ -159,6 +203,16 @@ function App() {
     meetupBackgroundImageUrl,
     meetupPartnerLogoPrimaryUrl,
     meetupPartnerLogoSecondaryUrl,
+    liveSupportText,
+    liveSupportTextBold,
+    liveSupportTextCapslock,
+    liveFooterLeftText,
+    liveFooterRightText,
+    liveSecondSpeakerName,
+    liveSecondSpeakerRole,
+    liveSecondSpeakerImageUrl,
+    livePartnerLogoUrl1,
+    livePartnerLogoUrl2,
   } = editorState
 
   useEffect(() => {
@@ -257,6 +311,23 @@ function App() {
     }
   }, [quoteSecondText])
 
+  useEffect(() => {
+    const syncScreenFromHash = () => {
+      setScreen(getInitialScreen())
+    }
+
+    syncScreenFromHash()
+    window.addEventListener('hashchange', syncScreenFromHash)
+
+    return () => {
+      window.removeEventListener('hashchange', syncScreenFromHash)
+    }
+  }, [])
+
+  useEffect(() => {
+    setHasSelectedBannerType(!isEditorStateEqual(editorState, initialEditorState))
+  }, [editorState])
+
   const commitState = (updater: EditorState | ((current: EditorState) => EditorState)) => {
     setEditorState((current) => {
       const next = typeof updater === 'function' ? updater(current) : updater
@@ -296,7 +367,10 @@ function App() {
       | 'workshopPartnerLogoUrl'
       | 'workshopSecondSpeakerImageUrl'
       | 'meetupPartnerLogoPrimaryUrl'
-      | 'meetupPartnerLogoSecondaryUrl',
+      | 'meetupPartnerLogoSecondaryUrl'
+      | 'liveSecondSpeakerImageUrl'
+      | 'livePartnerLogoUrl1'
+      | 'livePartnerLogoUrl2',
     setFeedback: (message: string) => void,
     successMessage: string,
   ) => {
@@ -423,6 +497,34 @@ function App() {
     setMeetupLogoFeedback(`${label} removida.`)
   }
 
+  const handleLiveSecondSpeakerPhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    await uploadEditorImage(
+      event,
+      'liveSecondSpeakerImageUrl',
+      setSecondPhotoFeedback,
+      'Segunda foto carregada',
+    )
+  }
+
+  const handleRemoveLiveSecondSpeakerPhoto = () => {
+    updateField('liveSecondSpeakerImageUrl', '')
+    setSecondPhotoFeedback('Segunda foto removida.')
+  }
+
+  const handleLivePartnerLogoUpload =
+    (field: 'livePartnerLogoUrl1' | 'livePartnerLogoUrl2', label: string) =>
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      await uploadEditorImage(event, field, setLivePartnerLogoFeedback, label)
+    }
+
+  const handleRemoveLivePartnerLogo = (
+    field: 'livePartnerLogoUrl1' | 'livePartnerLogoUrl2',
+    label: string,
+  ) => {
+    updateField(field, '')
+    setLivePartnerLogoFeedback(`${label} removida.`)
+  }
+
   const exportFrameImage = async (frameElement: HTMLDivElement | null) => {
     if (!frameElement) {
       throw new Error('Nao foi possivel localizar a preview para exportacao.')
@@ -441,13 +543,36 @@ function App() {
 
   const exportCurrentBannerImage = async () => exportFrameImage(primaryPreviewFrameRef.current)
 
-  const createSavedBannerAsset = async (): Promise<SavedBannerAsset> => ({
-    id: createSavedBannerId(),
-    fileName: buildBannerFileName(editorState),
-    imageDataUrl: await exportCurrentBannerImage(),
-    savedAt: new Date().toISOString(),
-    editorState,
-  })
+  const createSavedBannerAsset = async (): Promise<SavedBannerAsset> => {
+    const previewImageDataUrl = await optimizeSavedPreviewDataUrl(await exportCurrentBannerImage())
+
+    return {
+      id: createSavedBannerId(),
+      fileName: buildBannerFileName(editorState),
+      imageDataUrl: previewImageDataUrl,
+      savedAt: new Date().toISOString(),
+      editorState,
+    }
+  }
+
+  const persistSavedBannerAssets = (nextAssets: SavedBannerAsset[]) => {
+    let assetsToPersist = [...nextAssets]
+
+    while (assetsToPersist.length > 0) {
+      try {
+        window.localStorage.setItem(SAVED_EXPORTED_IMAGES_KEY, JSON.stringify(assetsToPersist))
+        return assetsToPersist
+      } catch (error) {
+        if (!isStorageQuotaExceeded(error)) {
+          throw error
+        }
+
+        assetsToPersist = assetsToPersist.slice(0, -1)
+      }
+    }
+
+    throw new Error('Nao foi possivel salvar a imagem no navegador porque o armazenamento local esta cheio.')
+  }
 
   const handleSaveVersion = async () => {
     setIsExporting(true)
@@ -455,11 +580,15 @@ function App() {
     try {
       const nextAsset = await createSavedBannerAsset()
       const nextAssets = [nextAsset, ...savedBannerAssets].slice(0, MAX_SAVED_EXPORTED_IMAGES)
+      const persistedAssets = persistSavedBannerAssets(nextAssets)
 
       window.localStorage.setItem(SAVED_EDITOR_STATE_KEY, JSON.stringify(editorState))
-      window.localStorage.setItem(SAVED_EXPORTED_IMAGES_KEY, JSON.stringify(nextAssets))
-      setSavedBannerAssets(nextAssets)
-      setSaveFeedback('Imagem e versao salvas no navegador.')
+      setSavedBannerAssets(persistedAssets)
+      setSaveFeedback(
+        persistedAssets.length < nextAssets.length
+          ? 'Imagem salva no navegador. Algumas versoes antigas foram removidas para liberar espaco.'
+          : 'Imagem e versao salvas no navegador.',
+      )
     } catch (error) {
       setSaveFeedback(
         error instanceof Error
@@ -512,14 +641,34 @@ function App() {
     }
   }
 
-  const handleDownloadSavedBanner = (asset: SavedBannerAsset) => {
-    downloadImage(asset.imageDataUrl, asset.fileName)
-    setSaveFeedback('Download iniciado.')
+  const navigateTo = (nextScreen: 'home' | 'editor' | 'salvos') => {
+    const nextHash = nextScreen === 'home' ? '#home' : nextScreen === 'editor' ? '#editor' : '#salvos'
+
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash
+    }
+
+    setScreen(nextScreen)
   }
+
+  const goHome = () => navigateTo('home')
+  const goEditor = () => navigateTo('editor')
+  const goSalvos = () => navigateTo('salvos')
 
   const handleRestoreSavedBanner = (asset: SavedBannerAsset) => {
     commitState(normalizeEditorState(asset.editorState))
+    setHasSelectedBannerType(true)
     setSaveFeedback(`Versao restaurada de ${formatSavedAt(asset.savedAt)}.`)
+    goEditor()
+  }
+  // Para SavedBannersPage
+  const handleEditSavedBanner = (asset: SavedBannerAsset) => {
+    handleRestoreSavedBanner(asset)
+  }
+  const handleDeleteSavedBanner = (asset: SavedBannerAsset) => {
+    const nextAssets = savedBannerAssets.filter((a) => a.id !== asset.id)
+    setSavedBannerAssets(nextAssets)
+    window.localStorage.setItem(SAVED_EXPORTED_IMAGES_KEY, JSON.stringify(nextAssets))
   }
 
   const selectedBannerOption =
@@ -547,7 +696,10 @@ function App() {
         selectedPlatform: option.platform,
       }
     })
+
+    setHasSelectedBannerType(true)
     setIsBannerMenuOpen(false)
+    goEditor()
   }
 
   const handleResetAll = () => {
@@ -567,6 +719,7 @@ function App() {
     setSponsorCarouselImageFeedback('')
     setWorkshopPartnerLogoFeedback('')
     setSecondPhotoFeedback('')
+    setLivePartnerLogoFeedback('')
   }
 
   const handleUndo = () => {
@@ -604,6 +757,7 @@ function App() {
     selectedType === 'Meetup Presencial' ||
     selectedType === 'Live' ||
     selectedType === 'Imersão'
+  const isLiveLayout = selectedType === 'Live'
   const isAnnualLayout = selectedType === 'Encontro Anual'
   const isPocketLayout = selectedType === 'Encontro Pocket'
   const isQuoteLayout = selectedType === 'Quote'
@@ -611,10 +765,8 @@ function App() {
   const isSponsorLayout = (isPocketLayout || isAnnualLayout) && isSponsorVariation(selectedVariation)
   const isSponsorCarouselLayout = isSponsorLayout && selectedVariation === 'Patrocinador Carousel'
   const isAnnualSponsorLayout = isAnnualLayout && isSponsorVariation(selectedVariation)
-  const isAnnualSpeakerLayout =
-    isAnnualLayout && selectedVariation === 'Palestrante'
-  const isPocketSpeakerLayout =
-    isPocketLayout && selectedVariation === 'Palestrante'
+  const isAnnualSpeakerLayout = isAnnualLayout && selectedVariation === 'Palestrante'
+  const isPocketSpeakerLayout = isPocketLayout && selectedVariation === 'Palestrante'
   const hasEventDetails = eventDate.trim() || eventLocation.trim()
   const hasMeetupSupportText = meetupSupportText.trim().length > 0
   const hasMeetupCta = meetupCta.trim().length > 0
@@ -625,6 +777,7 @@ function App() {
   const activeBannerModule = getBannerTypeModule(selectedType)
   const quoteModule = activeBannerModule?.type === 'Quote' ? activeBannerModule : null
   const workshopModule = activeBannerModule?.type === 'Workshop' ? activeBannerModule : null
+  const liveModule = activeBannerModule?.type === 'Live' ? activeBannerModule : null
   const previewBackgroundAsset =
     selectedType === 'Encontro Anual' && (selectedVariation === 'Palestrante' || isAnnualSponsorLayout)
       ? 'bg-matrix.png'
@@ -682,6 +835,15 @@ function App() {
         workshopSecondSpeakerName,
         workshopSecondSpeakerRole,
         workshopTitle,
+      })
+    : null
+  const liveDerivedState = liveModule
+    ? liveModule.getDerivedState({
+        liveSupportText,
+        liveSupportTextBold,
+        liveSupportTextCapslock,
+        liveSecondSpeakerName,
+        preset,
       })
     : null
   const hasQuoteSecondSlide = quoteDerivedState?.hasSecondSlide ?? false
@@ -762,7 +924,6 @@ function App() {
     }
 
     const nextValue = sanitizeQuoteHtml(editor.innerHTML)
-
     updateField(field, nextValue)
   }
 
@@ -790,7 +951,7 @@ function App() {
   })
 
   const handleRichEditorPaste = (
-    event: React.ClipboardEvent<HTMLDivElement>,
+    event: ClipboardEvent<HTMLDivElement>,
     field:
       | 'quoteText'
       | 'quoteSecondText'
@@ -805,6 +966,23 @@ function App() {
     syncRichEditorState(field, editor)
   }
 
+  const showInitialBannerChooser = screen === 'home'
+  const initialBannerTypeOptions = groupedBannerOptions.flatMap((group) => group.options)
+
+  // Renderização condicional por tela
+  if (screen === 'salvos') {
+    return (
+      <div className="saved-banners-shell">
+        <SavedBannersPage
+          banners={savedBannerAssets}
+          onEdit={handleEditSavedBanner}
+          onDelete={handleDeleteSavedBanner}
+          onBack={goHome}
+        />
+      </div>
+    )
+  }
+  // Home/editor
   return (
     <div className="app-shell">
       <aside className="control-panel">
@@ -828,13 +1006,14 @@ function App() {
           <BannerSelector
             bannerMenuRef={bannerMenuRef}
             groupedBannerOptions={groupedBannerOptions}
+            hasSelectedBannerOption={hasSelectedBannerType}
             isBannerMenuOpen={isBannerMenuOpen}
             selectedBannerOption={selectedBannerOption}
             onSelect={handleBannerSelect}
             onToggle={() => setIsBannerMenuOpen((open) => !open)}
           />
           <p className="field-hint">
-            Encontro Pocket e Encontro Anual incluem Palestrante, Patrocinador Single Image e Patrocinador Carousel. {selectedType === 'Workshop' ? 'Workshop inclui as variações Palestrante e Palestrantes.' : getBannerOptionGroupLabel(selectedType) === 'Outros eventos' ? 'Outros eventos usam um layout único.' : 'Quote e Artigo usam um layout único.'}
+            Encontro Pocket e Encontro Anual incluem Palestrante e Patrocinador Carousel. {selectedType === 'Workshop' ? 'Workshop inclui as variações Palestrante e Palestrantes.' : getBannerOptionGroupLabel(selectedType) === 'Outros eventos' ? 'Outros eventos usam um layout único.' : 'Quote e Artigo usam um layout único.'}
           </p>
         </section>
 
@@ -937,7 +1116,7 @@ function App() {
           ) : isOtherEventLayout ? (
             <>
               <label className="field-label" htmlFor="event-date">
-                Data e horario
+                Data e horário
               </label>
               <input
                 id="event-date"
@@ -978,7 +1157,24 @@ function App() {
             </>
           ) : null}
 
-          {!isQuoteLayout && !isArticleLayout && !isWorkshopLayout ? (
+          {isLiveLayout ? (
+            liveModule ? (
+              <liveModule.ContentFields
+                liveSupportText={liveSupportText}
+                liveSupportTextBold={liveSupportTextBold}
+                liveSupportTextCapslock={liveSupportTextCapslock}
+                liveFooterLeftText={liveFooterLeftText}
+                liveFooterRightText={liveFooterRightText}
+                onLiveSupportTextChange={(value) => updateField('liveSupportText', value)}
+                onLiveSupportTextBoldToggle={(value) => updateField('liveSupportTextBold', value)}
+                onLiveSupportTextCapslockToggle={(value) => updateField('liveSupportTextCapslock', value)}
+                onLiveFooterLeftTextChange={(value) => updateField('liveFooterLeftText', value)}
+                onLiveFooterRightTextChange={(value) => updateField('liveFooterRightText', value)}
+              />
+            ) : null
+          ) : null}
+
+          {!isQuoteLayout && !isArticleLayout && !isWorkshopLayout && !isLiveLayout ? (
             <>
               <label className="field-label" htmlFor="event-title">
                 Nome do evento
@@ -1174,6 +1370,30 @@ function App() {
             </div>
             {photoFeedback ? <p className="field-hint upload-feedback">{photoFeedback}</p> : null}
           </section>
+        ) : isLiveLayout && liveModule ? (
+          <liveModule.MediaFields
+            speakerName={speakerName}
+            speakerRole={speakerRole}
+            speakerImageUrl={speakerImageUrl}
+            liveSecondSpeakerName={liveSecondSpeakerName}
+            liveSecondSpeakerRole={liveSecondSpeakerRole}
+            liveSecondSpeakerImageUrl={liveSecondSpeakerImageUrl}
+            livePartnerLogoUrl1={livePartnerLogoUrl1}
+            livePartnerLogoUrl2={livePartnerLogoUrl2}
+            photoFeedback={photoFeedback}
+            secondPhotoFeedback={secondPhotoFeedback}
+            partnerLogoFeedback={livePartnerLogoFeedback}
+            onSpeakerNameChange={(value) => updateField('speakerName', value)}
+            onSpeakerRoleChange={(value) => updateField('speakerRole', value)}
+            onSpeakerPhotoUpload={handleSpeakerPhotoUpload}
+            onRemoveSpeakerPhoto={handleRemoveSpeakerPhoto}
+            onSecondSpeakerNameChange={(value) => updateField('liveSecondSpeakerName', value)}
+            onSecondSpeakerRoleChange={(value) => updateField('liveSecondSpeakerRole', value)}
+            onSecondSpeakerPhotoUpload={handleLiveSecondSpeakerPhotoUpload}
+            onRemoveSecondSpeakerPhoto={handleRemoveLiveSecondSpeakerPhoto}
+            onPartnerLogoUpload={handleLivePartnerLogoUpload}
+            onRemovePartnerLogo={handleRemoveLivePartnerLogo}
+          />
         ) : isOtherEventLayout ? (
           <section className="control-section muted-card">
             <div className="section-heading">
@@ -1257,7 +1477,7 @@ function App() {
               <span className="section-icon" aria-hidden="true">
                 <AppIcon name="image" />
               </span>
-              <p className="section-label">Conteúdo do patrocínio</p>
+              <p className="section-label">Conteúdo do patrocinio</p>
             </div>
 
             <label className="field-label" htmlFor="sponsor-title">
@@ -1464,10 +1684,10 @@ function App() {
         <div className="panel-footer">
           <button type="button" className="primary-action is-active" onClick={handleSaveVersion} disabled={isExporting}>
             <AppIcon name="save" className="button-icon" />
-            <span>{isExporting ? 'Processando...' : 'Salvar versão'}</span>
+            <span>{isExporting ? 'Processando...' : 'Salvar versao'}</span>
           </button>
           <p className="footer-copy">
-            {saveFeedback || 'As imagens salvas ficam disponiveis no historico abaixo para restaurar ou baixar.'}
+            {saveFeedback || 'As imagens salvas ficam disponiveis na pagina Modelos salvos.'}
           </p>
         </div>
       </aside>
@@ -1475,13 +1695,15 @@ function App() {
       <main className="preview-area">
         <header className="preview-toolbar">
           <div>
-            <p className="toolbar-kicker">Preview</p>
+            <p className="toolbar-kicker">{showInitialBannerChooser ? 'Começar' : 'Preview'}</p>
             <p className="toolbar-copy">
-              {getBannerOptionLabel(selectedType, selectedVariation, selectedPlatform)} ({getPlatformDimensions(selectedPlatform)}) para {selectedType}.
+              {showInitialBannerChooser
+                ? 'Escolha um tipo de banner para preencher o seletor e abrir a edição.'
+                : `${getBannerOptionLabel(selectedType, selectedVariation, selectedPlatform)} (${getPlatformDimensions(selectedPlatform)}) para ${selectedType}.`}
             </p>
           </div>
           <div className="toolbar-actions" aria-label="Preview actions">
-            {!hasIsolatedPreviewPanels ? (
+            {!showInitialBannerChooser && !hasIsolatedPreviewPanels ? (
               <button
                 type="button"
                 className="ghost-button"
@@ -1512,6 +1734,12 @@ function App() {
             >
               <AppIcon name="redo" />
             </button>
+            {!showInitialBannerChooser ? (
+              <button type="button" className="ghost-button" onClick={goHome}>
+                <AppIcon name="layers" className="button-icon" />
+                Voltar para home
+              </button>
+            ) : null}
             <button
               type="button"
               className="ghost-button"
@@ -1525,7 +1753,64 @@ function App() {
         </header>
 
         <section className={`preview-stage ${hasIsolatedPreviewPanels ? 'is-preview-stack' : ''}`.trim()} aria-label="Banner preview mockup">
-          {quoteModule && quoteDerivedState ? (
+          {showInitialBannerChooser ? (
+            <section className="banner-type-browser" aria-label="Tipos de banner disponíveis">
+              <div className="banner-type-browser-saved-link-row">
+                <button type="button" className="ghost-button banner-type-browser-saved-link" onClick={goSalvos}>
+                  <AppIcon name="save" className="button-icon" />
+                  Ver modelos salvos
+                </button>
+              </div>
+              {groupedBannerOptions.map((group) => {
+                  const groupTypeOptions = initialBannerTypeOptions.filter((option) =>
+                    group.options.some((groupOption) => groupOption.type === option.type)
+                  )
+
+                  // Adiciona tipos "em breve" para OUTROS EVENTOS
+                  const comingSoon =
+                    group.label === 'Outros eventos'
+                      ? comingSoonTypes.map((type) => ({ type, label: type }))
+                      : []
+
+                  if (groupTypeOptions.length === 0 && comingSoon.length === 0) {
+                    return null
+                  }
+
+                  return (
+                    <div key={group.label} className="banner-type-browser-group">
+                      <div className="banner-type-browser-heading">
+                        <p className="preview-topline">{group.label}</p>
+                        <p className="toolbar-copy">Selecione um formato para carregar a edição com esse layout.</p>
+                      </div>
+                      <div className="banner-type-browser-grid">
+                        {groupTypeOptions.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            className="banner-type-card"
+                            onClick={() => handleBannerSelect(option)}
+                          >
+                            <span className="banner-type-card-topline">{group.label}</span>
+                            <strong className="banner-type-card-title">{option.type}</strong>
+                            <span className="banner-type-card-copy">
+                              {getBannerOptionLabel(option.type, option.variation, option.platform)}
+                            </span>
+                            <span className="banner-type-card-meta">{option.dimensions}</span>
+                          </button>
+                        ))}
+                        {comingSoon.length > 0 && comingSoon.map((item) => (
+                          <div key={item.type} className="banner-type-card is-coming-soon" aria-disabled="true">
+                            <span className="banner-type-card-topline">{group.label}</span>
+                            <strong className="banner-type-card-title">{item.label}</strong>
+                            <span className="banner-type-card-copy">Em breve</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+            </section>
+          ) : quoteModule && quoteDerivedState ? (
             <quoteModule.Preview
               hasSecondSlide={quoteDerivedState.hasSecondSlide}
               isExporting={isExporting}
@@ -1859,12 +2144,30 @@ function App() {
             </div>
           ) : (
             <div
-              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isOtherEventLayout ? 'is-meetup-layout' : ''} ${isWorkshopLayout ? 'is-workshop-layout' : ''} ${isArticleLayout ? 'is-article-layout' : ''}`}
-              style={workshopDerivedState?.previewStyle ?? previewStyle}
+              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isLiveLayout ? 'is-live-layout' : ''} ${isOtherEventLayout && !isLiveLayout ? 'is-meetup-layout' : ''} ${isWorkshopLayout ? 'is-workshop-layout' : ''} ${isArticleLayout ? 'is-article-layout' : ''}`}
+              style={liveModule && liveDerivedState ? liveDerivedState.previewStyle : workshopDerivedState?.previewStyle ?? previewStyle}
               ref={primaryPreviewFrameRef}
             >
               <div className="preview-content">
-                {workshopModule && workshopDerivedState ? (
+                {liveModule && liveDerivedState ? (
+                  <liveModule.Preview
+                    eventTitle={eventTitle}
+                    eventDate={eventDate}
+                    speakerName={speakerName}
+                    speakerRole={speakerRole}
+                    speakerImageUrl={speakerImageUrl}
+                    supportTextHtml={liveDerivedState.supportText}
+                    liveFooterLeftText={liveFooterLeftText}
+                    liveFooterRightText={liveFooterRightText}
+                    liveSecondSpeakerName={liveSecondSpeakerName}
+                    liveSecondSpeakerRole={liveSecondSpeakerRole}
+                    liveSecondSpeakerImageUrl={liveSecondSpeakerImageUrl}
+                    livePartnerLogoUrl1={livePartnerLogoUrl1}
+                    livePartnerLogoUrl2={livePartnerLogoUrl2}
+                    speakerInitials={speakerInitials}
+                    secondSpeakerInitials={liveDerivedState.secondSpeakerInitials}
+                  />
+                ) : workshopModule && workshopDerivedState ? (
                   <workshopModule.Preview
                     isDualSpeaker={workshopDerivedState.isDualSpeaker}
                     speakerCards={workshopDerivedState.speakerCards}
@@ -1878,46 +2181,48 @@ function App() {
                     workshopPartnerLogoUrl={workshopDerivedState.workshopPartnerLogoUrl}
                     workshopTitle={workshopDerivedState.workshopTitle}
                   />
-                ) : isOtherEventLayout ? (
+                ) : isOtherEventLayout && !isLiveLayout ? (
                   <div className="meetup-preview-layout">
-                    <header className="meetup-logos-header">
-                      <div
-                        className="meetup-logo-row"
-                        style={{ '--meetup-logo-count': `${meetupLogoAssets.length}` } as CSSProperties}
-                      >
-                        {meetupLogoAssets.map((logo) => (
-                          <div key={logo.id} className="meetup-logo-slot">
-                            <img src={logo.src} alt={logo.alt} className={logo.className} />
+                    <section className="meetup-top-section">
+                      <header className="meetup-logos-header">
+                        <div
+                          className="meetup-logo-row"
+                          style={{ '--meetup-logo-count': `${meetupLogoAssets.length}` } as CSSProperties}
+                        >
+                          {meetupLogoAssets.map((logo) => (
+                            <div key={logo.id} className="meetup-logo-slot">
+                              <img src={logo.src} alt={logo.alt} className={logo.className} />
+                            </div>
+                          ))}
+                        </div>
+                      </header>
+
+                      <div className="meetup-copy-block">
+                        <h2 className="meetup-event-name">{eventTitle.trim() || 'Nome do evento'}</h2>
+
+                        {hasEventDetails ? (
+                          <div className="meetup-meta-row">
+                            {eventDate.trim() ? <span>{eventDate.trim()}</span> : null}
+                            {eventDate.trim() && eventLocation.trim() ? <span className="meetup-meta-dot" aria-hidden="true" /> : null}
+                            {eventLocation.trim() ? <span>{eventLocation.trim()}</span> : null}
                           </div>
-                        ))}
+                        ) : null}
+
+                        {hasMeetupSupportText ? (
+                          <p className="meetup-support-text">{meetupSupportText.trim()}</p>
+                        ) : null}
+
+                        {hasMeetupCta ? (
+                          <div className="meetup-cta-row">
+                            <p className="meetup-cta-pill">{meetupCta.trim()}</p>
+                          </div>
+                        ) : null}
                       </div>
-                    </header>
-
-                    <section className="meetup-copy-block">
-                      <h2 className="meetup-event-name">{eventTitle.trim() || 'Nome do evento'}</h2>
-
-                      {hasEventDetails ? (
-                        <div className="meetup-meta-row">
-                          {eventDate.trim() ? <span>{eventDate.trim()}</span> : null}
-                          {eventDate.trim() && eventLocation.trim() ? <span className="meetup-meta-dot" aria-hidden="true" /> : null}
-                          {eventLocation.trim() ? <span>{eventLocation.trim()}</span> : null}
-                        </div>
-                      ) : null}
-
-                      {hasMeetupSupportText ? (
-                        <p className="meetup-support-text">{meetupSupportText.trim()}</p>
-                      ) : null}
-
-                      {hasMeetupCta ? (
-                        <div className="meetup-cta-row">
-                          <p className="meetup-cta-pill">{meetupCta.trim()}</p>
-                        </div>
-                      ) : null}
                     </section>
 
-                    <footer className="meetup-photo-section" style={meetupPhotoSectionStyle}>
+                    <section className="meetup-bottom-section meetup-photo-section" style={meetupPhotoSectionStyle}>
                       <div className="meetup-photo-gradient" aria-hidden="true" />
-                    </footer>
+                    </section>
                   </div>
                 ) : (
                 <>
@@ -2077,50 +2382,6 @@ function App() {
           )}
         </section>
 
-        <section className="saved-assets-section" aria-label="Imagens salvas">
-          <div className="saved-assets-header">
-            <div>
-              <p className="toolbar-kicker">Imagens salvas</p>
-              <p className="toolbar-copy">Acesse as ultimas imagens exportadas, restaure uma versao ou baixe novamente.</p>
-            </div>
-          </div>
-
-          {savedBannerAssets.length ? (
-            <div className="saved-assets-grid">
-              {savedBannerAssets.map((asset) => (
-                <article key={asset.id} className="saved-asset-card">
-                  <button
-                    type="button"
-                    className="saved-asset-preview"
-                    onClick={() => handleRestoreSavedBanner(asset)}
-                    aria-label={`Restaurar ${asset.fileName}`}
-                  >
-                    <img src={asset.imageDataUrl} alt={asset.fileName} className="saved-asset-image" />
-                  </button>
-                  <div className="saved-asset-copy">
-                    <p className="saved-asset-title">{asset.editorState.selectedType}</p>
-                    <p className="saved-asset-meta">
-                      {(asset.editorState.selectedType === 'Quote' || asset.editorState.selectedType === 'Artigo'
-                        ? asset.editorState.speakerName
-                        : asset.editorState.eventCity) || 'Sem identificador'}{' '}
-                      · {formatSavedAt(asset.savedAt)}
-                    </p>
-                  </div>
-                  <div className="saved-asset-actions">
-                    <button type="button" className="saved-asset-button" onClick={() => handleRestoreSavedBanner(asset)}>
-                      Restaurar
-                    </button>
-                    <button type="button" className="saved-asset-button" onClick={() => handleDownloadSavedBanner(asset)}>
-                      Download
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className="saved-assets-empty">As imagens salvas aparecerao aqui depois que voce usar Salvar versao.</p>
-          )}
-        </section>
       </main>
     </div>
   )
