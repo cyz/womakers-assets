@@ -741,7 +741,7 @@
 .preview-stage {
   display: flex;
   flex: 1 1 auto;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
   min-height: 0;
   overflow-y: auto;
