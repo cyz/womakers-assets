@@ -146,6 +146,7 @@ function App() {
   const [secondPhotoFeedback, setSecondPhotoFeedback] = useState('')
   const [livePartnerLogoFeedback, setLivePartnerLogoFeedback] = useState('')
   const bannerMenuRef = useRef<HTMLDivElement | null>(null)
+  const previewStageRef = useRef<HTMLElement | null>(null)
   const primaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const quoteSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const articleSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
@@ -327,6 +328,18 @@ function App() {
   useEffect(() => {
     setHasSelectedBannerType(!isEditorStateEqual(editorState, initialEditorState))
   }, [editorState])
+
+  useEffect(() => {
+    const previewStage = previewStageRef.current
+
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+
+    if (!previewStage) {
+      return
+    }
+
+    previewStage.scrollTop = 0
+  }, [screen, selectedType, selectedVariation, selectedPlatform])
 
   const commitState = (updater: EditorState | ((current: EditorState) => EditorState)) => {
     setEditorState((current) => {
@@ -1752,7 +1765,11 @@ function App() {
           </div>
         </header>
 
-        <section className={`preview-stage ${hasIsolatedPreviewPanels ? 'is-preview-stack' : ''}`.trim()} aria-label="Banner preview mockup">
+        <section
+          ref={previewStageRef}
+          className={`preview-stage ${hasIsolatedPreviewPanels ? 'is-preview-stack' : ''}`.trim()}
+          aria-label="Banner preview mockup"
+        >
           {showInitialBannerChooser ? (
             <section className="banner-type-browser" aria-label="Tipos de banner disponíveis">
               <div className="banner-type-browser-saved-link-row">
@@ -1978,92 +1995,92 @@ function App() {
                   ref={primaryPreviewFrameRef}
                 >
                   <div className="preview-content">
-                    <header className="event-header">
-                      <h2 className={`event-title ${isAnnualLayout ? 'is-annual-layout' : ''}`}>
-                        {isAnnualLayout ? (
-                          <span className="event-title-icon-block" aria-hidden="true">
+                        <header className="event-header">
+                          <h2 className={`event-title ${isAnnualLayout ? 'is-annual-layout' : ''}`}>
+                            {isAnnualLayout ? (
+                              <span className="event-title-icon-block" aria-hidden="true">
+                                <img
+                                  src={`${import.meta.env.BASE_URL}src/assets/icons/arrow.png`}
+                                  alt=""
+                                  className="event-title-icon"
+                                />
+                              </span>
+                            ) : null}
+                            <span className="event-title-copy">
+                              <span className="event-title-segment">{eventTitle}</span>
+                              {eventCity.trim() ? <span className="event-city event-title-segment"> {eventCity}</span> : null}
+                            </span>
+                          </h2>
+
+                          {(!isAnnualSponsorLayout || isPocketLayout) && hasEventDetails ? (
+                            <div className="event-details-pill">
+                              {eventDate.trim() ? (
+                                <span className="event-detail-item">
+                                  <span className="event-dot" aria-hidden="true" />
+                                  <span>{eventDate}</span>
+                                </span>
+                              ) : null}
+                              {eventLocation.trim() ? (
+                                <span className="event-detail-item">
+                                  <span className="event-dot" aria-hidden="true" />
+                                  <span>{eventLocation}</span>
+                                </span>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </header>
+
+                        <section className="pocket-sponsor-section" aria-label={selectedVariation}>
+                          <h3 className="pocket-sponsor-title">
                             <img
-                              src={`${import.meta.env.BASE_URL}src/assets/icons/arrow.png`}
+                              src={`${import.meta.env.BASE_URL}src/assets/icons/spark-pink.png`}
                               alt=""
-                              className="event-title-icon"
+                              aria-hidden="true"
+                              className="pocket-sponsor-spark"
                             />
-                          </span>
-                        ) : null}
-                        <span className="event-title-copy">
-                          <span className="event-title-segment">{eventTitle}</span>
-                          {eventCity.trim() ? <span className="event-city event-title-segment"> {eventCity}</span> : null}
-                        </span>
-                      </h2>
+                            <span>{sponsorTitle.trim() || initialEditorState.sponsorTitle}</span>
+                            <img
+                              src={`${import.meta.env.BASE_URL}src/assets/icons/spark-pink.png`}
+                              alt=""
+                              aria-hidden="true"
+                              className="pocket-sponsor-spark"
+                            />
+                          </h3>
+                          <div className="pocket-sponsor-frame">
+                            {sponsorLogoUrl ? (
+                              <img src={sponsorLogoUrl} alt="Logo do patrocinador" className="pocket-sponsor-logo" />
+                            ) : (
+                              <div className="pocket-sponsor-placeholder">Logo do patrocinador</div>
+                            )}
+                          </div>
+                        </section>
 
-                      {(!isAnnualSponsorLayout || isPocketLayout) && hasEventDetails ? (
-                        <div className="event-details-pill">
-                          {eventDate.trim() ? (
-                            <span className="event-detail-item">
-                              <span className="event-dot" aria-hidden="true" />
-                              <span>{eventDate}</span>
-                            </span>
-                          ) : null}
-                          {eventLocation.trim() ? (
-                            <span className="event-detail-item">
-                              <span className="event-dot" aria-hidden="true" />
-                              <span>{eventLocation}</span>
-                            </span>
-                          ) : null}
+                        {isAnnualSponsorLayout && hasEventDetails ? (
+                          <div className="event-details-pill">
+                            {eventDate.trim() ? (
+                              <span className="event-detail-item">
+                                <span className="event-dot" aria-hidden="true" />
+                                <span>{eventDate}</span>
+                              </span>
+                            ) : null}
+                            {eventLocation.trim() ? (
+                              <span className="event-detail-item">
+                                <span className="event-dot" aria-hidden="true" />
+                                <span>{eventLocation}</span>
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null}
+
+                        <div className="pocket-brand-footer">
+                          <img
+                            src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
+                            alt="WoMakers Code"
+                            className="pocket-brand"
+                          />
                         </div>
-                      ) : null}
-                    </header>
-
-                    <section className="pocket-sponsor-section" aria-label={selectedVariation}>
-                      <h3 className="pocket-sponsor-title">
-                        <img
-                          src={`${import.meta.env.BASE_URL}src/assets/icons/spark-pink.png`}
-                          alt=""
-                          aria-hidden="true"
-                          className="pocket-sponsor-spark"
-                        />
-                        <span>{sponsorTitle.trim() || initialEditorState.sponsorTitle}</span>
-                        <img
-                          src={`${import.meta.env.BASE_URL}src/assets/icons/spark-pink.png`}
-                          alt=""
-                          aria-hidden="true"
-                          className="pocket-sponsor-spark"
-                        />
-                      </h3>
-                      <div className="pocket-sponsor-frame">
-                        {sponsorLogoUrl ? (
-                          <img src={sponsorLogoUrl} alt="Logo do patrocinador" className="pocket-sponsor-logo" />
-                        ) : (
-                          <div className="pocket-sponsor-placeholder">Logo do patrocinador</div>
-                        )}
-                      </div>
-                    </section>
-
-                    {isAnnualSponsorLayout && hasEventDetails ? (
-                      <div className="event-details-pill">
-                        {eventDate.trim() ? (
-                          <span className="event-detail-item">
-                            <span className="event-dot" aria-hidden="true" />
-                            <span>{eventDate}</span>
-                          </span>
-                        ) : null}
-                        {eventLocation.trim() ? (
-                          <span className="event-detail-item">
-                            <span className="event-dot" aria-hidden="true" />
-                            <span>{eventLocation}</span>
-                          </span>
-                        ) : null}
-                      </div>
-                    ) : null}
-
-                    <div className="pocket-brand-footer">
-                      <img
-                        src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
-                        alt="WoMakers Code"
-                        className="pocket-brand"
-                      />
                     </div>
                   </div>
-                </div>
               </article>
 
               <article className="sponsor-carousel-preview-panel">
@@ -2376,7 +2393,7 @@ function App() {
                     </div>
                   ) : null}
                 </>
-              )}
+                )}
               </div>
             </div>
           )}
