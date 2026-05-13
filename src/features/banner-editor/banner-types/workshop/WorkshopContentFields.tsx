@@ -7,6 +7,7 @@ type WorkshopContentFieldsProps = {
   onWorkshopBulletOneChange: (value: string) => void
   onWorkshopBulletThreeChange: (value: string) => void
   onWorkshopBulletTwoChange: (value: string) => void
+  onWorkshopBulletsIntroChange: (value: string) => void
   onWorkshopDescriptionChange: (value: string) => void
   onWorkshopFooterLeftLineOneChange: (value: string) => void
   onWorkshopFooterLeftLineTwoChange: (value: string) => void
@@ -18,6 +19,7 @@ type WorkshopContentFieldsProps = {
   workshopBulletOne: string
   workshopBulletThree: string
   workshopBulletTwo: string
+  workshopBulletsIntro: string
   workshopDescription: string
   workshopFooterLeftLineOne: string
   workshopFooterLeftLineTwo: string
@@ -33,6 +35,7 @@ export function WorkshopContentFields({
   onWorkshopBulletOneChange,
   onWorkshopBulletThreeChange,
   onWorkshopBulletTwoChange,
+  onWorkshopBulletsIntroChange,
   onWorkshopDescriptionChange,
   onWorkshopFooterLeftLineOneChange,
   onWorkshopFooterLeftLineTwoChange,
@@ -44,6 +47,7 @@ export function WorkshopContentFields({
   workshopBulletOne,
   workshopBulletThree,
   workshopBulletTwo,
+  workshopBulletsIntro,
   workshopDescription,
   workshopFooterLeftLineOne,
   workshopFooterLeftLineTwo,
@@ -113,6 +117,19 @@ export function WorkshopContentFields({
             id="workshop-description"
             value={workshopDescription}
             onChange={(event) => onWorkshopDescriptionChange(event.target.value)}
+          />
+        </>
+      ) : null}
+
+      {isDualSpeaker ? (
+        <>
+          <label className="field-label" htmlFor="workshop-bullets-intro">
+            Texto antes dos bullets
+          </label>
+          <textarea
+            id="workshop-bullets-intro"
+            value={workshopBulletsIntro}
+            onChange={(event) => onWorkshopBulletsIntroChange(event.target.value)}
           />
         </>
       ) : null}

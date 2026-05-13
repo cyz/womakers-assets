@@ -54,6 +54,7 @@ export type EditorState = {
   workshopBadge: string
   workshopTitle: string
   workshopHighlight: string
+  workshopBulletsIntro: string
   workshopDescription: string
   workshopBulletOne: string
   workshopBulletTwo: string
@@ -159,6 +160,7 @@ export const workshopPreviewDefaults = {
   badge: 'Workshop | 14-05 as 19h',
   title: 'Infraestrutura de TI voltada para',
   highlight: 'Data Center',
+  bulletsIntro: '',
   description: 'Reference site about Lorem Ipsum, giving information on its origins, as well as a random Lipsum generator',
   bulletOne: 'Lorem Ipsum, giving information',
   bulletTwo: 'Lorem Ipsum, giving information',
@@ -181,6 +183,7 @@ export const initialEditorState: EditorState = {
   workshopBadge: workshopPreviewDefaults.badge,
   workshopTitle: workshopPreviewDefaults.title,
   workshopHighlight: workshopPreviewDefaults.highlight,
+  workshopBulletsIntro: workshopPreviewDefaults.bulletsIntro,
   workshopDescription: workshopPreviewDefaults.description,
   workshopBulletOne: workshopPreviewDefaults.bulletOne,
   workshopBulletTwo: workshopPreviewDefaults.bulletTwo,

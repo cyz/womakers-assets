@@ -60,6 +60,7 @@ export const normalizeEditorState = (state: EditorState): EditorState => {
 
   return {
     ...state,
+    workshopBulletsIntro: state.workshopBulletsIntro ?? initialEditorState.workshopBulletsIntro,
     selectedVariation: normalizedVariation && supportedVariations.includes(normalizedVariation)
       ? normalizedVariation
       : supportedVariations[0],
@@ -124,6 +125,7 @@ export const isEditorStateEqual = (left: EditorState, right: EditorState) =>
   left.workshopBadge === right.workshopBadge &&
   left.workshopTitle === right.workshopTitle &&
   left.workshopHighlight === right.workshopHighlight &&
+  left.workshopBulletsIntro === right.workshopBulletsIntro &&
   left.workshopDescription === right.workshopDescription &&
   left.workshopBulletOne === right.workshopBulletOne &&
   left.workshopBulletTwo === right.workshopBulletTwo &&
@@ -226,6 +228,7 @@ export const parseEditorStateCandidate = (
     workshopBadge: parsed.workshopBadge ?? initialEditorState.workshopBadge,
     workshopTitle: parsed.workshopTitle ?? initialEditorState.workshopTitle,
     workshopHighlight: parsed.workshopHighlight ?? initialEditorState.workshopHighlight,
+    workshopBulletsIntro: parsed.workshopBulletsIntro ?? initialEditorState.workshopBulletsIntro,
     workshopDescription: parsed.workshopDescription ?? initialEditorState.workshopDescription,
     workshopBulletOne: parsed.workshopBulletOne ?? initialEditorState.workshopBulletOne,
     workshopBulletTwo: parsed.workshopBulletTwo ?? initialEditorState.workshopBulletTwo,

@@ -23,6 +23,7 @@ type WorkshopDerivedStateArgs = {
   workshopBulletOne: string
   workshopBulletThree: string
   workshopBulletTwo: string
+  workshopBulletsIntro: string
   workshopDescription: string
   workshopFooterLeftLineOne: string
   workshopFooterLeftLineTwo: string
@@ -48,6 +49,7 @@ export type WorkshopDerivedState = {
   speakerCards: WorkshopSpeakerCard[]
   workshopBadge: string
   workshopBullets: string[]
+  workshopBulletsIntro: string
   workshopDescription: string
   workshopFooterLeftLineOne: string
   workshopFooterLeftLineTwo: string
@@ -68,6 +70,7 @@ export const getWorkshopDerivedState = ({
   workshopBulletOne,
   workshopBulletThree,
   workshopBulletTwo,
+  workshopBulletsIntro,
   workshopDescription,
   workshopFooterLeftLineOne,
   workshopFooterLeftLineTwo,
@@ -134,6 +137,7 @@ export const getWorkshopDerivedState = ({
 
           return item.trim() || fallback
         }),
+    workshopBulletsIntro: workshopBulletsIntro.trim(),
     workshopDescription: workshopDescription.trim() || workshopPreviewDefaults.description,
     workshopFooterLeftLineOne:
       workshopFooterLeftLineOne.trim() || workshopPreviewDefaults.footerLeftLineOne,

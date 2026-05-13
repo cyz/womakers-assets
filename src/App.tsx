@@ -167,6 +167,7 @@ function App() {
     workshopBadge,
     workshopTitle,
     workshopHighlight,
+    workshopBulletsIntro,
     workshopDescription,
     workshopBulletOne,
     workshopBulletTwo,
@@ -838,6 +839,7 @@ function App() {
         workshopBulletOne,
         workshopBulletThree,
         workshopBulletTwo,
+        workshopBulletsIntro,
         workshopDescription,
         workshopFooterLeftLineOne,
         workshopFooterLeftLineTwo,
@@ -1108,6 +1110,7 @@ function App() {
               onWorkshopBulletOneChange={(value) => updateField('workshopBulletOne', value)}
               onWorkshopBulletThreeChange={(value) => updateField('workshopBulletThree', value)}
               onWorkshopBulletTwoChange={(value) => updateField('workshopBulletTwo', value)}
+              onWorkshopBulletsIntroChange={(value) => updateField('workshopBulletsIntro', value)}
               onWorkshopDescriptionChange={(value) => updateField('workshopDescription', value)}
               onWorkshopFooterLeftLineOneChange={(value) => updateField('workshopFooterLeftLineOne', value)}
               onWorkshopFooterLeftLineTwoChange={(value) => updateField('workshopFooterLeftLineTwo', value)}
@@ -1119,6 +1122,7 @@ function App() {
               workshopBulletOne={workshopBulletOne}
               workshopBulletThree={workshopBulletThree}
               workshopBulletTwo={workshopBulletTwo}
+              workshopBulletsIntro={workshopBulletsIntro}
               workshopDescription={workshopDescription}
               workshopFooterLeftLineOne={workshopFooterLeftLineOne}
               workshopFooterLeftLineTwo={workshopFooterLeftLineTwo}
@@ -2190,6 +2194,7 @@ function App() {
                     speakerCards={workshopDerivedState.speakerCards}
                     workshopBadge={workshopDerivedState.workshopBadge}
                     workshopBullets={workshopDerivedState.workshopBullets}
+                    workshopBulletsIntro={workshopDerivedState.workshopBulletsIntro}
                     workshopDescription={workshopDerivedState.workshopDescription}
                     workshopFooterLeftLineOne={workshopDerivedState.workshopFooterLeftLineOne}
                     workshopFooterLeftLineTwo={workshopDerivedState.workshopFooterLeftLineTwo}

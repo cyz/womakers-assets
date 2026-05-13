@@ -8,6 +8,7 @@ type WorkshopPreviewProps = {
   }>
   workshopBadge: string
   workshopBullets: string[]
+  workshopBulletsIntro: string
   workshopDescription: string
   workshopFooterLeftLineOne: string
   workshopFooterLeftLineTwo: string
@@ -22,6 +23,7 @@ export function WorkshopPreview({
   speakerCards,
   workshopBadge,
   workshopBullets,
+  workshopBulletsIntro,
   workshopDescription,
   workshopFooterLeftLineOne,
   workshopFooterLeftLineTwo,
@@ -68,6 +70,10 @@ export function WorkshopPreview({
               ))}
             </div>
           </section>
+
+          {workshopBulletsIntro ? (
+            <p className="workshop-dual-bullets-intro">{workshopBulletsIntro}</p>
+          ) : null}
 
           {workshopBullets.length > 0 ? (
             <section
