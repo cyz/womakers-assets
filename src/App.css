@@ -2159,12 +2159,20 @@
   gap: 2.6rem;
 }
 
+.workshop-preview-layout.is-dual {
+  gap: 1.9rem;
+}
+
 .workshop-hero-row {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 2.2rem;
   width: 100%;
+}
+
+.workshop-preview-layout.is-dual .workshop-hero-row {
+  gap: 1.5rem;
 }
 
 .workshop-body-grid {
@@ -3676,8 +3684,16 @@
     gap: 1.8rem;
   }
 
+  .workshop-preview-layout.is-dual {
+    gap: 1.45rem;
+  }
+
   .workshop-hero-row {
     gap: 1.6rem;
+  }
+
+  .workshop-preview-layout.is-dual .workshop-hero-row {
+    gap: 1.15rem;
   }
 
   .workshop-body-grid {
@@ -3999,8 +4015,16 @@
     gap: 1.25rem;
   }
 
+  .workshop-preview-layout.is-dual {
+    gap: 1rem;
+  }
+
   .workshop-hero-row {
     gap: 1.2rem;
+  }
+
+  .workshop-preview-layout.is-dual .workshop-hero-row {
+    gap: 0.95rem;
   }
 
   .workshop-body-grid {

@@ -35,7 +35,7 @@ export function WorkshopPreview({
   const brandAssetUrl = `${import.meta.env.BASE_URL}src/assets/themes/brand.png`
 
   return (
-    <article className="workshop-preview-layout">
+    <article className={`workshop-preview-layout ${isDualSpeaker ? 'is-dual' : ''}`}>
       <header className="workshop-hero-row">
         <p className="workshop-badge">{workshopBadge}</p>
 
