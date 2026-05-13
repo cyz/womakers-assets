@@ -83,6 +83,7 @@ export const getWorkshopDerivedState = ({
   workshopTitle,
 }: WorkshopDerivedStateArgs): WorkshopDerivedState => {
   const accent = workshopAccentPalette[workshopAccentColor]
+  const accentForeground = workshopAccentColor === 'Magenta' ? '#ffffff' : '#171717'
   const primarySpeakerName = speakerName.trim() || workshopPreviewDefaults.speakerName
   const primarySpeakerRole = speakerRole.trim() || workshopPreviewDefaults.speakerRole
   const secondarySpeakerName =
@@ -102,6 +103,7 @@ export const getWorkshopDerivedState = ({
       '--preview-aspect-ratio': `${preset.width} / ${preset.height}`,
       '--workshop-accent': accent.color,
       '--workshop-accent-rgb': accent.rgb,
+      '--workshop-accent-foreground': accentForeground,
       background: '#050505',
     } as CSSProperties,
     isDualSpeaker,

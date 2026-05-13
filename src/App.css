@@ -2189,7 +2189,7 @@
   padding: 0.95rem 1.5rem;
   border-radius: 1rem;
   background: var(--workshop-accent);
-  color: #171717;
+  color: var(--workshop-accent-foreground, #171717);
   font-family: 'NextNew', var(--heading);
   font-size: clamp(1.1rem, 1.9vw, 1.9rem);
   font-weight: 700;
@@ -2547,7 +2547,7 @@
   padding: 0.9rem 1.2rem;
   border-radius: 1rem;
   background: var(--workshop-accent);
-  color: #171717;
+  color: var(--workshop-accent-foreground, #171717);
   font-family: 'NextNew', var(--heading);
   font-size: clamp(0.98rem, 1.5vw, 1.35rem);
   font-weight: 700;
