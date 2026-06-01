@@ -20,6 +20,7 @@ export function SavedBannersPage({ banners, onEdit, onDelete, onBack }: SavedBan
       <header className="saved-banners-header">
         <div className="saved-banners-header-copy">
           <button type="button" className="ghost-button" onClick={onBack}>
+            <span aria-hidden="true">←</span>
             Voltar para home
           </button>
           <div>

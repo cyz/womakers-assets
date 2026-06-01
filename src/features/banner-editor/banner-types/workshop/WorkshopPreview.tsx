@@ -1,5 +1,6 @@
 type WorkshopPreviewProps = {
   isDualSpeaker: boolean
+  isStoriesPlatform: boolean
   speakerCards: Array<{
     imageUrl: string
     initials: string
@@ -20,6 +21,7 @@ type WorkshopPreviewProps = {
 
 export function WorkshopPreview({
   isDualSpeaker,
+  isStoriesPlatform,
   speakerCards,
   workshopBadge,
   workshopBullets,
@@ -33,14 +35,18 @@ export function WorkshopPreview({
   workshopTitle,
 }: WorkshopPreviewProps) {
   const brandAssetUrl = `${import.meta.env.BASE_URL}src/assets/themes/brand.png`
+  const hasHighlight = workshopHighlight.trim().length > 0
 
   return (
-    <article className={`workshop-preview-layout ${isDualSpeaker ? 'is-dual' : ''}`}>
+    <article className={`workshop-preview-layout ${isDualSpeaker ? 'is-dual' : ''} ${isStoriesPlatform ? 'is-stories-platform' : ''}`}>
       <header className="workshop-hero-row">
         <p className="workshop-badge">{workshopBadge}</p>
 
         <div className="workshop-title-block">
-          <h2 className="workshop-title">{workshopTitle} <span className="workshop-highlight">{workshopHighlight}</span></h2>
+          <h2 className="workshop-title">
+            {workshopTitle}
+            {hasHighlight ? <span className="workshop-highlight"> {workshopHighlight}</span> : null}
+          </h2>
         </div>
       </header>
 
@@ -132,6 +138,17 @@ export function WorkshopPreview({
       )}
 
       <footer className="workshop-footer-section">
+        <section className="workshop-footer-copy-grid">
+          <div className="workshop-footer-copy-column">
+            <p>{workshopFooterLeftLineOne}</p>
+            <p>{workshopFooterLeftLineTwo}</p>
+          </div>
+
+          <div className="workshop-footer-tag-column">
+            <p className="workshop-footer-tag">{workshopFooterTag}</p>
+          </div>
+        </section>
+
         <section className="workshop-footer-brand-row" aria-label="Marcas do workshop">
           <div className="workshop-footer-brand-slot">
             <img src={brandAssetUrl} alt="WoMakers Code" className="workshop-brand" />
@@ -142,17 +159,6 @@ export function WorkshopPreview({
               <img src={workshopPartnerLogoUrl} alt="Marca parceira" className="workshop-brand workshop-brand-partner" />
             </div>
           ) : null}
-        </section>
-
-        <section className="workshop-footer-copy-grid">
-          <div className="workshop-footer-copy-column">
-            <p>{workshopFooterLeftLineOne}</p>
-            <p>{workshopFooterLeftLineTwo}</p>
-          </div>
-
-          <div className="workshop-footer-tag-column">
-            <p className="workshop-footer-tag">{workshopFooterTag}</p>
-          </div>
         </section>
       </footer>
     </article>

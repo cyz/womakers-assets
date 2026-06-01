@@ -19,6 +19,7 @@ type WorkshopDerivedStateArgs = {
   speakerRole: string
   speakerImageUrl: string
   workshopAccentColor: WorkshopAccentColor
+  workshopBackgroundImageUrl: string
   workshopBadge: string
   workshopBulletOne: string
   workshopBulletThree: string
@@ -66,6 +67,7 @@ export const getWorkshopDerivedState = ({
   speakerRole,
   speakerImageUrl,
   workshopAccentColor,
+  workshopBackgroundImageUrl,
   workshopBadge,
   workshopBulletOne,
   workshopBulletThree,
@@ -84,6 +86,7 @@ export const getWorkshopDerivedState = ({
 }: WorkshopDerivedStateArgs): WorkshopDerivedState => {
   const accent = workshopAccentPalette[workshopAccentColor]
   const accentForeground = workshopAccentColor === 'Magenta' ? '#ffffff' : '#171717'
+  const workshopBackgroundAssetUrl = `${import.meta.env.BASE_URL}src/assets/themes/fundo.png`
   const primarySpeakerName = speakerName.trim() || workshopPreviewDefaults.speakerName
   const primarySpeakerRole = speakerRole.trim() || workshopPreviewDefaults.speakerRole
   const secondarySpeakerName =
@@ -104,7 +107,12 @@ export const getWorkshopDerivedState = ({
       '--workshop-accent': accent.color,
       '--workshop-accent-rgb': accent.rgb,
       '--workshop-accent-foreground': accentForeground,
-      background: '#050505',
+      backgroundColor: '#050505',
+      backgroundImage:
+        workshopBackgroundImageUrl === workshopBackgroundAssetUrl ? `url(${workshopBackgroundAssetUrl})` : 'none',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundSize: 'cover',
     } as CSSProperties,
     isDualSpeaker,
     speakerCards: [
@@ -146,7 +154,7 @@ export const getWorkshopDerivedState = ({
     workshopFooterLeftLineTwo:
       workshopFooterLeftLineTwo.trim() || workshopPreviewDefaults.footerLeftLineTwo,
     workshopFooterTag: workshopFooterTag.trim() || workshopPreviewDefaults.footerTag,
-    workshopHighlight: workshopHighlight.trim() || workshopPreviewDefaults.highlight,
+    workshopHighlight: workshopHighlight.trim(),
     workshopPartnerLogoUrl,
     workshopTitle: workshopTitle.trim() || workshopPreviewDefaults.title,
   }

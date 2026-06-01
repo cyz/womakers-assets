@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 
 type QuoteDerivedStateArgs = {
   initialSpeakerName: string
+  isStoriesPlatform: boolean
   preset: {
     width: number
     height: number
@@ -22,13 +23,14 @@ export type QuoteDerivedState = {
 
 export const getQuoteDerivedState = ({
   initialSpeakerName,
+  isStoriesPlatform,
   preset,
   quoteBackgroundImageUrl,
   quoteSecondText,
   speakerName,
   speakerRole,
 }: QuoteDerivedStateArgs): QuoteDerivedState => ({
-  hasSecondSlide: Boolean(quoteSecondText.trim()),
+  hasSecondSlide: Boolean(quoteSecondText.trim()) && !isStoriesPlatform,
   previewStyle: {
     '--preview-aspect-ratio': `${preset.width} / ${preset.height}`,
     backgroundColor: quoteBackgroundImageUrl ? undefined : '#16181b',

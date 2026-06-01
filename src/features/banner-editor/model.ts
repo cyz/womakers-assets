@@ -30,10 +30,12 @@ export const defaultAssetVariation = assetVariations[0]
 
 export const platforms = [
   'Instagram Feed (1080x1350)',
+  'Instagram Stories (1080x1920)',
 ] as const
 
 export const platformPresets: Record<(typeof platforms)[number], { width: number; height: number }> = {
   'Instagram Feed (1080x1350)': { width: 1080, height: 1350 },
+  'Instagram Stories (1080x1920)': { width: 1080, height: 1920 },
 }
 
 export type ImageType = (typeof imageTypes)[number]
@@ -51,6 +53,7 @@ export type EditorState = {
   selectedPlatform: Platform
   eventTitle: string
   workshopAccentColor: WorkshopAccentColor
+  workshopBackgroundImageUrl: string
   workshopBadge: string
   workshopTitle: string
   workshopHighlight: string
@@ -180,6 +183,7 @@ export const initialEditorState: EditorState = {
   selectedPlatform: platforms[0],
   eventTitle: 'Encontro de Mulheres na Tecnologia:',
   workshopAccentColor: workshopPreviewDefaults.accentColor,
+  workshopBackgroundImageUrl: '',
   workshopBadge: workshopPreviewDefaults.badge,
   workshopTitle: workshopPreviewDefaults.title,
   workshopHighlight: workshopPreviewDefaults.highlight,

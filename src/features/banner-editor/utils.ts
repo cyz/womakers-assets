@@ -122,6 +122,7 @@ export const isEditorStateEqual = (left: EditorState, right: EditorState) =>
   left.selectedPlatform === right.selectedPlatform &&
   left.eventTitle === right.eventTitle &&
   left.workshopAccentColor === right.workshopAccentColor &&
+  left.workshopBackgroundImageUrl === right.workshopBackgroundImageUrl &&
   left.workshopBadge === right.workshopBadge &&
   left.workshopTitle === right.workshopTitle &&
   left.workshopHighlight === right.workshopHighlight &&
@@ -225,6 +226,7 @@ export const parseEditorStateCandidate = (
     workshopAccentColor:
       (parsed.workshopAccentColor as WorkshopAccentColor | undefined) ??
       initialEditorState.workshopAccentColor,
+    workshopBackgroundImageUrl: parsed.workshopBackgroundImageUrl ?? '',
     workshopBadge: parsed.workshopBadge ?? initialEditorState.workshopBadge,
     workshopTitle: parsed.workshopTitle ?? initialEditorState.workshopTitle,
     workshopHighlight: parsed.workshopHighlight ?? initialEditorState.workshopHighlight,

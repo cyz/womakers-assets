@@ -6,8 +6,10 @@ import { QuoteCard } from '../../components/QuoteCard'
 type QuotePreviewProps = {
   hasSecondSlide: boolean
   isExporting: boolean
+  showDownloadControls?: boolean
   onDownloadFrame: (frameElement: HTMLDivElement | null, fileNameSuffix: string) => void
   primaryPreviewFrameRef: RefObject<HTMLDivElement | null>
+  isStoriesPlatform: boolean
   previewStyle: CSSProperties
   primaryQuoteHtml: string
   quoteDisplayName: string
@@ -22,8 +24,10 @@ type QuotePreviewProps = {
 export function QuotePreview({
   hasSecondSlide,
   isExporting,
+  showDownloadControls = true,
   onDownloadFrame,
   primaryPreviewFrameRef,
+  isStoriesPlatform,
   previewStyle,
   primaryQuoteHtml,
   quoteDisplayName,
@@ -40,7 +44,7 @@ export function QuotePreview({
   return (
     <div className="quote-preview-stack" aria-label="Imagens da citação">
       <article className="quote-preview-panel">
-        {hasSecondSlide ? (
+        {showDownloadControls && hasSecondSlide ? (
           <div className="quote-preview-panel-toolbar">
             <div>
               <p className="toolbar-kicker">Imagem 1</p>
@@ -59,7 +63,7 @@ export function QuotePreview({
         ) : null}
 
         <div
-          className={`preview-frame theme-${selectedTheme.toLowerCase()} is-quote-layout is-quote-primary-frame`}
+          className={`preview-frame theme-${selectedTheme.toLowerCase()} is-quote-layout is-quote-primary-frame ${isStoriesPlatform ? 'is-stories-platform' : ''}`}
           style={previewStyle}
           ref={primaryPreviewFrameRef}
         >
@@ -97,7 +101,7 @@ export function QuotePreview({
         </div>
       </article>
 
-      {hasSecondSlide ? (
+        {showDownloadControls && hasSecondSlide ? (
         <article className="quote-preview-panel">
           <div className="quote-preview-panel-toolbar">
             <div>
@@ -116,7 +120,7 @@ export function QuotePreview({
           </div>
 
           <div
-            className={`preview-frame theme-${selectedTheme.toLowerCase()} is-quote-layout is-quote-secondary-frame`}
+            className={`preview-frame theme-${selectedTheme.toLowerCase()} is-quote-layout is-quote-secondary-frame ${isStoriesPlatform ? 'is-stories-platform' : ''}`}
             style={previewStyle}
             ref={quoteSecondaryPreviewFrameRef}
           >

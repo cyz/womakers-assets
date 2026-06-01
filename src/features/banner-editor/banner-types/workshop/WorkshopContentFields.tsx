@@ -3,6 +3,7 @@ import { workshopAccentColors, type WorkshopAccentColor } from '../../model'
 type WorkshopContentFieldsProps = {
   isDualSpeaker: boolean
   onWorkshopAccentColorChange: (value: WorkshopAccentColor) => void
+  onWorkshopBackgroundImageChange: (value: string) => void
   onWorkshopBadgeChange: (value: string) => void
   onWorkshopBulletOneChange: (value: string) => void
   onWorkshopBulletThreeChange: (value: string) => void
@@ -15,6 +16,7 @@ type WorkshopContentFieldsProps = {
   onWorkshopHighlightChange: (value: string) => void
   onWorkshopTitleChange: (value: string) => void
   workshopAccentColor: WorkshopAccentColor
+  workshopBackgroundImageUrl: string
   workshopBadge: string
   workshopBulletOne: string
   workshopBulletThree: string
@@ -31,6 +33,7 @@ type WorkshopContentFieldsProps = {
 export function WorkshopContentFields({
   isDualSpeaker,
   onWorkshopAccentColorChange,
+  onWorkshopBackgroundImageChange,
   onWorkshopBadgeChange,
   onWorkshopBulletOneChange,
   onWorkshopBulletThreeChange,
@@ -43,6 +46,7 @@ export function WorkshopContentFields({
   onWorkshopHighlightChange,
   onWorkshopTitleChange,
   workshopAccentColor,
+  workshopBackgroundImageUrl,
   workshopBadge,
   workshopBulletOne,
   workshopBulletThree,
@@ -55,6 +59,8 @@ export function WorkshopContentFields({
   workshopHighlight,
   workshopTitle,
 }: WorkshopContentFieldsProps) {
+  const workshopBackgroundAssetUrl = `${import.meta.env.BASE_URL}src/assets/themes/fundo.png`
+
   return (
     <>
       <label className="field-label" htmlFor="workshop-badge">
@@ -107,6 +113,18 @@ export function WorkshopContentFields({
           ))}
         </div>
       </fieldset>
+
+      <label className="field-label" htmlFor="workshop-background-image">
+        Fundo do banner
+      </label>
+      <select
+        id="workshop-background-image"
+        value={workshopBackgroundImageUrl}
+        onChange={(event) => onWorkshopBackgroundImageChange(event.target.value)}
+      >
+        <option value="">Padrão</option>
+        <option value={workshopBackgroundAssetUrl}>fundo.png</option>
+      </select>
 
       {!isDualSpeaker ? (
         <>

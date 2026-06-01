@@ -4,6 +4,7 @@ import { AppIcon } from '../../components/AppIcon'
 import { RichTextEditor } from '../../components/RichTextEditor'
 
 type QuoteEditorSectionsProps = {
+  isStoriesPlatform: boolean
   photoFeedback: string
   quoteBackgroundFeedback: string
   quoteBackgroundImageUrl: string
@@ -27,6 +28,7 @@ type QuoteEditorSectionsProps = {
 }
 
 export function QuoteEditorSections({
+  isStoriesPlatform,
   photoFeedback,
   quoteBackgroundFeedback,
   quoteBackgroundImageUrl,
@@ -74,22 +76,30 @@ export function QuoteEditorSections({
           Selecione um trecho e use o botão para aplicar negrito sem precisar editar HTML.
         </p>
 
-        <label className="field-label" htmlFor="quote-second-text">
-          Texto da segunda imagem
-        </label>
-        <RichTextEditor
-          editorClassName="quote-second-editor"
-          editorRef={quoteSecondEditorRef}
-          id="quote-second-text"
-          onBold={onQuoteSecondBold}
-          onInput={onQuoteSecondInput}
-          onPaste={onQuoteSecondPaste}
-          placeholder="Digite o depoimento completo para a segunda imagem"
-          toolbarLabel="Formatação da segunda imagem da citação"
-        />
-        <p className="field-hint">
-          Se preencher este campo, a preview passa a exibir uma segunda imagem com o texto completo centralizado.
-        </p>
+        {isStoriesPlatform ? (
+          <p className="field-hint">
+            No stories, usamos apenas a citação principal, sem uma segunda imagem separada.
+          </p>
+        ) : (
+          <>
+            <label className="field-label" htmlFor="quote-second-text">
+              Texto da segunda imagem
+            </label>
+            <RichTextEditor
+              editorClassName="quote-second-editor"
+              editorRef={quoteSecondEditorRef}
+              id="quote-second-text"
+              onBold={onQuoteSecondBold}
+              onInput={onQuoteSecondInput}
+              onPaste={onQuoteSecondPaste}
+              placeholder="Digite o depoimento completo para a segunda imagem"
+              toolbarLabel="Formatação da segunda imagem da citação"
+            />
+            <p className="field-hint">
+              Se preencher este campo, a preview passa a exibir uma segunda imagem com o texto completo centralizado.
+            </p>
+          </>
+        )}
       </section>
 
       <section className="control-section muted-card">
