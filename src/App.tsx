@@ -1555,10 +1555,10 @@ function App() {
             <span className="badge-icon" aria-hidden="true">
               <AppIcon name="spark" />
             </span>
-            <strong>WoMakers Social Assets</strong>
+            <strong>Social Assets</strong>
           </div>
           <div className="panel-hero">
-            <h1>Construa artes com menos esforço visual</h1>
+            <h1>WoMakersCode</h1>
             <p>
               Organize o conteúdo uma vez, mantenha a edição guiada e gere versões mais consistentes para Feed e Stories.
             </p>
