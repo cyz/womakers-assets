@@ -146,6 +146,9 @@ function App() {
   const quoteSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const articleSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const sponsorCarouselSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
+  const storiesQuoteSecondaryRef = useRef<HTMLDivElement | null>(null)
+  const storiesArticleSecondaryRef = useRef<HTMLDivElement | null>(null)
+  const storiesSponsorCarouselSecondaryRef = useRef<HTMLDivElement | null>(null)
   const quoteEditorRef = useRef<HTMLDivElement | null>(null)
   const quoteSecondEditorRef = useRef<HTMLDivElement | null>(null)
   const articleSecondEditorRef = useRef<HTMLDivElement | null>(null)
@@ -855,9 +858,12 @@ function App() {
 
   const renderPlatformPreview = (
     platform: (typeof previewPlatforms)[number],
-    showDownloadControls: boolean,
   ) => {
     const isStoriesPlatformForPreview = platform === 'Instagram Stories (1080x1920)'
+    const activePrimaryRef = isStoriesPlatformForPreview ? storiesPreviewFrameRef : primaryPreviewFrameRef
+    const activeQuoteSecondaryRef = isStoriesPlatformForPreview ? storiesQuoteSecondaryRef : quoteSecondaryPreviewFrameRef
+    const activeArticleSecondaryRef = isStoriesPlatformForPreview ? storiesArticleSecondaryRef : articleSecondaryPreviewFrameRef
+    const activeSponsorCarouselSecondaryRef = isStoriesPlatformForPreview ? storiesSponsorCarouselSecondaryRef : sponsorCarouselSecondaryPreviewFrameRef
     const presetForPreview = platformPresets[platform]
     const activeBannerModuleForPreview = getBannerTypeModule(selectedType)
     const quoteModuleForPreview = activeBannerModuleForPreview?.type === 'Quote' ? activeBannerModuleForPreview : null
@@ -926,20 +932,20 @@ function App() {
     const quoteSecondaryHtmlForPreview = renderRichText(quoteSecondText, quoteText || initialEditorState.quoteText).__html
 
     return (
-      <article className={`platform-preview-panel ${showDownloadControls ? '' : 'is-readonly'}`.trim()}>
+      <article className="platform-preview-panel">
         {quoteModuleForPreview && quoteDerivedStateForPreview ? (
           <quoteModuleForPreview.Preview
             hasSecondSlide={quoteDerivedStateForPreview.hasSecondSlide}
             isExporting={isExporting}
-            showDownloadControls={showDownloadControls}
+            showDownloadControls={true}
             isStoriesPlatform={isStoriesPlatformForPreview}
             onDownloadFrame={handleDownloadQuoteFrame}
-            primaryPreviewFrameRef={showDownloadControls ? primaryPreviewFrameRef : storiesPreviewFrameRef}
+            primaryPreviewFrameRef={activePrimaryRef}
             previewStyle={quoteDerivedStateForPreview.previewStyle}
             primaryQuoteHtml={quotePrimaryHtmlForPreview}
             quoteDisplayName={quoteDerivedStateForPreview.quoteDisplayName}
             quoteDisplayRole={quoteDerivedStateForPreview.quoteDisplayRole}
-            quoteSecondaryPreviewFrameRef={showDownloadControls ? quoteSecondaryPreviewFrameRef : storiesPreviewFrameRef}
+            quoteSecondaryPreviewFrameRef={activeQuoteSecondaryRef}
             secondaryQuoteHtml={quoteSecondaryHtmlForPreview}
             selectedTheme={selectedTheme}
             speakerImageUrl={speakerImageUrl}
@@ -948,8 +954,7 @@ function App() {
         ) : isArticleLayout ? (
           <div className="article-preview-stack" aria-label="Imagens do artigo">
             <article className="article-preview-panel">
-              {showDownloadControls ? (
-                <div className="article-preview-panel-toolbar">
+              <div className="article-preview-panel-toolbar">
                   <div>
                     <p className="toolbar-kicker">Imagem 1</p>
                     <p className="toolbar-copy">Download individual desta arte.</p>
@@ -957,19 +962,18 @@ function App() {
                   <button
                     type="button"
                     className="ghost-button"
-                    onClick={() => handleDownloadQuoteFrame(primaryPreviewFrameRef.current, 'imagem-1')}
+                    onClick={() => handleDownloadQuoteFrame(activePrimaryRef.current, 'imagem-1')}
                     disabled={isExporting}
                   >
                     <AppIcon name="download" className="button-icon" />
                     {isExporting ? 'Gerando...' : 'Baixar PNG'}
                   </button>
                 </div>
-              ) : null}
 
               <div
                 className={`preview-frame theme-${selectedTheme.toLowerCase()} is-article-layout is-article-primary-frame ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
                 style={previewStyleForPreview}
-                ref={showDownloadControls ? primaryPreviewFrameRef : storiesPreviewFrameRef}
+                ref={activePrimaryRef}
               >
                 <div className="preview-content">
                   <article className="article-slide article-slide-primary">
@@ -1024,8 +1028,7 @@ function App() {
             </article>
 
             <article className="article-preview-panel">
-              {showDownloadControls ? (
-                <div className="article-preview-panel-toolbar">
+              <div className="article-preview-panel-toolbar">
                   <div>
                     <p className="toolbar-kicker">Imagem 2</p>
                     <p className="toolbar-copy">Download individual desta arte.</p>
@@ -1033,19 +1036,18 @@ function App() {
                   <button
                     type="button"
                     className="ghost-button"
-                    onClick={() => handleDownloadQuoteFrame(articleSecondaryPreviewFrameRef.current, 'imagem-2')}
+                    onClick={() => handleDownloadQuoteFrame(activeArticleSecondaryRef.current, 'imagem-2')}
                     disabled={isExporting}
                   >
                     <AppIcon name="download" className="button-icon" />
                     {isExporting ? 'Gerando...' : 'Baixar PNG'}
                   </button>
                 </div>
-              ) : null}
 
               <div
                 className={`preview-frame theme-${selectedTheme.toLowerCase()} is-article-layout is-article-secondary-frame ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
                 style={previewStyleForPreview}
-                ref={showDownloadControls ? articleSecondaryPreviewFrameRef : storiesPreviewFrameRef}
+                ref={activeArticleSecondaryRef}
               >
                 <div className="preview-content">
                   <article className="article-slide article-slide-advice">
@@ -1079,8 +1081,7 @@ function App() {
         ) : isSponsorCarouselLayout ? (
           <div className="sponsor-carousel-preview-stack" aria-label="Imagens do patrocinador carousel">
             <article className="sponsor-carousel-preview-panel">
-              {showDownloadControls ? (
-                <div className="sponsor-carousel-preview-panel-toolbar">
+              <div className="sponsor-carousel-preview-panel-toolbar">
                   <div>
                     <p className="toolbar-kicker">Imagem 1</p>
                     <p className="toolbar-copy">Primeira arte do carousel com a logo do patrocinador.</p>
@@ -1088,19 +1089,18 @@ function App() {
                   <button
                     type="button"
                     className="ghost-button"
-                    onClick={() => handleDownloadQuoteFrame(primaryPreviewFrameRef.current, 'imagem-1')}
+                    onClick={() => handleDownloadQuoteFrame(activePrimaryRef.current, 'imagem-1')}
                     disabled={isExporting}
                   >
                     <AppIcon name="download" className="button-icon" />
                     {isExporting ? 'Gerando...' : 'Baixar PNG'}
                   </button>
                 </div>
-              ) : null}
 
               <div
                 className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketLayout ? 'is-pocket-sponsor' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
                 style={previewStyleForPreview}
-                ref={showDownloadControls ? primaryPreviewFrameRef : storiesPreviewFrameRef}
+                ref={activePrimaryRef}
               >
                 <div className="preview-content">
                   <header className="event-header">
@@ -1192,8 +1192,7 @@ function App() {
             </article>
 
             <article className="sponsor-carousel-preview-panel">
-              {showDownloadControls ? (
-                <div className="sponsor-carousel-preview-panel-toolbar">
+              <div className="sponsor-carousel-preview-panel-toolbar">
                   <div>
                     <p className="toolbar-kicker">Imagem 2</p>
                     <p className="toolbar-copy">Segunda arte do carousel com bloco estático, texto, imagem e CTA.</p>
@@ -1201,14 +1200,13 @@ function App() {
                   <button
                     type="button"
                     className="ghost-button"
-                    onClick={() => handleDownloadQuoteFrame(sponsorCarouselSecondaryPreviewFrameRef.current, 'imagem-2')}
+                    onClick={() => handleDownloadQuoteFrame(activeSponsorCarouselSecondaryRef.current, 'imagem-2')}
                     disabled={isExporting}
                   >
                     <AppIcon name="download" className="button-icon" />
                     {isExporting ? 'Gerando...' : 'Baixar PNG'}
                   </button>
                 </div>
-              ) : null}
 
               <div
                 className={`preview-frame theme-${selectedTheme.toLowerCase()} is-sponsor-carousel-secondary-frame ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
@@ -1217,7 +1215,7 @@ function App() {
                   backgroundImage: 'none',
                   backgroundColor: '#ffffff',
                 }}
-                ref={showDownloadControls ? sponsorCarouselSecondaryPreviewFrameRef : storiesPreviewFrameRef}
+                ref={activeSponsorCarouselSecondaryRef}
               >
                 <div className="preview-content">
                   <article className="sponsor-carousel-slide-secondary">
@@ -1270,17 +1268,34 @@ function App() {
             </article>
           </div>
         ) : liveModuleForPreview && liveDerivedStateForPreview ? (
-          <div
-            className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isLiveLayout ? 'is-live-layout' : ''} ${isOtherEventLayout && !isLiveLayout ? 'is-meetup-layout' : ''} ${isWorkshopLayout ? 'is-workshop-layout' : ''} ${isArticleLayout ? 'is-article-layout' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
-            style={liveDerivedStateForPreview.previewStyle}
-            ref={showDownloadControls ? primaryPreviewFrameRef : storiesPreviewFrameRef}
-          >
-            <div className="preview-content">
-              <liveModuleForPreview.Preview
+          <>
+            <div className="article-preview-panel-toolbar">
+              <div>
+                <p className="toolbar-kicker">Live</p>
+                <p className="toolbar-copy">Download desta arte.</p>
+              </div>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => handleDownloadQuoteFrame(activePrimaryRef.current, 'live')}
+                disabled={isExporting}
+              >
+                <AppIcon name="download" className="button-icon" />
+                {isExporting ? 'Gerando...' : 'Baixar PNG'}
+              </button>
+            </div>
+            <div
+              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isLiveLayout ? 'is-live-layout' : ''} ${isOtherEventLayout && !isLiveLayout ? 'is-meetup-layout' : ''} ${isWorkshopLayout ? 'is-workshop-layout' : ''} ${isArticleLayout ? 'is-article-layout' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
+              style={liveDerivedStateForPreview.previewStyle}
+              ref={activePrimaryRef}
+            >
+              <div className="preview-content">
+                <liveModuleForPreview.Preview
                 eventTitle={eventTitle}
                 eventDate={eventDate}
                 speakerName={speakerName}
                 speakerRole={speakerRole}
+                speakerTalk={speakerTalk}
                 speakerImageUrl={speakerImageUrl}
                 supportTextHtml={liveDerivedStateForPreview.supportText}
                 liveFooterLeftText={liveFooterLeftText}
@@ -1295,14 +1310,31 @@ function App() {
               />
             </div>
           </div>
+          </>
         ) : workshopModuleForPreview && workshopDerivedStateForPreview ? (
-          <div
-            className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isWorkshopLayout ? 'is-workshop-layout' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
-            style={workshopDerivedStateForPreview.previewStyle}
-            ref={showDownloadControls ? primaryPreviewFrameRef : storiesPreviewFrameRef}
-          >
-            <div className="preview-content">
-              <workshopModuleForPreview.Preview
+          <>
+            <div className="article-preview-panel-toolbar">
+              <div>
+                <p className="toolbar-kicker">Workshop</p>
+                <p className="toolbar-copy">Download desta arte.</p>
+              </div>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => handleDownloadQuoteFrame(activePrimaryRef.current, 'workshop')}
+                disabled={isExporting}
+              >
+                <AppIcon name="download" className="button-icon" />
+                {isExporting ? 'Gerando...' : 'Baixar PNG'}
+              </button>
+            </div>
+            <div
+              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isWorkshopLayout ? 'is-workshop-layout' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
+              style={workshopDerivedStateForPreview.previewStyle}
+              ref={activePrimaryRef}
+            >
+              <div className="preview-content">
+                <workshopModuleForPreview.Preview
                 isDualSpeaker={workshopDerivedStateForPreview.isDualSpeaker}
                 isStoriesPlatform={isStoriesPlatformForPreview}
                 speakerCards={workshopDerivedStateForPreview.speakerCards}
@@ -1319,12 +1351,29 @@ function App() {
               />
             </div>
           </div>
+          </>
         ) : (
-          <div
-            className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualLayout ? 'is-annual-layout' : ''} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isOtherEventLayout && !isLiveLayout ? 'is-meetup-layout' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
-            style={previewStyleForPreview}
-            ref={showDownloadControls ? primaryPreviewFrameRef : storiesPreviewFrameRef}
-          >
+          <>
+            <div className="article-preview-panel-toolbar">
+              <div>
+                <p className="toolbar-kicker">{selectedType}</p>
+                <p className="toolbar-copy">Download desta arte.</p>
+              </div>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => handleDownloadQuoteFrame(activePrimaryRef.current, selectedType.toLowerCase().replace(/\s+/g, '-'))}
+                disabled={isExporting}
+              >
+                <AppIcon name="download" className="button-icon" />
+                {isExporting ? 'Gerando...' : 'Baixar PNG'}
+              </button>
+            </div>
+            <div
+              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualLayout ? 'is-annual-layout' : ''} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isOtherEventLayout && !isLiveLayout ? 'is-meetup-layout' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
+              style={previewStyleForPreview}
+              ref={activePrimaryRef}
+            >
             <div className="preview-content">
               {!isOtherEventLayout ? (
                 <header className="event-header">
@@ -1464,6 +1513,7 @@ function App() {
               ) : null}
             </div>
           </div>
+          </>
         )}
       </article>
     )
@@ -2424,7 +2474,7 @@ function App() {
                     <p className="toolbar-copy">Formato 1080x1350, com download e exportação.</p>
                   </div>
                 </div>
-                {renderPlatformPreview(previewPlatforms[0], true)}
+                {renderPlatformPreview(previewPlatforms[0])}
               </section>
 
               <section className="platform-preview-section">
@@ -2435,7 +2485,7 @@ function App() {
                     <p className="toolbar-copy">Formato 1080x1920, mantendo o mesmo conteúdo.</p>
                   </div>
                 </div>
-                {renderPlatformPreview(previewPlatforms[1], false)}
+                {renderPlatformPreview(previewPlatforms[1])}
               </section>
             </div>
           )}

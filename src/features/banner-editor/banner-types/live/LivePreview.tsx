@@ -3,6 +3,7 @@ interface LivePreviewProps {
   eventDate: string
   speakerName: string
   speakerRole: string
+  speakerTalk: string
   speakerImageUrl: string
   supportTextHtml: string
   liveFooterLeftText: string
@@ -21,6 +22,7 @@ export function LivePreview({
   eventDate,
   speakerName,
   speakerRole,
+  speakerTalk,
   speakerImageUrl,
   supportTextHtml,
   liveFooterLeftText,
@@ -111,6 +113,7 @@ export function LivePreview({
           <div className="live-speaker-info-bar">
             <h3 className="live-speaker-name">{speakerName.trim() || 'Palestrante 1'}</h3>
             {speakerRole.trim() ? <p className="live-speaker-role">{speakerRole}</p> : null}
+            {speakerTalk.trim() ? <p className="live-speaker-talk">{speakerTalk.trim()}</p> : null}
           </div>
         </div>
 
