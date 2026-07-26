@@ -2,6 +2,8 @@ import type { ChangeEvent, ClipboardEvent, CSSProperties } from 'react'
 import { toPng } from 'html-to-image'
 import { useEffect, useRef, useState } from 'react'
 import { AppIcon } from './features/banner-editor/components/AppIcon'
+import { BannerSelector } from './features/banner-editor/components/BannerSelector'
+import { CollapsibleSection } from './features/banner-editor/components/CollapsibleSection'
 import { getBannerTypeModule } from './features/banner-editor/banner-types/registry'
 import { RichTextEditor } from './features/banner-editor/components/RichTextEditor'
 import { SavedBannersPage } from './features/banner-editor/components/SavedBannersPage'
@@ -17,14 +19,15 @@ import {
   type BannerOption,
   type EditorState,
   type MeetupLogoAsset,
+  type Platform,
   type SavedBannerAsset,
 } from './features/banner-editor/model'
 import {
   buildBannerFileName,
   createSavedBannerId,
   formatSavedAt,
+  bannerOptions,
   groupedBannerOptions,
-  comingSoonTypes,
   hasTypeVariations,
   isEditorStateEqual,
   isSponsorVariation,
@@ -52,10 +55,10 @@ const convertImageFileToDataUrl = async (file: File) => {
         return
       }
 
-      reject(new Error('Nao foi possivel ler a imagem selecionada.'))
+      reject(new Error('Não foi possível ler a imagem selecionada.'))
     }
 
-    reader.onerror = () => reject(new Error('Nao foi possivel ler a imagem selecionada.'))
+    reader.onerror = () => reject(new Error('Não foi possível ler a imagem selecionada.'))
     reader.readAsDataURL(file)
   })
 
@@ -63,7 +66,7 @@ const convertImageFileToDataUrl = async (file: File) => {
     const nextImage = new Image()
 
     nextImage.onload = () => resolve(nextImage)
-    nextImage.onerror = () => reject(new Error('Nao foi possivel processar a imagem selecionada.'))
+    nextImage.onerror = () => reject(new Error('Não foi possível processar a imagem selecionada.'))
     nextImage.src = fileDataUrl
   })
 
@@ -76,7 +79,7 @@ const convertImageFileToDataUrl = async (file: File) => {
   const context = canvas.getContext('2d')
 
   if (!context) {
-    throw new Error('Nao foi possivel preparar a imagem para salvamento.')
+    throw new Error('Não foi possível preparar a imagem para salvamento.')
   }
 
   context.drawImage(image, 0, 0, canvas.width, canvas.height)
@@ -88,7 +91,7 @@ const optimizeSavedPreviewDataUrl = async (imageDataUrl: string) => {
     const nextImage = new Image()
 
     nextImage.onload = () => resolve(nextImage)
-    nextImage.onerror = () => reject(new Error('Nao foi possivel preparar a previa para salvamento.'))
+    nextImage.onerror = () => reject(new Error('Não foi possível preparar a prévia para salvamento.'))
     nextImage.src = imageDataUrl
   })
 
@@ -101,7 +104,7 @@ const optimizeSavedPreviewDataUrl = async (imageDataUrl: string) => {
   const context = canvas.getContext('2d')
 
   if (!context) {
-    throw new Error('Nao foi possivel preparar a previa para salvamento.')
+    throw new Error('Não foi possível preparar a prévia para salvamento.')
   }
 
   context.drawImage(image, 0, 0, canvas.width, canvas.height)
@@ -115,19 +118,33 @@ const isStorageQuotaExceeded = (error: unknown) =>
   )
 
 function App() {
-  // Navegação baseada em hash: #home, #editor, #salvos
-  const getInitialScreen = () => {
+  // Navegação baseada em hash: #editor, #salvos
+  const getInitialScreen = (): 'editor' | 'salvos' => {
     if (window.location.hash === '#salvos') return 'salvos'
-    if (window.location.hash === '#editor') return 'editor'
-    return 'home'
+    return 'editor'
   }
   const [screen, setScreen] = useState(getInitialScreen())
   const [editorState, setEditorState] = useState<EditorState>(() => loadSavedEditorState())
   const [undoStack, setUndoStack] = useState<EditorState[]>([])
   const [redoStack, setRedoStack] = useState<EditorState[]>([])
   const [isBannerMenuOpen, setIsBannerMenuOpen] = useState(false)
-  const [editorPane, setEditorPane] = useState<'conteudo' | 'midia' | 'saida'>('conteudo')
+  const [openSections, setOpenSections] = useState<Set<string>>(() => new Set(['conteudo', 'midia', 'saida']))
+  const isSectionOpen = (id: string) => openSections.has(id)
+  const toggleSection = (id: string) =>
+    setOpenSections((current) => {
+      const next = new Set(current)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
   const [isExporting, setIsExporting] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [hasSelectedType, setHasSelectedType] = useState(false)
+  const [zoom, setZoom] = useState(1)
+  const [previewFitWidth, setPreviewFitWidth] = useState<number | null>(null)
   const [savedBannerAssets, setSavedBannerAssets] = useState<SavedBannerAsset[]>(() => loadSavedBannerAssets())
   const [saveFeedback, setSaveFeedback] = useState('')
   const [photoFeedback, setPhotoFeedback] = useState('')
@@ -138,8 +155,11 @@ function App() {
   const [workshopPartnerLogoFeedback, setWorkshopPartnerLogoFeedback] = useState('')
   const [sponsorCarouselImageFeedback, setSponsorCarouselImageFeedback] = useState('')
   const [secondPhotoFeedback, setSecondPhotoFeedback] = useState('')
+  const [thirdPhotoFeedback, setThirdPhotoFeedback] = useState('')
+  const [fourthPhotoFeedback, setFourthPhotoFeedback] = useState('')
   const [livePartnerLogoFeedback, setLivePartnerLogoFeedback] = useState('')
   const bannerMenuRef = useRef<HTMLDivElement | null>(null)
+  const lastHistoryCaptureRef = useRef(0)
   const previewStageRef = useRef<HTMLElement | null>(null)
   const primaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const storiesPreviewFrameRef = useRef<HTMLDivElement | null>(null)
@@ -155,11 +175,6 @@ function App() {
   const sponsorCarouselLeadEditorRef = useRef<HTMLDivElement | null>(null)
   const sponsorCarouselBodyEditorRef = useRef<HTMLDivElement | null>(null)
   const selectedTheme = 'WoMakers'
-  const previewPlatforms = [
-    'Instagram Feed (1080x1350)',
-    'Instagram Stories (1080x1920)',
-  ] as const
-
   const {
     selectedType,
     selectedVariation,
@@ -170,8 +185,10 @@ function App() {
     workshopBadge,
     workshopTitle,
     workshopHighlight,
+    workshopHighlightColored,
     workshopBulletsIntro,
     workshopDescription,
+    workshopBulletCount,
     workshopBulletOne,
     workshopBulletTwo,
     workshopBulletThree,
@@ -179,9 +196,16 @@ function App() {
     workshopFooterLeftLineTwo,
     workshopFooterTag,
     workshopPartnerLogoUrl,
+    workshopSpeakerCount,
     workshopSecondSpeakerName,
     workshopSecondSpeakerRole,
     workshopSecondSpeakerImageUrl,
+    workshopThirdSpeakerName,
+    workshopThirdSpeakerRole,
+    workshopThirdSpeakerImageUrl,
+    workshopFourthSpeakerName,
+    workshopFourthSpeakerRole,
+    workshopFourthSpeakerImageUrl,
     meetupSupportText,
     meetupCta,
     eventCity,
@@ -349,7 +373,13 @@ function App() {
         return current
       }
 
-      setUndoStack((stack) => [...stack, current])
+      // Coalesce rapid edits (e.g. typing) into a single undo entry so the
+      // history stays word-level instead of per-keystroke.
+      const now = Date.now()
+      if (now - lastHistoryCaptureRef.current > 500) {
+        lastHistoryCaptureRef.current = now
+        setUndoStack((stack) => [...stack, current])
+      }
       setRedoStack([])
       setSaveFeedback('')
       return next
@@ -379,6 +409,8 @@ function App() {
       | 'meetupBackgroundImageUrl'
       | 'workshopPartnerLogoUrl'
       | 'workshopSecondSpeakerImageUrl'
+      | 'workshopThirdSpeakerImageUrl'
+      | 'workshopFourthSpeakerImageUrl'
       | 'meetupPartnerLogoPrimaryUrl'
       | 'meetupPartnerLogoSecondaryUrl'
       | 'liveSecondSpeakerImageUrl'
@@ -400,7 +432,7 @@ function App() {
     }
 
     if (file.size > MAX_IMAGE_FILE_SIZE) {
-      setFeedback('A imagem deve ter no maximo 8 MB.')
+      setFeedback('A imagem deve ter no máximo 8 MB.')
       event.target.value = ''
       return
     }
@@ -411,7 +443,7 @@ function App() {
       setFeedback(`${successMessage}: ${file.name}`)
     } catch (error) {
       setFeedback(
-        error instanceof Error ? error.message : 'Nao foi possivel carregar a foto selecionada.',
+        error instanceof Error ? error.message : 'Não foi possível carregar a foto selecionada.',
       )
     }
 
@@ -428,6 +460,24 @@ function App() {
       'workshopSecondSpeakerImageUrl',
       setSecondPhotoFeedback,
       'Segunda foto carregada',
+    )
+  }
+
+  const handleThirdSpeakerPhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    await uploadEditorImage(
+      event,
+      'workshopThirdSpeakerImageUrl',
+      setThirdPhotoFeedback,
+      'Terceira foto carregada',
+    )
+  }
+
+  const handleFourthSpeakerPhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    await uploadEditorImage(
+      event,
+      'workshopFourthSpeakerImageUrl',
+      setFourthPhotoFeedback,
+      'Quarta foto carregada',
     )
   }
 
@@ -475,6 +525,16 @@ function App() {
   const handleRemoveSecondSpeakerPhoto = () => {
     updateField('workshopSecondSpeakerImageUrl', '')
     setSecondPhotoFeedback('Segunda foto removida.')
+  }
+
+  const handleRemoveThirdSpeakerPhoto = () => {
+    updateField('workshopThirdSpeakerImageUrl', '')
+    setThirdPhotoFeedback('Terceira foto removida.')
+  }
+
+  const handleRemoveFourthSpeakerPhoto = () => {
+    updateField('workshopFourthSpeakerImageUrl', '')
+    setFourthPhotoFeedback('Quarta foto removida.')
   }
 
   const handleRemoveSponsorLogo = () => {
@@ -540,7 +600,7 @@ function App() {
 
   const exportFrameImage = async (frameElement: HTMLDivElement | null) => {
     if (!frameElement) {
-      throw new Error('Nao foi possivel localizar a preview para exportacao.')
+      throw new Error('Não foi possível localizar a preview para exportação.')
     }
 
     const pixelRatio = Math.min(
@@ -554,7 +614,32 @@ function App() {
     })
   }
 
-  const exportCurrentBannerImage = async () => exportFrameImage(primaryPreviewFrameRef.current)
+  const exportCurrentBannerImage = async () => {
+    const isStories = editorState.selectedPlatform === 'Instagram Stories (1080x1920)'
+    return exportFrameImage(
+      isStories ? storiesPreviewFrameRef.current : primaryPreviewFrameRef.current,
+    )
+  }
+
+  const handleDownloadFocusedBanner = async () => {
+    setIsExporting(true)
+    try {
+      const isStories = editorState.selectedPlatform === 'Instagram Stories (1080x1920)'
+      const dataUrl = await exportCurrentBannerImage()
+      const fileName = buildBannerFileName(editorState).replace(
+        '.png',
+        isStories ? '-stories.png' : '-feed.png',
+      )
+      downloadImage(dataUrl, fileName)
+      setSaveFeedback('Download iniciado.')
+    } catch (error) {
+      setSaveFeedback(
+        error instanceof Error ? error.message : 'Não foi possível gerar o download da imagem.',
+      )
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const createSavedBannerAsset = async (): Promise<SavedBannerAsset> => {
     const previewImageDataUrl = await optimizeSavedPreviewDataUrl(await exportCurrentBannerImage())
@@ -584,7 +669,7 @@ function App() {
       }
     }
 
-    throw new Error('Nao foi possivel salvar a imagem no navegador porque o armazenamento local esta cheio.')
+    throw new Error('Não foi possível salvar a imagem no navegador porque o armazenamento local está cheio.')
   }
 
   const handleSaveVersion = async () => {
@@ -599,33 +684,14 @@ function App() {
       setSavedBannerAssets(persistedAssets)
       setSaveFeedback(
         persistedAssets.length < nextAssets.length
-          ? 'Imagem salva no navegador. Algumas versoes antigas foram removidas para liberar espaco.'
-          : 'Imagem e versao salvas no navegador.',
+          ? 'Imagem salva no navegador. Algumas versões antigas foram removidas para liberar espaço.'
+          : 'Imagem e versão salvas no navegador.',
       )
     } catch (error) {
       setSaveFeedback(
         error instanceof Error
           ? error.message
-          : 'Nao foi possivel salvar a imagem. Tente novamente.',
-      )
-    } finally {
-      setIsExporting(false)
-    }
-  }
-
-  const handleDownloadCurrentBanner = async () => {
-    setIsExporting(true)
-
-    try {
-      const fileName = buildBannerFileName(editorState)
-      const imageDataUrl = await exportCurrentBannerImage()
-      downloadImage(imageDataUrl, fileName)
-      setSaveFeedback('Download iniciado.')
-    } catch (error) {
-      setSaveFeedback(
-        error instanceof Error
-          ? error.message
-          : 'Nao foi possivel gerar o download da imagem.',
+          : 'Não foi possível salvar a imagem. Tente novamente.',
       )
     } finally {
       setIsExporting(false)
@@ -647,15 +713,15 @@ function App() {
       setSaveFeedback(
         error instanceof Error
           ? error.message
-          : 'Nao foi possivel gerar o download da imagem.',
+          : 'Não foi possível gerar o download da imagem.',
       )
     } finally {
       setIsExporting(false)
     }
   }
 
-  const navigateTo = (nextScreen: 'home' | 'editor' | 'salvos') => {
-    const nextHash = nextScreen === 'home' ? '#home' : nextScreen === 'editor' ? '#editor' : '#salvos'
+  const navigateTo = (nextScreen: 'editor' | 'salvos') => {
+    const nextHash = nextScreen === 'salvos' ? '#salvos' : '#editor'
 
     if (window.location.hash !== nextHash) {
       window.location.assign(nextHash)
@@ -664,14 +730,45 @@ function App() {
     setScreen(nextScreen)
   }
 
-  const goHome = () => navigateTo('home')
   const goEditor = () => navigateTo('editor')
   const goSalvos = () => navigateTo('salvos')
 
+  const zoomIn = () => setZoom((value) => Math.min(2, Math.round((value + 0.1) * 10) / 10))
+  const zoomOut = () => setZoom((value) => Math.max(0.4, Math.round((value - 0.1) * 10) / 10))
+  const zoomFit = () => setZoom(1)
+
+  useEffect(() => {
+    const stage = previewStageRef.current
+    if (!stage || !hasSelectedType) {
+      return
+    }
+
+    const preset = platformPresets[selectedPlatform]
+    const aspect = preset.width / preset.height
+
+    const recompute = () => {
+      const styles = window.getComputedStyle(stage)
+      const paddingX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight)
+      const paddingY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom)
+      // Reserve horizontal room for the lateral zoom bar and vertical room for
+      // the per-frame download row so the whole banner always stays visible.
+      const availableWidth = stage.clientWidth - paddingX - 76
+      const availableHeight = stage.clientHeight - paddingY - 56
+      const widthFromHeight = availableHeight * aspect
+      const nextWidth = Math.max(220, Math.min(760, availableWidth, widthFromHeight))
+      setPreviewFitWidth(Number.isFinite(nextWidth) ? nextWidth : null)
+    }
+
+    recompute()
+    const observer = new ResizeObserver(recompute)
+    observer.observe(stage)
+    return () => observer.disconnect()
+  }, [hasSelectedType, selectedType, selectedVariation, selectedPlatform])
+
   const handleRestoreSavedBanner = (asset: SavedBannerAsset) => {
     commitState(normalizeEditorState(asset.editorState))
-    setSaveFeedback(`Versao restaurada de ${formatSavedAt(asset.savedAt)}.`)
-    setEditorPane('conteudo')
+    setHasSelectedType(true)
+    setSaveFeedback(`Versão restaurada de ${formatSavedAt(asset.savedAt)}.`)
     goEditor()
   }
 
@@ -694,7 +791,7 @@ function App() {
     })
 
     setIsBannerMenuOpen(false)
-    setEditorPane('conteudo')
+    setHasSelectedType(true)
     goEditor()
   }
 
@@ -716,8 +813,8 @@ function App() {
     setUndoStack((stack) => [...stack, editorState])
     setRedoStack([])
     setEditorState(initialEditorState)
+    setHasSelectedType(false)
     setIsBannerMenuOpen(false)
-    setEditorPane('conteudo')
     setPhotoFeedback('')
     setSponsorFeedback('')
     setQuoteBackgroundFeedback('')
@@ -780,6 +877,13 @@ function App() {
   const hasSponsorCarouselCta = sponsorCarouselCta.trim().length > 0
 
   const preset = platformPresets[selectedPlatform]
+  const selectedBannerOption =
+    bannerOptions.find(
+      (option) =>
+        option.type === selectedType &&
+        option.variation === selectedVariation &&
+        option.platform === selectedPlatform,
+    ) ?? bannerOptions[0]
   const isStoriesPlatform = selectedPlatform === 'Instagram Stories (1080x1920)'
   const activeBannerModule = getBannerTypeModule(selectedType)
   const quoteModule = activeBannerModule?.type === 'Quote' ? activeBannerModule : null
@@ -810,7 +914,6 @@ function App() {
       ? articleSecondText
       : articleAdviceDefaults.text
   const articleAdviceKeyword = articleSecondKeyword.trim() || articleAdviceDefaults.keyword
-  const hasIsolatedPreviewPanels = true
 
   const meetupPhotoSectionStyle = {
     backgroundImage: meetupBackgroundImageUrl
@@ -857,7 +960,7 @@ function App() {
     .join('')
 
   const renderPlatformPreview = (
-    platform: (typeof previewPlatforms)[number],
+    platform: Platform,
   ) => {
     const isStoriesPlatformForPreview = platform === 'Instagram Stories (1080x1920)'
     const activePrimaryRef = isStoriesPlatformForPreview ? storiesPreviewFrameRef : primaryPreviewFrameRef
@@ -890,6 +993,7 @@ function App() {
           workshopAccentColor,
           workshopBackgroundImageUrl,
           workshopBadge,
+          workshopBulletCount,
           workshopBulletOne,
           workshopBulletThree,
           workshopBulletTwo,
@@ -899,10 +1003,18 @@ function App() {
           workshopFooterLeftLineTwo,
           workshopFooterTag,
           workshopHighlight,
+          workshopHighlightColored,
           workshopPartnerLogoUrl,
+          workshopSpeakerCount,
           workshopSecondSpeakerImageUrl,
           workshopSecondSpeakerName,
           workshopSecondSpeakerRole,
+          workshopThirdSpeakerImageUrl,
+          workshopThirdSpeakerName,
+          workshopThirdSpeakerRole,
+          workshopFourthSpeakerImageUrl,
+          workshopFourthSpeakerName,
+          workshopFourthSpeakerRole,
           workshopTitle,
         })
       : null
@@ -1346,6 +1458,7 @@ function App() {
                 workshopFooterLeftLineTwo={workshopDerivedStateForPreview.workshopFooterLeftLineTwo}
                 workshopFooterTag={workshopDerivedStateForPreview.workshopFooterTag}
                 workshopHighlight={workshopDerivedStateForPreview.workshopHighlight}
+                workshopHighlightColored={workshopDerivedStateForPreview.workshopHighlightColored}
                 workshopPartnerLogoUrl={workshopDerivedStateForPreview.workshopPartnerLogoUrl}
                 workshopTitle={workshopDerivedStateForPreview.workshopTitle}
               />
@@ -1575,14 +1688,6 @@ function App() {
     syncRichEditorState(field, editor)
   }
 
-  const showInitialBannerChooser = screen === 'home'
-  const initialBannerTypeOptions = groupedBannerOptions
-    .flatMap((group) => group.options)
-    .filter(
-      (option, index, options) =>
-        index === options.findIndex((candidate) => candidate.type === option.type && candidate.variation === option.variation),
-    )
-
   // Renderização condicional por tela
   if (screen === 'salvos') {
     return (
@@ -1591,91 +1696,78 @@ function App() {
           banners={savedBannerAssets}
           onEdit={handleEditSavedBanner}
           onDelete={handleDeleteSavedBanner}
-          onBack={goHome}
+          onBack={goEditor}
         />
       </div>
     )
   }
   // Home/editor
   return (
-    <div className="app-shell">
-      <aside className={`control-panel ${showInitialBannerChooser ? 'is-chooser-mode' : ''}`.trim()}>
-        <div className="panel-header">
-          <div className="panel-badge">
-            <span className="badge-icon" aria-hidden="true">
-              <AppIcon name="spark" />
-            </span>
-            <strong>Social Assets</strong>
+    <div className="app-root">
+      <header className="app-topbar">
+        <button type="button" className="app-topbar-brand" onClick={goEditor} aria-label="Voltar para o editor">
+          <span className="app-topbar-logo" aria-hidden="true">
+            <AppIcon name="spark" />
+          </span>
+          <div className="app-topbar-brand-text">
+            <strong>WoMakersCode</strong>
+            <span>Social Assets</span>
           </div>
-          <div className="panel-hero">
-            <h1>WoMakersCode</h1>
-            <p>
-              Organize o conteúdo uma vez, mantenha a edição guiada e gere versões mais consistentes para Feed e Stories.
-            </p>
-          </div>
-          <div className="panel-quick-actions" aria-label="Atalhos de navegação">
-            <button type="button" className="ghost-button" onClick={goHome}>
-              <AppIcon name="layers" className="button-icon" />
-              Home
-            </button>
-            <button type="button" className="ghost-button" onClick={goSalvos}>
-              <AppIcon name="save" className="button-icon" />
-              Salvos
-            </button>
-          </div>
+        </button>
+        <div className="app-topbar-actions" aria-label="Ações">
+          <button
+            type="button"
+            className="app-topbar-icon-btn"
+            onClick={handleUndo}
+            disabled={!canUndo}
+            aria-label="Desfazer"
+            title="Desfazer"
+          >
+            <AppIcon name="undo" />
+          </button>
+          <button
+            type="button"
+            className="app-topbar-icon-btn"
+            onClick={handleRedo}
+            disabled={!canRedo}
+            aria-label="Refazer"
+            title="Refazer"
+          >
+            <AppIcon name="redo" />
+          </button>
+          <a
+            className="app-topbar-link"
+            href="https://github.com/cyz/womakers-assets"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Repositório no GitHub"
+            title="Repositório no GitHub"
+          >
+            <AppIcon name="github" />
+          </a>
+          <button type="button" className="app-topbar-pill" onClick={goSalvos}>
+            <AppIcon name="history" className="button-icon" />
+            Banners salvos
+          </button>
+        </div>
+      </header>
+      <div className={`app-shell ${sidebarCollapsed ? 'is-sidebar-collapsed' : ''}`.trim()}>
+      <aside className={`control-panel ${sidebarCollapsed ? 'is-collapsed' : ''}`.trim()}>
+        <div className="panel-collapse-row">
+          <button
+            type="button"
+            className="sidebar-collapse-btn"
+            onClick={() => setSidebarCollapsed((value) => !value)}
+            aria-pressed={sidebarCollapsed}
+            aria-label={sidebarCollapsed ? 'Expandir painel' : 'Recolher painel'}
+            title={sidebarCollapsed ? 'Expandir painel' : 'Recolher painel'}
+          >
+            <AppIcon name={sidebarCollapsed ? 'expand' : 'collapse'} />
+          </button>
+          <p className="panel-design-label">Design</p>
         </div>
 
-        <div className="panel-dashboard" aria-label="Resumo do editor">
-          <div className="panel-dashboard-card is-accent">
-            <p className="panel-dashboard-label">Formato ativo</p>
-            <strong className="panel-dashboard-value">{selectedType}</strong>
-            <span className="panel-dashboard-meta">
-              {hasTypeVariations(selectedType) ? selectedVariation : 'Versao unica'}
-            </span>
-          </div>
-          <div className="panel-dashboard-card">
-            <p className="panel-dashboard-label">Saida</p>
-            <strong className="panel-dashboard-value">Feed + Stories</strong>
-            <span className="panel-dashboard-meta">Preview sincronizado</span>
-          </div>
-        </div>
-
-        <nav className="editor-pane-tabs" aria-label="Etapas do editor">
-          <button
-            type="button"
-            className={`editor-pane-tab ${editorPane === 'conteudo' ? 'is-active' : ''}`.trim()}
-            aria-pressed={editorPane === 'conteudo'}
-            onClick={() => setEditorPane('conteudo')}
-          >
-            <span className="editor-pane-tab-step">1</span>
-            Conteudo
-          </button>
-          <button
-            type="button"
-            className={`editor-pane-tab ${editorPane === 'midia' ? 'is-active' : ''}`.trim()}
-            aria-pressed={editorPane === 'midia'}
-            onClick={() => setEditorPane('midia')}
-          >
-            <span className="editor-pane-tab-step">2</span>
-            Midia
-          </button>
-          <button
-            type="button"
-            className={`editor-pane-tab ${editorPane === 'saida' ? 'is-active' : ''}`.trim()}
-            aria-pressed={editorPane === 'saida'}
-            onClick={() => setEditorPane('saida')}
-          >
-            <span className="editor-pane-tab-step">3</span>
-            Saida
-          </button>
-        </nav>
-
-        <section className="control-section">
-          <p className="field-hint">
-            Escolha um tipo para continuar, depois cadastre o conteúdo uma única vez para Feed e Stories.
-          </p>
-        </section>
-
+        <div className="control-panel-scroll">
         <section className="control-section">
           <div className="section-heading">
             <span className="section-icon" aria-hidden="true">
@@ -1683,20 +1775,30 @@ function App() {
             </span>
             <p className="section-label">Formato</p>
           </div>
+          <BannerSelector
+            bannerMenuRef={bannerMenuRef}
+            groupedBannerOptions={groupedBannerOptions}
+            hasSelectedBannerOption={hasSelectedType}
+            isBannerMenuOpen={isBannerMenuOpen}
+            selectedBannerOption={selectedBannerOption}
+            onSelect={handleBannerSelect}
+            onToggle={() => setIsBannerMenuOpen((value) => !value)}
+          />
           <p className="field-hint">
-            O tipo selecionado gera versões para Feed e Stories. A edição abaixo atualiza os dois formatos.
+            {hasSelectedType
+              ? 'O tipo selecionado gera versões para Feed e Stories. A edição abaixo atualiza os dois formatos.'
+              : 'Escolha um tipo de banner para liberar os campos de edição.'}
           </p>
         </section>
 
-        {editorPane === 'conteudo' ? (
-          <section className="control-section muted-card">
-            <div className="section-heading">
-              <span className="section-icon" aria-hidden="true">
-                <AppIcon name="text" />
-              </span>
-              <p className="section-label">{isQuoteLayout ? 'Conteudo da citacao' : isArticleLayout ? 'Trecho do artigo' : isWorkshopLayout ? 'Conteudo do workshop' : 'Conteudo do evento'}</p>
-            </div>
-
+        {hasSelectedType ? (
+          <>
+        <CollapsibleSection
+          icon="text"
+          title={isQuoteLayout ? 'Conteúdo da citação' : isArticleLayout ? 'Trecho do artigo' : isWorkshopLayout ? 'Conteúdo do workshop' : 'Conteúdo do evento'}
+          open={isSectionOpen('conteudo')}
+          onToggle={() => toggleSection('conteudo')}
+        >
             {isQuoteLayout || isArticleLayout ? (
               <>
                 {quoteModule ? (
@@ -1755,6 +1857,7 @@ function App() {
                   onWorkshopAccentColorChange={(value) => updateField('workshopAccentColor', value)}
                   onWorkshopBackgroundImageChange={(value) => updateField('workshopBackgroundImageUrl', value)}
                   onWorkshopBadgeChange={(value) => updateField('workshopBadge', value)}
+                  onWorkshopBulletCountChange={(value) => updateField('workshopBulletCount', value)}
                   onWorkshopBulletOneChange={(value) => updateField('workshopBulletOne', value)}
                   onWorkshopBulletThreeChange={(value) => updateField('workshopBulletThree', value)}
                   onWorkshopBulletTwoChange={(value) => updateField('workshopBulletTwo', value)}
@@ -1764,10 +1867,12 @@ function App() {
                   onWorkshopFooterLeftLineTwoChange={(value) => updateField('workshopFooterLeftLineTwo', value)}
                   onWorkshopFooterTagChange={(value) => updateField('workshopFooterTag', value)}
                   onWorkshopHighlightChange={(value) => updateField('workshopHighlight', value)}
+                  onWorkshopHighlightColoredChange={(value) => updateField('workshopHighlightColored', value)}
                   onWorkshopTitleChange={(value) => updateField('workshopTitle', value)}
                   workshopAccentColor={workshopAccentColor}
                   workshopBackgroundImageUrl={workshopBackgroundImageUrl}
                   workshopBadge={workshopBadge}
+                  workshopBulletCount={workshopBulletCount}
                   workshopBulletOne={workshopBulletOne}
                   workshopBulletThree={workshopBulletThree}
                   workshopBulletTwo={workshopBulletTwo}
@@ -1777,6 +1882,7 @@ function App() {
                   workshopFooterLeftLineTwo={workshopFooterLeftLineTwo}
                   workshopFooterTag={workshopFooterTag}
                   workshopHighlight={workshopHighlight}
+                  workshopHighlightColored={workshopHighlightColored}
                   workshopTitle={workshopTitle}
                 />
               ) : null
@@ -1866,15 +1972,19 @@ function App() {
 
                 {isAnnualSpeakerLayout ? (
                   <>
-                    <label className="checkbox-field" htmlFor="annual-cta-toggle">
-                      <input
-                        id="annual-cta-toggle"
-                        type="checkbox"
-                        checked={showAnnualCta}
-                        onChange={(event) => updateField('showAnnualCta', event.target.checked)}
-                      />
+                    <button
+                      type="button"
+                      id="annual-cta-toggle"
+                      className="switch-field"
+                      role="switch"
+                      aria-checked={showAnnualCta}
+                      onClick={() => updateField('showAnnualCta', !showAnnualCta)}
+                    >
                       <span>Incluir CTA no rodapé do Encontro Anual</span>
-                    </label>
+                      <span className={`switch ${showAnnualCta ? 'is-on' : ''}`.trim()} aria-hidden="true">
+                        <span />
+                      </span>
+                    </button>
 
                     {showAnnualCta ? (
                       <>
@@ -1903,9 +2013,15 @@ function App() {
                 ) : null}
               </>
             )}
-          </section>
-        ) : editorPane === 'midia' ? (
-          quoteModule ? (
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          icon="image"
+          title="Mídia"
+          open={isSectionOpen('midia')}
+          onToggle={() => toggleSection('midia')}
+        >
+          {quoteModule ? (
             <quoteModule.MediaFields
               onQuoteBackgroundUpload={handleQuoteBackgroundUpload}
               onRemoveQuoteBackground={handleRemoveQuoteBackground}
@@ -1927,12 +2043,21 @@ function App() {
               onRemovePartnerLogo={handleRemoveWorkshopPartnerLogo}
               onRemoveSpeakerPhoto={handleRemoveSpeakerPhoto}
               onRemoveSecondSpeakerPhoto={handleRemoveSecondSpeakerPhoto}
+              onRemoveThirdSpeakerPhoto={handleRemoveThirdSpeakerPhoto}
+              onRemoveFourthSpeakerPhoto={handleRemoveFourthSpeakerPhoto}
+              onSpeakerCountChange={(value) => updateField('workshopSpeakerCount', value)}
               onSpeakerNameChange={(value) => updateField('speakerName', value)}
               onSpeakerPhotoUpload={handleSpeakerPhotoUpload}
               onSpeakerRoleChange={(value) => updateField('speakerRole', value)}
               onSecondSpeakerNameChange={(value) => updateField('workshopSecondSpeakerName', value)}
               onSecondSpeakerPhotoUpload={handleSecondSpeakerPhotoUpload}
               onSecondSpeakerRoleChange={(value) => updateField('workshopSecondSpeakerRole', value)}
+              onThirdSpeakerNameChange={(value) => updateField('workshopThirdSpeakerName', value)}
+              onThirdSpeakerPhotoUpload={handleThirdSpeakerPhotoUpload}
+              onThirdSpeakerRoleChange={(value) => updateField('workshopThirdSpeakerRole', value)}
+              onFourthSpeakerNameChange={(value) => updateField('workshopFourthSpeakerName', value)}
+              onFourthSpeakerPhotoUpload={handleFourthSpeakerPhotoUpload}
+              onFourthSpeakerRoleChange={(value) => updateField('workshopFourthSpeakerRole', value)}
               partnerLogoFeedback={workshopPartnerLogoFeedback}
               partnerLogoUrl={workshopPartnerLogoUrl}
               photoFeedback={photoFeedback}
@@ -1940,9 +2065,18 @@ function App() {
               secondSpeakerImageUrl={workshopSecondSpeakerImageUrl}
               secondSpeakerName={workshopSecondSpeakerName}
               secondSpeakerRole={workshopSecondSpeakerRole}
+              speakerCount={workshopSpeakerCount}
               speakerImageUrl={speakerImageUrl}
               speakerName={speakerName}
               speakerRole={speakerRole}
+              thirdPhotoFeedback={thirdPhotoFeedback}
+              thirdSpeakerImageUrl={workshopThirdSpeakerImageUrl}
+              thirdSpeakerName={workshopThirdSpeakerName}
+              thirdSpeakerRole={workshopThirdSpeakerRole}
+              fourthPhotoFeedback={fourthPhotoFeedback}
+              fourthSpeakerImageUrl={workshopFourthSpeakerImageUrl}
+              fourthSpeakerName={workshopFourthSpeakerName}
+              fourthSpeakerRole={workshopFourthSpeakerRole}
             />
           ) : isArticleLayout ? (
             <section className="control-section muted-card">
@@ -2004,7 +2138,7 @@ function App() {
               />
               <div className="photo-actions-row">
                 <p className="field-hint">
-                  Upload de imagem com ate 8 MB. Se ficar vazio, a preview usa um placeholder com iniciais.
+                  Upload de imagem com até 8 MB. Se ficar vazio, a preview usa um placeholder com iniciais.
                 </p>
                 {speakerImageUrl ? (
                   <button type="button" className="secondary-inline-action" onClick={handleRemoveSpeakerPhoto}>
@@ -2058,7 +2192,7 @@ function App() {
               />
               <div className="photo-actions-row">
                 <p className="field-hint">
-                  A imagem fica concentrada na faixa inferior do banner, com corte automatico para preencher a seção.
+                  A imagem fica concentrada na faixa inferior do banner, com corte automático para preencher a seção.
                 </p>
                 {meetupBackgroundImageUrl ? (
                   <button type="button" className="secondary-inline-action" onClick={handleRemoveMeetupBackground}>
@@ -2121,7 +2255,7 @@ function App() {
                 <span className="section-icon" aria-hidden="true">
                   <AppIcon name="image" />
                 </span>
-                <p className="section-label">Conteúdo do patrocinio</p>
+                <p className="section-label">Conteúdo do patrocínio</p>
               </div>
 
               <label className="field-label" htmlFor="sponsor-title">
@@ -2182,7 +2316,7 @@ function App() {
                       )
                     }
                     placeholder="Digite o texto 1 da segunda arte"
-                    toolbarLabel="Formatacao do texto 1 da segunda arte"
+                    toolbarLabel="Formatação do texto 1 da segunda arte"
                   />
 
                   <label className="field-label" htmlFor="sponsor-carousel-image-upload">
@@ -2233,7 +2367,7 @@ function App() {
                       )
                     }
                     placeholder="Digite o texto 2 da segunda arte"
-                    toolbarLabel="Formatacao do texto 2 da segunda arte"
+                    toolbarLabel="Formatação do texto 2 da segunda arte"
                   />
 
                   <label className="field-label" htmlFor="sponsor-carousel-cta">
@@ -2255,7 +2389,7 @@ function App() {
                 <span className="section-icon" aria-hidden="true">
                   <AppIcon name="image" />
                 </span>
-                <p className="section-label">Conteudo da palestrante</p>
+                <p className="section-label">Conteúdo da palestrante</p>
               </div>
 
               <label className="field-label" htmlFor="speaker-name">
@@ -2299,7 +2433,7 @@ function App() {
               />
               <div className="photo-actions-row">
                 <p className="field-hint">
-                  Upload de imagem com ate 8 MB. Se ficar vazio, a preview mostra um placeholder com iniciais.
+                  Upload de imagem com até 8 MB. Se ficar vazio, a preview mostra um placeholder com iniciais.
                 </p>
                 {speakerImageUrl ? (
                   <button type="button" className="secondary-inline-action" onClick={handleRemoveSpeakerPhoto}>
@@ -2309,15 +2443,15 @@ function App() {
               </div>
               {photoFeedback ? <p className="field-hint upload-feedback">{photoFeedback}</p> : null}
             </section>
-          )
-        ) : (
-          <section className="control-section muted-card">
-            <div className="section-heading">
-              <span className="section-icon" aria-hidden="true">
-                <AppIcon name="layers" />
-              </span>
-              <p className="section-label">Resumo de entrega</p>
-            </div>
+          )}
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          icon="layers"
+          title="Resumo de entrega"
+          open={isSectionOpen('saida')}
+          onToggle={() => toggleSection('saida')}
+        >
             <div className="summary-chips summary-chips-compact" aria-label="Resumo de publicação">
               <span>{selectedType}</span>
               {hasTypeVariations(selectedType) ? <span>{selectedVariation}</span> : null}
@@ -2327,171 +2461,127 @@ function App() {
             <p className="field-hint">
               Revise o preview ao lado e depois use as ações de exportação e salvamento abaixo para fechar a entrega.
             </p>
-          </section>
-        )}
-
-        <div className="panel-footer">
-          <button type="button" className="primary-action is-active" onClick={handleSaveVersion} disabled={isExporting}>
-            <AppIcon name="save" className="button-icon" />
-            <span>{isExporting ? 'Processando...' : 'Salvar versao'}</span>
-          </button>
-          <p className="footer-copy">
-            {saveFeedback || 'As imagens salvas ficam disponiveis na pagina Modelos salvos.'}
-          </p>
-        </div>
-      </aside>
-
-      <main className="preview-area">
-        <header className="preview-toolbar">
-          <div>
-            <p className="toolbar-kicker">{showInitialBannerChooser ? 'Começar' : 'Preview'}</p>
-            <p className="toolbar-copy">
-              {showInitialBannerChooser
-                ? 'Escolha um tipo de banner para preencher o seletor e abrir a edição.'
-                : `${selectedType}${hasTypeVariations(selectedType) ? ` · ${selectedVariation}` : ''} · Feed + Stories.`}
-            </p>
-            {!showInitialBannerChooser ? (
-              <div className="toolbar-chip-row" aria-label="Resumo da seleção">
-                <span className="toolbar-chip">{selectedType}</span>
-                {hasTypeVariations(selectedType) ? <span className="toolbar-chip">{selectedVariation}</span> : null}
-                <span className="toolbar-chip is-subtle">{selectedPlatform}</span>
-              </div>
-            ) : null}
+            <button
+              type="button"
+              className="primary-action is-active"
+              onClick={handleSaveVersion}
+              disabled={isExporting}
+            >
+              <AppIcon name="save" className="button-icon" />
+              {isExporting ? 'Processando...' : 'Salvar versão'}
+            </button>
+            {saveFeedback ? <p className="field-hint upload-feedback">{saveFeedback}</p> : null}
+        </CollapsibleSection>
+          </>
+        ) : (
+          <div className="sidebar-empty-hint">
+            <span className="sidebar-empty-icon" aria-hidden="true">
+              <AppIcon name="layout" />
+            </span>
+            <p>Selecione um tipo de banner acima para configurar o conteúdo, a mídia e a exportação.</p>
           </div>
-          <div className="toolbar-actions" aria-label="Preview actions">
-            {!showInitialBannerChooser && !hasIsolatedPreviewPanels ? (
+        )}
+        </div>
+
+        {hasSelectedType ? (
+          <div className="panel-footer">
+            <div className="panel-footer-row">
               <button
                 type="button"
-                className="ghost-button"
-                onClick={handleDownloadCurrentBanner}
+                className="ghost-button panel-footer-reset"
+                onClick={handleResetAll}
+                disabled={!canReset}
+              >
+                <AppIcon name="refresh" className="button-icon" />
+                Resetar
+              </button>
+              <button
+                type="button"
+                className="panel-footer-download"
+                onClick={handleDownloadFocusedBanner}
                 disabled={isExporting}
               >
                 <AppIcon name="download" className="button-icon" />
-                {isExporting ? 'Gerando...' : 'Baixar PNG'}
+                <span>{isExporting ? 'Gerando...' : 'Baixar'}</span>
               </button>
-            ) : null}
-            <button
-              type="button"
-              className="icon-button"
-              onClick={handleUndo}
-              disabled={!canUndo}
-              aria-label="Undo"
-              title="Undo"
-            >
-              <AppIcon name="undo" />
-            </button>
-            <button
-              type="button"
-              className="icon-button"
-              onClick={handleRedo}
-              disabled={!canRedo}
-              aria-label="Redo"
-              title="Redo"
-            >
-              <AppIcon name="redo" />
-            </button>
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={handleResetAll}
-              disabled={!canReset}
-            >
-              <AppIcon name="refresh" className="button-icon" />
-              Reset all
-            </button>
+            </div>
           </div>
-        </header>
+        ) : null}
+      </aside>
 
+      <main className="preview-area">
         <section
           ref={previewStageRef}
-          className={`preview-stage ${hasIsolatedPreviewPanels ? 'is-preview-stack' : ''}`.trim()}
+          className="preview-stage is-preview-stack"
+          style={{ '--preview-zoom': zoom } as CSSProperties}
           aria-label="Banner preview mockup"
         >
-          {showInitialBannerChooser ? (
-            <section className="banner-type-browser" aria-label="Tipos de banner disponíveis">
-              <div className="banner-type-browser-saved-link-row">
-                <button type="button" className="ghost-button banner-type-browser-saved-link" onClick={goSalvos}>
-                  <AppIcon name="save" className="button-icon" />
-                  Ver modelos salvos
-                </button>
-              </div>
-              {groupedBannerOptions.map((group) => {
-                  const groupTypeOptions = initialBannerTypeOptions.filter((option) =>
-                    group.options.some((groupOption) => groupOption.type === option.type)
-                  )
-
-                  // Adiciona tipos "em breve" para OUTROS EVENTOS
-                  const comingSoon =
-                    group.label === 'Outros eventos'
-                      ? comingSoonTypes.map((type) => ({ type, label: type }))
-                      : []
-
-                  if (groupTypeOptions.length === 0 && comingSoon.length === 0) {
-                    return null
-                  }
-
-                  return (
-                    <div key={group.label} className="banner-type-browser-group">
-                      <div className="banner-type-browser-heading">
-                        <p className="preview-topline">{group.label}</p>
-                        <p className="toolbar-copy">Selecione um tipo para gerar versões para Feed e Stories.</p>
-                      </div>
-                      <div className="banner-type-browser-grid">
-                        {groupTypeOptions.map((option) => (
-                          <button
-                            key={option.id}
-                            type="button"
-                            className="banner-type-card"
-                            onClick={() => handleBannerSelect(option)}
-                          >
-                            <span className="banner-type-card-topline">{group.label}</span>
-                            <strong className="banner-type-card-title">{option.type}</strong>
-                            <span className="banner-type-card-copy">
-                              {hasTypeVariations(option.type) ? `${option.variation} · Feed + Stories` : 'Feed + Stories'}
-                            </span>
-                            <span className="banner-type-card-meta">1080x1350 + 1080x1920</span>
-                          </button>
-                        ))}
-                        {comingSoon.length > 0 && comingSoon.map((item) => (
-                          <div key={item.type} className="banner-type-card is-coming-soon" aria-disabled="true">
-                            <span className="banner-type-card-topline">{group.label}</span>
-                            <strong className="banner-type-card-title">{item.label}</strong>
-                            <span className="banner-type-card-copy">Em breve</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
-            </section>
+          {hasSelectedType ? (
+            <div
+              className="platform-preview-stack"
+              style={previewFitWidth ? ({ width: `${previewFitWidth}px` } as CSSProperties) : undefined}
+            >
+              <section className="platform-preview-section">
+                {renderPlatformPreview(selectedPlatform)}
+              </section>
+            </div>
           ) : (
-            <div className="platform-preview-stack">
-              <section className="platform-preview-section">
-                <div className="platform-preview-section-header">
-                  <div>
-                    <p className="toolbar-kicker">Feed</p>
-                    <h3>Imagens do feed</h3>
-                    <p className="toolbar-copy">Formato 1080x1350, com download e exportação.</p>
-                  </div>
-                </div>
-                {renderPlatformPreview(previewPlatforms[0])}
-              </section>
-
-              <section className="platform-preview-section">
-                <div className="platform-preview-section-header">
-                  <div>
-                    <p className="toolbar-kicker">Stories</p>
-                    <h3>Ajuste para stories</h3>
-                    <p className="toolbar-copy">Formato 1080x1920, mantendo o mesmo conteúdo.</p>
-                  </div>
-                </div>
-                {renderPlatformPreview(previewPlatforms[1])}
-              </section>
+            <div className="preview-empty-state">
+              <span className="preview-empty-icon" aria-hidden="true">
+                <AppIcon name="layout" />
+              </span>
+              <h2>Escolha um tipo de banner</h2>
+              <p>Selecione um formato na barra lateral para visualizar e editar a arte por aqui.</p>
             </div>
           )}
         </section>
 
+        {hasSelectedType ? (
+          <div className="preview-zoom-toolbar" role="toolbar" aria-label="Zoom da preview">
+            <button
+              type="button"
+              className="preview-zoom-btn"
+              onClick={zoomIn}
+              disabled={zoom >= 2}
+              aria-label="Aproximar"
+              title="Aproximar"
+            >
+              <AppIcon name="zoomIn" />
+            </button>
+            <button
+              type="button"
+              className="preview-zoom-btn"
+              onClick={zoomOut}
+              disabled={zoom <= 0.4}
+              aria-label="Afastar"
+              title="Afastar"
+            >
+              <AppIcon name="zoomOut" />
+            </button>
+            <button
+              type="button"
+              className="preview-zoom-btn"
+              onClick={zoomFit}
+              aria-label="Ajustar zoom"
+              title="Ajustar zoom"
+            >
+              <AppIcon name="fit" />
+            </button>
+            <button
+              type="button"
+              className="preview-zoom-btn"
+              onClick={handleDownloadFocusedBanner}
+              disabled={isExporting}
+              aria-label="Baixar imagem atual"
+              title="Baixar imagem atual"
+            >
+              <AppIcon name="download" />
+            </button>
+        </div>
+        ) : null}
+
       </main>
+      </div>
     </div>
   )
 }

@@ -40,7 +40,7 @@ export function SavedBannersPage({ banners, onEdit, onDelete, onBack }: SavedBan
         {banners.length === 0 ? (
           <div className="saved-banners-empty-state">
             <p className="empty-message">Nenhum modelo salvo ainda.</p>
-            <p className="saved-banners-subtitle">Use o botao Salvar versao dentro do construtor para criar sua biblioteca.</p>
+            <p className="saved-banners-subtitle">Use o botão Salvar versão dentro do construtor para criar sua biblioteca.</p>
           </div>
         ) : (
           <div className="saved-banners-table" role="table" aria-label="Modelos salvos">

@@ -47,7 +47,7 @@ export function QuoteMediaFields({
       />
 
       <label className="field-label" htmlFor="quote-role">
-        Funcao
+        Função
       </label>
       <input
         id="quote-role"
@@ -67,7 +67,7 @@ export function QuoteMediaFields({
       />
       <div className="photo-actions-row">
         <p className="field-hint">
-          Upload de imagem com ate 8 MB. A foto aparece arredondada acima do bloco do depoimento.
+          Upload de imagem com até 8 MB. A foto aparece arredondada acima do bloco do depoimento.
         </p>
         {speakerImageUrl ? (
           <button type="button" className="secondary-inline-action" onClick={onRemoveSpeakerPhoto}>

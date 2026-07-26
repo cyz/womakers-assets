@@ -5,6 +5,7 @@ type WorkshopContentFieldsProps = {
   onWorkshopAccentColorChange: (value: WorkshopAccentColor) => void
   onWorkshopBackgroundImageChange: (value: string) => void
   onWorkshopBadgeChange: (value: string) => void
+  onWorkshopBulletCountChange: (value: number) => void
   onWorkshopBulletOneChange: (value: string) => void
   onWorkshopBulletThreeChange: (value: string) => void
   onWorkshopBulletTwoChange: (value: string) => void
@@ -14,10 +15,12 @@ type WorkshopContentFieldsProps = {
   onWorkshopFooterLeftLineTwoChange: (value: string) => void
   onWorkshopFooterTagChange: (value: string) => void
   onWorkshopHighlightChange: (value: string) => void
+  onWorkshopHighlightColoredChange: (value: boolean) => void
   onWorkshopTitleChange: (value: string) => void
   workshopAccentColor: WorkshopAccentColor
   workshopBackgroundImageUrl: string
   workshopBadge: string
+  workshopBulletCount: number
   workshopBulletOne: string
   workshopBulletThree: string
   workshopBulletTwo: string
@@ -27,6 +30,7 @@ type WorkshopContentFieldsProps = {
   workshopFooterLeftLineTwo: string
   workshopFooterTag: string
   workshopHighlight: string
+  workshopHighlightColored: boolean
   workshopTitle: string
 }
 
@@ -35,6 +39,7 @@ export function WorkshopContentFields({
   onWorkshopAccentColorChange,
   onWorkshopBackgroundImageChange,
   onWorkshopBadgeChange,
+  onWorkshopBulletCountChange,
   onWorkshopBulletOneChange,
   onWorkshopBulletThreeChange,
   onWorkshopBulletTwoChange,
@@ -44,10 +49,12 @@ export function WorkshopContentFields({
   onWorkshopFooterLeftLineTwoChange,
   onWorkshopFooterTagChange,
   onWorkshopHighlightChange,
+  onWorkshopHighlightColoredChange,
   onWorkshopTitleChange,
   workshopAccentColor,
   workshopBackgroundImageUrl,
   workshopBadge,
+  workshopBulletCount,
   workshopBulletOne,
   workshopBulletThree,
   workshopBulletTwo,
@@ -57,9 +64,32 @@ export function WorkshopContentFields({
   workshopFooterLeftLineTwo,
   workshopFooterTag,
   workshopHighlight,
+  workshopHighlightColored,
   workshopTitle,
 }: WorkshopContentFieldsProps) {
   const workshopBackgroundAssetUrl = `${import.meta.env.BASE_URL}src/assets/themes/fundo.png`
+  const bulletValues = [workshopBulletOne, workshopBulletTwo, workshopBulletThree]
+  const bulletChangeHandlers = [
+    onWorkshopBulletOneChange,
+    onWorkshopBulletTwoChange,
+    onWorkshopBulletThreeChange,
+  ]
+  const bulletCount = Math.min(Math.max(workshopBulletCount ?? 0, 0), 3)
+
+  const handleAddBullet = () => {
+    onWorkshopBulletCountChange(Math.min(bulletCount + 1, 3))
+  }
+
+  const handleRemoveBullet = (removeIndex: number) => {
+    const nextValues = bulletValues.filter((_, index) => index !== removeIndex)
+    nextValues.push('')
+    nextValues.forEach((value, index) => {
+      if (value !== bulletValues[index]) {
+        bulletChangeHandlers[index](value)
+      }
+    })
+    onWorkshopBulletCountChange(Math.max(bulletCount - 1, 0))
+  }
 
   return (
     <>
@@ -92,6 +122,20 @@ export function WorkshopContentFields({
         value={workshopHighlight}
         onChange={(event) => onWorkshopHighlightChange(event.target.value)}
       />
+
+      <button
+        type="button"
+        id="workshop-highlight-colored-toggle"
+        className="switch-field"
+        role="switch"
+        aria-checked={workshopHighlightColored}
+        onClick={() => onWorkshopHighlightColoredChange(!workshopHighlightColored)}
+      >
+        <span>Destaque colorido</span>
+        <span className={`switch ${workshopHighlightColored ? 'is-on' : ''}`.trim()} aria-hidden="true">
+          <span />
+        </span>
+      </button>
 
       <fieldset className="workshop-accent-picker">
         <legend className="field-label">Cor de destaque</legend>
@@ -152,35 +196,43 @@ export function WorkshopContentFields({
         </>
       ) : null}
 
-      <label className="field-label" htmlFor="workshop-bullet-one">
-        Bullet 1
-      </label>
-      <input
-        id="workshop-bullet-one"
-        type="text"
-        value={workshopBulletOne}
-        onChange={(event) => onWorkshopBulletOneChange(event.target.value)}
-      />
+      <div className="workshop-bullets-editor">
+        <p className="field-label">Bullets (até 3, máx. 100 caracteres)</p>
 
-      <label className="field-label" htmlFor="workshop-bullet-two">
-        Bullet 2
-      </label>
-      <input
-        id="workshop-bullet-two"
-        type="text"
-        value={workshopBulletTwo}
-        onChange={(event) => onWorkshopBulletTwoChange(event.target.value)}
-      />
+        {bulletValues.slice(0, bulletCount).map((value, index) => (
+          <div key={`workshop-bullet-${index}`} className="workshop-bullet-field">
+            <label className="field-label" htmlFor={`workshop-bullet-${index}`}>
+              Bullet {index + 1}
+            </label>
+            <div className="workshop-bullet-field-row">
+              <input
+                id={`workshop-bullet-${index}`}
+                type="text"
+                maxLength={100}
+                value={value}
+                onChange={(event) => bulletChangeHandlers[index](event.target.value)}
+              />
+              <button
+                type="button"
+                className="secondary-inline-action"
+                onClick={() => handleRemoveBullet(index)}
+              >
+                Remover
+              </button>
+            </div>
+          </div>
+        ))}
 
-      <label className="field-label" htmlFor="workshop-bullet-three">
-        Bullet 3
-      </label>
-      <input
-        id="workshop-bullet-three"
-        type="text"
-        value={workshopBulletThree}
-        onChange={(event) => onWorkshopBulletThreeChange(event.target.value)}
-      />
+        {bulletCount === 0 ? (
+          <p className="field-hint">Nenhum bullet adicionado.</p>
+        ) : null}
+
+        {bulletCount < 3 ? (
+          <button type="button" className="secondary-inline-action" onClick={handleAddBullet}>
+            Adicionar bullet
+          </button>
+        ) : null}
+      </div>
 
       <label className="field-label" htmlFor="workshop-footer-left-line-one">
         Rodapé esquerdo linha 1

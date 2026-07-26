@@ -57,7 +57,7 @@ export function QuoteEditorSections({
           <span className="section-icon" aria-hidden="true">
             <AppIcon name="text" />
           </span>
-          <p className="section-label">Conteudo da citacao</p>
+          <p className="section-label">Conteúdo da citação</p>
         </div>
 
         <label className="field-label" htmlFor="quote-text">
@@ -121,7 +121,7 @@ export function QuoteEditorSections({
         />
 
         <label className="field-label" htmlFor="quote-role">
-          Funcao
+          Função
         </label>
         <input
           id="quote-role"
@@ -141,7 +141,7 @@ export function QuoteEditorSections({
         />
         <div className="photo-actions-row">
           <p className="field-hint">
-            Upload de imagem com ate 8 MB. A foto aparece arredondada acima do bloco do depoimento.
+            Upload de imagem com até 8 MB. A foto aparece arredondada acima do bloco do depoimento.
           </p>
           {speakerImageUrl ? (
             <button type="button" className="secondary-inline-action" onClick={onRemoveSpeakerPhoto}>

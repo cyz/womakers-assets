@@ -37,25 +37,33 @@ export function LiveContentFields({
       />
 
       <div className="checkbox-group">
-        <label className="checkbox-field" htmlFor="live-support-bold">
-          <input
-            id="live-support-bold"
-            type="checkbox"
-            checked={liveSupportTextBold}
-            onChange={(event) => onLiveSupportTextBoldToggle(event.target.checked)}
-          />
+        <button
+          type="button"
+          id="live-support-bold"
+          className="switch-field"
+          role="switch"
+          aria-checked={liveSupportTextBold}
+          onClick={() => onLiveSupportTextBoldToggle(!liveSupportTextBold)}
+        >
           <span>Deixar em negrito</span>
-        </label>
+          <span className={`switch ${liveSupportTextBold ? 'is-on' : ''}`.trim()} aria-hidden="true">
+            <span />
+          </span>
+        </button>
 
-        <label className="checkbox-field" htmlFor="live-support-capslock">
-          <input
-            id="live-support-capslock"
-            type="checkbox"
-            checked={liveSupportTextCapslock}
-            onChange={(event) => onLiveSupportTextCapslockToggle(event.target.checked)}
-          />
+        <button
+          type="button"
+          id="live-support-capslock"
+          className="switch-field"
+          role="switch"
+          aria-checked={liveSupportTextCapslock}
+          onClick={() => onLiveSupportTextCapslockToggle(!liveSupportTextCapslock)}
+        >
           <span>Converter para MAIÚSCULA</span>
-        </label>
+          <span className={`switch ${liveSupportTextCapslock ? 'is-on' : ''}`.trim()} aria-hidden="true">
+            <span />
+          </span>
+        </button>
       </div>
 
       <label className="field-label" htmlFor="live-footer-left">

@@ -15,6 +15,7 @@ type WorkshopPreviewProps = {
   workshopFooterLeftLineTwo: string
   workshopFooterTag: string
   workshopHighlight: string
+  workshopHighlightColored: boolean
   workshopPartnerLogoUrl: string
   workshopTitle: string
 }
@@ -31,6 +32,7 @@ export function WorkshopPreview({
   workshopFooterLeftLineTwo,
   workshopFooterTag,
   workshopHighlight,
+  workshopHighlightColored,
   workshopPartnerLogoUrl,
   workshopTitle,
 }: WorkshopPreviewProps) {
@@ -45,7 +47,9 @@ export function WorkshopPreview({
         <div className="workshop-title-block">
           <h2 className="workshop-title">
             {workshopTitle}
-            {hasHighlight ? <span className="workshop-highlight"> {workshopHighlight}</span> : null}
+            {hasHighlight ? (
+              <span className={`workshop-highlight ${workshopHighlightColored ? '' : 'is-plain'}`}> {workshopHighlight}</span>
+            ) : null}
           </h2>
         </div>
       </header>
@@ -53,7 +57,7 @@ export function WorkshopPreview({
       {isDualSpeaker ? (
         <>
           <section className="workshop-speaker-section is-dual" aria-label="Palestrantes do workshop">
-            <div className="workshop-speaker-grid is-dual">
+            <div className={`workshop-speaker-grid is-dual count-${speakerCards.length}`}>
               {speakerCards.map((speaker) => (
                 <article key={`${speaker.name}-${speaker.role}`} className="workshop-speaker-card is-dual">
                   <div className="workshop-speaker-photo-shell">

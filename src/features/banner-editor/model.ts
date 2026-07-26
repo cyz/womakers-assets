@@ -57,8 +57,10 @@ export type EditorState = {
   workshopBadge: string
   workshopTitle: string
   workshopHighlight: string
+  workshopHighlightColored: boolean
   workshopBulletsIntro: string
   workshopDescription: string
+  workshopBulletCount: number
   workshopBulletOne: string
   workshopBulletTwo: string
   workshopBulletThree: string
@@ -66,9 +68,16 @@ export type EditorState = {
   workshopFooterLeftLineTwo: string
   workshopFooterTag: string
   workshopPartnerLogoUrl: string
+  workshopSpeakerCount: number
   workshopSecondSpeakerName: string
   workshopSecondSpeakerRole: string
   workshopSecondSpeakerImageUrl: string
+  workshopThirdSpeakerName: string
+  workshopThirdSpeakerRole: string
+  workshopThirdSpeakerImageUrl: string
+  workshopFourthSpeakerName: string
+  workshopFourthSpeakerRole: string
+  workshopFourthSpeakerImageUrl: string
   meetupHeadline: string
   meetupSupportText: string
   meetupCta: string
@@ -175,6 +184,10 @@ export const workshopPreviewDefaults = {
   speakerRole: 'Co-founder da mgmt.',
   secondSpeakerName: 'Segunda palestrante',
   secondSpeakerRole: 'Cargo da segunda palestrante',
+  thirdSpeakerName: 'Terceira palestrante',
+  thirdSpeakerRole: 'Cargo da terceira palestrante',
+  fourthSpeakerName: 'Quarta palestrante',
+  fourthSpeakerRole: 'Cargo da quarta palestrante',
 } as const
 
 export const initialEditorState: EditorState = {
@@ -187,8 +200,10 @@ export const initialEditorState: EditorState = {
   workshopBadge: workshopPreviewDefaults.badge,
   workshopTitle: workshopPreviewDefaults.title,
   workshopHighlight: workshopPreviewDefaults.highlight,
+  workshopHighlightColored: true,
   workshopBulletsIntro: workshopPreviewDefaults.bulletsIntro,
   workshopDescription: workshopPreviewDefaults.description,
+  workshopBulletCount: 3,
   workshopBulletOne: workshopPreviewDefaults.bulletOne,
   workshopBulletTwo: workshopPreviewDefaults.bulletTwo,
   workshopBulletThree: workshopPreviewDefaults.bulletThree,
@@ -196,9 +211,16 @@ export const initialEditorState: EditorState = {
   workshopFooterLeftLineTwo: workshopPreviewDefaults.footerLeftLineTwo,
   workshopFooterTag: workshopPreviewDefaults.footerTag,
   workshopPartnerLogoUrl: '',
+  workshopSpeakerCount: 2,
   workshopSecondSpeakerName: workshopPreviewDefaults.secondSpeakerName,
   workshopSecondSpeakerRole: workshopPreviewDefaults.secondSpeakerRole,
   workshopSecondSpeakerImageUrl: '',
+  workshopThirdSpeakerName: workshopPreviewDefaults.thirdSpeakerName,
+  workshopThirdSpeakerRole: workshopPreviewDefaults.thirdSpeakerRole,
+  workshopThirdSpeakerImageUrl: '',
+  workshopFourthSpeakerName: workshopPreviewDefaults.fourthSpeakerName,
+  workshopFourthSpeakerRole: workshopPreviewDefaults.fourthSpeakerRole,
+  workshopFourthSpeakerImageUrl: '',
   meetupHeadline: 'Presencial',
   meetupSupportText: '',
   meetupCta: 'Inscreva-se agora',

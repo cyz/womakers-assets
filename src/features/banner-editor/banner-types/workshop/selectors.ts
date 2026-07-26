@@ -21,6 +21,7 @@ type WorkshopDerivedStateArgs = {
   workshopAccentColor: WorkshopAccentColor
   workshopBackgroundImageUrl: string
   workshopBadge: string
+  workshopBulletCount: number
   workshopBulletOne: string
   workshopBulletThree: string
   workshopBulletTwo: string
@@ -30,10 +31,18 @@ type WorkshopDerivedStateArgs = {
   workshopFooterLeftLineTwo: string
   workshopFooterTag: string
   workshopHighlight: string
+  workshopHighlightColored: boolean
   workshopPartnerLogoUrl: string
+  workshopSpeakerCount: number
   workshopSecondSpeakerImageUrl: string
   workshopSecondSpeakerName: string
   workshopSecondSpeakerRole: string
+  workshopThirdSpeakerImageUrl: string
+  workshopThirdSpeakerName: string
+  workshopThirdSpeakerRole: string
+  workshopFourthSpeakerImageUrl: string
+  workshopFourthSpeakerName: string
+  workshopFourthSpeakerRole: string
   workshopTitle: string
 }
 
@@ -56,6 +65,7 @@ export type WorkshopDerivedState = {
   workshopFooterLeftLineTwo: string
   workshopFooterTag: string
   workshopHighlight: string
+  workshopHighlightColored: boolean
   workshopPartnerLogoUrl: string
   workshopTitle: string
 }
@@ -69,6 +79,7 @@ export const getWorkshopDerivedState = ({
   workshopAccentColor,
   workshopBackgroundImageUrl,
   workshopBadge,
+  workshopBulletCount,
   workshopBulletOne,
   workshopBulletThree,
   workshopBulletTwo,
@@ -78,10 +89,18 @@ export const getWorkshopDerivedState = ({
   workshopFooterLeftLineTwo,
   workshopFooterTag,
   workshopHighlight,
+  workshopHighlightColored,
   workshopPartnerLogoUrl,
+  workshopSpeakerCount,
   workshopSecondSpeakerImageUrl,
   workshopSecondSpeakerName,
   workshopSecondSpeakerRole,
+  workshopThirdSpeakerImageUrl,
+  workshopThirdSpeakerName,
+  workshopThirdSpeakerRole,
+  workshopFourthSpeakerImageUrl,
+  workshopFourthSpeakerName,
+  workshopFourthSpeakerRole,
   workshopTitle,
 }: WorkshopDerivedStateArgs): WorkshopDerivedState => {
   const accent = workshopAccentPalette[workshopAccentColor]
@@ -93,6 +112,14 @@ export const getWorkshopDerivedState = ({
     workshopSecondSpeakerName.trim() || workshopPreviewDefaults.secondSpeakerName
   const secondarySpeakerRole =
     workshopSecondSpeakerRole.trim() || workshopPreviewDefaults.secondSpeakerRole
+  const tertiarySpeakerName =
+    workshopThirdSpeakerName.trim() || workshopPreviewDefaults.thirdSpeakerName
+  const tertiarySpeakerRole =
+    workshopThirdSpeakerRole.trim() || workshopPreviewDefaults.thirdSpeakerRole
+  const quaternarySpeakerName =
+    workshopFourthSpeakerName.trim() || workshopPreviewDefaults.fourthSpeakerName
+  const quaternarySpeakerRole =
+    workshopFourthSpeakerRole.trim() || workshopPreviewDefaults.fourthSpeakerRole
   const buildInitials = (value: string) =>
     value
       .split(' ')
@@ -100,6 +127,26 @@ export const getWorkshopDerivedState = ({
       .slice(0, 2)
       .map((part) => part[0]?.toUpperCase())
       .join('')
+
+  const clampedSpeakerCount = Math.min(Math.max(workshopSpeakerCount ?? 2, 2), 4)
+  const additionalSpeakers = [
+    {
+      imageUrl: workshopSecondSpeakerImageUrl,
+      name: secondarySpeakerName,
+      role: secondarySpeakerRole,
+    },
+    {
+      imageUrl: workshopThirdSpeakerImageUrl,
+      name: tertiarySpeakerName,
+      role: tertiarySpeakerRole,
+    },
+    {
+      imageUrl: workshopFourthSpeakerImageUrl,
+      name: quaternarySpeakerName,
+      role: quaternarySpeakerRole,
+    },
+  ].slice(0, clampedSpeakerCount - 1)
+  const clampedBulletCount = Math.min(Math.max(workshopBulletCount ?? 0, 0), 3)
 
   return {
     previewStyle: {
@@ -123,30 +170,19 @@ export const getWorkshopDerivedState = ({
         role: primarySpeakerRole,
       },
       ...(isDualSpeaker
-        ? [
-            {
-              imageUrl: workshopSecondSpeakerImageUrl,
-              initials: buildInitials(secondarySpeakerName),
-              name: secondarySpeakerName,
-              role: secondarySpeakerRole,
-            },
-          ]
+        ? additionalSpeakers.map((speaker) => ({
+            imageUrl: speaker.imageUrl,
+            initials: buildInitials(speaker.name),
+            name: speaker.name,
+            role: speaker.role,
+          }))
         : []),
     ],
     workshopBadge: workshopBadge.trim() || workshopPreviewDefaults.badge,
-    workshopBullets: isDualSpeaker
-      ? [workshopBulletOne, workshopBulletTwo, workshopBulletThree]
-          .map((item) => item.trim())
-          .filter(Boolean)
-      : [workshopBulletOne, workshopBulletTwo, workshopBulletThree].map((item, index) => {
-          const fallback = [
-            workshopPreviewDefaults.bulletOne,
-            workshopPreviewDefaults.bulletTwo,
-            workshopPreviewDefaults.bulletThree,
-          ][index]
-
-          return item.trim() || fallback
-        }),
+    workshopBullets: [workshopBulletOne, workshopBulletTwo, workshopBulletThree]
+      .slice(0, clampedBulletCount)
+      .map((item) => item.trim())
+      .filter(Boolean),
     workshopBulletsIntro: workshopBulletsIntro.trim(),
     workshopDescription: workshopDescription.trim() || workshopPreviewDefaults.description,
     workshopFooterLeftLineOne:
@@ -155,6 +191,7 @@ export const getWorkshopDerivedState = ({
       workshopFooterLeftLineTwo.trim() || workshopPreviewDefaults.footerLeftLineTwo,
     workshopFooterTag: workshopFooterTag.trim() || workshopPreviewDefaults.footerTag,
     workshopHighlight: workshopHighlight.trim(),
+    workshopHighlightColored,
     workshopPartnerLogoUrl,
     workshopTitle: workshopTitle.trim() || workshopPreviewDefaults.title,
   }

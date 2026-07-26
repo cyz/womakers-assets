@@ -61,6 +61,28 @@ export const normalizeEditorState = (state: EditorState): EditorState => {
   return {
     ...state,
     workshopBulletsIntro: state.workshopBulletsIntro ?? initialEditorState.workshopBulletsIntro,
+    workshopHighlightColored:
+      typeof state.workshopHighlightColored === 'boolean'
+        ? state.workshopHighlightColored
+        : initialEditorState.workshopHighlightColored,
+    workshopBulletCount:
+      typeof state.workshopBulletCount === 'number'
+        ? state.workshopBulletCount
+        : initialEditorState.workshopBulletCount,
+    workshopSpeakerCount:
+      typeof state.workshopSpeakerCount === 'number'
+        ? state.workshopSpeakerCount
+        : initialEditorState.workshopSpeakerCount,
+    workshopThirdSpeakerName:
+      state.workshopThirdSpeakerName ?? initialEditorState.workshopThirdSpeakerName,
+    workshopThirdSpeakerRole:
+      state.workshopThirdSpeakerRole ?? initialEditorState.workshopThirdSpeakerRole,
+    workshopThirdSpeakerImageUrl: state.workshopThirdSpeakerImageUrl ?? '',
+    workshopFourthSpeakerName:
+      state.workshopFourthSpeakerName ?? initialEditorState.workshopFourthSpeakerName,
+    workshopFourthSpeakerRole:
+      state.workshopFourthSpeakerRole ?? initialEditorState.workshopFourthSpeakerRole,
+    workshopFourthSpeakerImageUrl: state.workshopFourthSpeakerImageUrl ?? '',
     selectedVariation: normalizedVariation && supportedVariations.includes(normalizedVariation)
       ? normalizedVariation
       : supportedVariations[0],
@@ -109,6 +131,45 @@ export const getBannerOptionGroupLabel = (type: ImageType) =>
   bannerOptionGroups.find((group) => group.types.some((groupType) => groupType === type))?.label ??
   type
 
+// Friendly, dropdown-only display names. The internal model keeps its original
+// type/variation identifiers; these only relabel what the user reads.
+const typeDisplayNames: Partial<Record<ImageType, string>> = {
+  'Encontro Anual': 'EMCT',
+  Quote: 'Frase',
+  Artigo: 'Newsletter',
+}
+
+export const getTypeDisplayName = (type: ImageType) => typeDisplayNames[type] ?? type
+
+const variationDisplayNames: Partial<Record<AssetVariation, string>> = {
+  'Patrocinador Carousel': 'Carousel Patrocinador',
+}
+
+export const getVariationDisplayName = (variation: AssetVariation) =>
+  variationDisplayNames[variation] ?? variation
+
+export const getPlatformShortLabel = (platform: Platform) =>
+  platform.includes('Stories') ? 'Stories' : 'Feed'
+
+// Per-option label shown inside a group. The group header already names the
+// event, so we only append what distinguishes options within it.
+export const getBannerOptionMenuName = (option: BannerOption) => {
+  const group = bannerOptionGroups.find((candidate) =>
+    candidate.types.some((groupType) => groupType === option.type),
+  )
+  const platformShort = getPlatformShortLabel(option.platform)
+
+  if (group && group.types.length > 1) {
+    return `${getTypeDisplayName(option.type)} · ${platformShort}`
+  }
+
+  if (hasTypeVariations(option.type)) {
+    return `${getVariationDisplayName(option.variation)} · ${platformShort}`
+  }
+
+  return platformShort
+}
+
 export const groupedBannerOptions = bannerOptionGroups.map((group) => ({
   label: group.label,
   options: bannerOptions.filter((option) =>
@@ -126,8 +187,10 @@ export const isEditorStateEqual = (left: EditorState, right: EditorState) =>
   left.workshopBadge === right.workshopBadge &&
   left.workshopTitle === right.workshopTitle &&
   left.workshopHighlight === right.workshopHighlight &&
+  left.workshopHighlightColored === right.workshopHighlightColored &&
   left.workshopBulletsIntro === right.workshopBulletsIntro &&
   left.workshopDescription === right.workshopDescription &&
+  left.workshopBulletCount === right.workshopBulletCount &&
   left.workshopBulletOne === right.workshopBulletOne &&
   left.workshopBulletTwo === right.workshopBulletTwo &&
   left.workshopBulletThree === right.workshopBulletThree &&
@@ -135,9 +198,16 @@ export const isEditorStateEqual = (left: EditorState, right: EditorState) =>
   left.workshopFooterLeftLineTwo === right.workshopFooterLeftLineTwo &&
   left.workshopFooterTag === right.workshopFooterTag &&
   left.workshopPartnerLogoUrl === right.workshopPartnerLogoUrl &&
+  left.workshopSpeakerCount === right.workshopSpeakerCount &&
   left.workshopSecondSpeakerName === right.workshopSecondSpeakerName &&
   left.workshopSecondSpeakerRole === right.workshopSecondSpeakerRole &&
   left.workshopSecondSpeakerImageUrl === right.workshopSecondSpeakerImageUrl &&
+  left.workshopThirdSpeakerName === right.workshopThirdSpeakerName &&
+  left.workshopThirdSpeakerRole === right.workshopThirdSpeakerRole &&
+  left.workshopThirdSpeakerImageUrl === right.workshopThirdSpeakerImageUrl &&
+  left.workshopFourthSpeakerName === right.workshopFourthSpeakerName &&
+  left.workshopFourthSpeakerRole === right.workshopFourthSpeakerRole &&
+  left.workshopFourthSpeakerImageUrl === right.workshopFourthSpeakerImageUrl &&
   left.meetupHeadline === right.meetupHeadline &&
   left.meetupSupportText === right.meetupSupportText &&
   left.meetupCta === right.meetupCta &&
@@ -230,8 +300,16 @@ export const parseEditorStateCandidate = (
     workshopBadge: parsed.workshopBadge ?? initialEditorState.workshopBadge,
     workshopTitle: parsed.workshopTitle ?? initialEditorState.workshopTitle,
     workshopHighlight: parsed.workshopHighlight ?? initialEditorState.workshopHighlight,
+    workshopHighlightColored:
+      typeof parsed.workshopHighlightColored === 'boolean'
+        ? parsed.workshopHighlightColored
+        : initialEditorState.workshopHighlightColored,
     workshopBulletsIntro: parsed.workshopBulletsIntro ?? initialEditorState.workshopBulletsIntro,
     workshopDescription: parsed.workshopDescription ?? initialEditorState.workshopDescription,
+    workshopBulletCount:
+      typeof parsed.workshopBulletCount === 'number'
+        ? parsed.workshopBulletCount
+        : initialEditorState.workshopBulletCount,
     workshopBulletOne: parsed.workshopBulletOne ?? initialEditorState.workshopBulletOne,
     workshopBulletTwo: parsed.workshopBulletTwo ?? initialEditorState.workshopBulletTwo,
     workshopBulletThree: parsed.workshopBulletThree ?? initialEditorState.workshopBulletThree,
@@ -241,11 +319,25 @@ export const parseEditorStateCandidate = (
       parsed.workshopFooterLeftLineTwo ?? initialEditorState.workshopFooterLeftLineTwo,
     workshopFooterTag: parsed.workshopFooterTag ?? initialEditorState.workshopFooterTag,
     workshopPartnerLogoUrl: parsed.workshopPartnerLogoUrl ?? '',
+    workshopSpeakerCount:
+      typeof parsed.workshopSpeakerCount === 'number'
+        ? parsed.workshopSpeakerCount
+        : initialEditorState.workshopSpeakerCount,
     workshopSecondSpeakerName:
       parsed.workshopSecondSpeakerName ?? initialEditorState.workshopSecondSpeakerName,
     workshopSecondSpeakerRole:
       parsed.workshopSecondSpeakerRole ?? initialEditorState.workshopSecondSpeakerRole,
     workshopSecondSpeakerImageUrl: parsed.workshopSecondSpeakerImageUrl ?? '',
+    workshopThirdSpeakerName:
+      parsed.workshopThirdSpeakerName ?? initialEditorState.workshopThirdSpeakerName,
+    workshopThirdSpeakerRole:
+      parsed.workshopThirdSpeakerRole ?? initialEditorState.workshopThirdSpeakerRole,
+    workshopThirdSpeakerImageUrl: parsed.workshopThirdSpeakerImageUrl ?? '',
+    workshopFourthSpeakerName:
+      parsed.workshopFourthSpeakerName ?? initialEditorState.workshopFourthSpeakerName,
+    workshopFourthSpeakerRole:
+      parsed.workshopFourthSpeakerRole ?? initialEditorState.workshopFourthSpeakerRole,
+    workshopFourthSpeakerImageUrl: parsed.workshopFourthSpeakerImageUrl ?? '',
     meetupHeadline: parsed.meetupHeadline ?? '',
     meetupSupportText: parsed.meetupSupportText ?? '',
     meetupCta: parsed.meetupCta ?? initialEditorState.meetupCta,
