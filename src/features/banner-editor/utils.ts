@@ -177,10 +177,14 @@ export const getBannerOptionMenuName = (option: BannerOption) => {
   return platformShort
 }
 
+const shouldHideSidebarOption = (option: BannerOption) =>
+  option.type === 'Encontro Pocket' && option.platform.includes('Stories')
+
 export const groupedBannerOptions = bannerOptionGroups.map((group) => ({
   label: group.label,
-  options: bannerOptions.filter((option) =>
-    group.types.some((groupType) => groupType === option.type),
+  options: bannerOptions.filter(
+    (option) =>
+      group.types.some((groupType) => groupType === option.type) && !shouldHideSidebarOption(option),
   ),
 }))
 
