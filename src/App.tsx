@@ -1,132 +1,48 @@
-import type { ChangeEvent, ClipboardEvent, CSSProperties } from 'react'
-import { toPng } from 'html-to-image'
+import type { CSSProperties } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { AppIcon } from './features/banner-editor/components/AppIcon'
-import { BannerSelector } from './features/banner-editor/components/BannerSelector'
-import { CollapsibleSection } from './features/banner-editor/components/CollapsibleSection'
-import { getBannerTypeModule } from './features/banner-editor/banner-types/registry'
-import { RichTextEditor } from './features/banner-editor/components/RichTextEditor'
-import { SavedBannersPage } from './features/banner-editor/components/SavedBannersPage'
 import {
-  MAX_IMAGE_FILE_SIZE,
-  MAX_SAVED_EXPORTED_IMAGES,
-  articleAdviceDefaults,
-  articlePreviewDefaults,
-  initialEditorState,
+  AppIcon,
+  BannerSelector,
+  CollapsibleSection,
+  PreviewZoomToolbar,
+  RichTextEditor,
+  SavedBannersPage,
+  Topbar,
+} from './features/banner-editor/components'
+import { getBannerTypeModule } from './features/banner-editor/banner-types/registry'
+import { useEditor } from './features/banner-editor/EditorContext'
+import { EditorProvider } from './features/banner-editor/EditorProvider'
+import { PlatformPreview } from './features/banner-editor/PlatformPreview'
+import {
+  useImageUpload,
+  useEditorExport,
+  useRichTextEditors,
+  useSyncContentEditable,
+} from './features/banner-editor/hooks'
+import {
   platformPresets,
-  SAVED_EDITOR_STATE_KEY,
   SAVED_EXPORTED_IMAGES_KEY,
   type BannerOption,
-  type EditorState,
-  type MeetupLogoAsset,
-  type Platform,
   type SavedBannerAsset,
 } from './features/banner-editor/model'
 import {
-  buildBannerFileName,
-  createSavedBannerId,
   formatSavedAt,
   bannerOptions,
   groupedBannerOptions,
   hasTypeVariations,
-  isEditorStateEqual,
   isSponsorVariation,
   loadSavedBannerAssets,
-  loadSavedEditorState,
   normalizeEditorState,
-  sanitizeQuoteHtml,
 } from './features/banner-editor/utils'
 import './App.css'
 
-const downloadImage = (imageDataUrl: string, fileName: string) => {
-  const link = document.createElement('a')
-  link.href = imageDataUrl
-  link.download = fileName
-  link.click()
-}
-
-const convertImageFileToDataUrl = async (file: File) => {
-  const fileDataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        resolve(reader.result)
-        return
-      }
-
-      reject(new Error('Não foi possível ler a imagem selecionada.'))
-    }
-
-    reader.onerror = () => reject(new Error('Não foi possível ler a imagem selecionada.'))
-    reader.readAsDataURL(file)
-  })
-
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const nextImage = new Image()
-
-    nextImage.onload = () => resolve(nextImage)
-    nextImage.onerror = () => reject(new Error('Não foi possível processar a imagem selecionada.'))
-    nextImage.src = fileDataUrl
-  })
-
-  const maxDimension = 1600
-  const scale = Math.min(1, maxDimension / Math.max(image.width, image.height))
-  const canvas = document.createElement('canvas')
-  canvas.width = Math.max(1, Math.round(image.width * scale))
-  canvas.height = Math.max(1, Math.round(image.height * scale))
-
-  const context = canvas.getContext('2d')
-
-  if (!context) {
-    throw new Error('Não foi possível preparar a imagem para salvamento.')
-  }
-
-  context.drawImage(image, 0, 0, canvas.width, canvas.height)
-  return canvas.toDataURL('image/webp', 0.88)
-}
-
-const optimizeSavedPreviewDataUrl = async (imageDataUrl: string) => {
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const nextImage = new Image()
-
-    nextImage.onload = () => resolve(nextImage)
-    nextImage.onerror = () => reject(new Error('Não foi possível preparar a prévia para salvamento.'))
-    nextImage.src = imageDataUrl
-  })
-
-  const maxWidth = 720
-  const scale = Math.min(1, maxWidth / Math.max(image.width, 1))
-  const canvas = document.createElement('canvas')
-  canvas.width = Math.max(1, Math.round(image.width * scale))
-  canvas.height = Math.max(1, Math.round(image.height * scale))
-
-  const context = canvas.getContext('2d')
-
-  if (!context) {
-    throw new Error('Não foi possível preparar a prévia para salvamento.')
-  }
-
-  context.drawImage(image, 0, 0, canvas.width, canvas.height)
-  return canvas.toDataURL('image/webp', 0.8)
-}
-
-const isStorageQuotaExceeded = (error: unknown) =>
-  error instanceof DOMException && (
-    error.name === 'QuotaExceededError' ||
-    error.name === 'NS_ERROR_DOM_QUOTA_REACHED'
-  )
-
-function App() {
+function EditorWorkspace() {
   // Navegação baseada em hash: #editor, #salvos
   const getInitialScreen = (): 'editor' | 'salvos' => {
     if (window.location.hash === '#salvos') return 'salvos'
     return 'editor'
   }
   const [screen, setScreen] = useState(getInitialScreen())
-  const [editorState, setEditorState] = useState<EditorState>(() => loadSavedEditorState())
-  const [undoStack, setUndoStack] = useState<EditorState[]>([])
-  const [redoStack, setRedoStack] = useState<EditorState[]>([])
   const [isBannerMenuOpen, setIsBannerMenuOpen] = useState(false)
   const [openSections, setOpenSections] = useState<Set<string>>(() => new Set(['conteudo', 'midia', 'saida']))
   const isSectionOpen = (id: string) => openSections.has(id)
@@ -146,20 +62,21 @@ function App() {
   const [zoom, setZoom] = useState(1)
   const [previewFitWidth, setPreviewFitWidth] = useState<number | null>(null)
   const [savedBannerAssets, setSavedBannerAssets] = useState<SavedBannerAsset[]>(() => loadSavedBannerAssets())
-  const [saveFeedback, setSaveFeedback] = useState('')
-  const [photoFeedback, setPhotoFeedback] = useState('')
-  const [sponsorFeedback, setSponsorFeedback] = useState('')
-  const [quoteBackgroundFeedback, setQuoteBackgroundFeedback] = useState('')
-  const [meetupBackgroundFeedback, setMeetupBackgroundFeedback] = useState('')
-  const [meetupLogoFeedback, setMeetupLogoFeedback] = useState('')
-  const [workshopPartnerLogoFeedback, setWorkshopPartnerLogoFeedback] = useState('')
-  const [sponsorCarouselImageFeedback, setSponsorCarouselImageFeedback] = useState('')
-  const [secondPhotoFeedback, setSecondPhotoFeedback] = useState('')
-  const [thirdPhotoFeedback, setThirdPhotoFeedback] = useState('')
-  const [fourthPhotoFeedback, setFourthPhotoFeedback] = useState('')
-  const [livePartnerLogoFeedback, setLivePartnerLogoFeedback] = useState('')
+  const {
+    feedback,
+    setFeedback,
+    clearFeedback,
+    editorState,
+    commitState,
+    updateField,
+    undo,
+    redo,
+    resetToInitial,
+    canUndo,
+    canRedo,
+    canReset,
+  } = useEditor()
   const bannerMenuRef = useRef<HTMLDivElement | null>(null)
-  const lastHistoryCaptureRef = useRef(0)
   const previewStageRef = useRef<HTMLElement | null>(null)
   const primaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const storiesPreviewFrameRef = useRef<HTMLDivElement | null>(null)
@@ -232,11 +149,6 @@ function App() {
     meetupBackgroundImageUrl,
     meetupPartnerLogoPrimaryUrl,
     meetupPartnerLogoSecondaryUrl,
-    liveSupportText,
-    liveSupportTextBold,
-    liveSupportTextCapslock,
-    liveFooterLeftText,
-    liveFooterRightText,
     liveSecondSpeakerName,
     liveSecondSpeakerRole,
     liveSecondSpeakerImageUrl,
@@ -270,75 +182,11 @@ function App() {
     }
   }, [isBannerMenuOpen])
 
-  useEffect(() => {
-    const editor = quoteEditorRef.current
-
-    if (!editor) {
-      return
-    }
-
-    const normalizedQuote = sanitizeQuoteHtml(quoteText)
-
-    if (sanitizeQuoteHtml(editor.innerHTML) !== normalizedQuote) {
-      editor.innerHTML = normalizedQuote
-    }
-  }, [quoteText])
-
-  useEffect(() => {
-    const editor = articleSecondEditorRef.current
-
-    if (!editor) {
-      return
-    }
-
-    const normalizedAdvice = sanitizeQuoteHtml(articleSecondText)
-
-    if (sanitizeQuoteHtml(editor.innerHTML) !== normalizedAdvice) {
-      editor.innerHTML = normalizedAdvice
-    }
-  }, [articleSecondText])
-
-  useEffect(() => {
-    const editor = sponsorCarouselLeadEditorRef.current
-
-    if (!editor) {
-      return
-    }
-
-    const normalizedLeadText = sanitizeQuoteHtml(sponsorCarouselLeadText)
-
-    if (sanitizeQuoteHtml(editor.innerHTML) !== normalizedLeadText) {
-      editor.innerHTML = normalizedLeadText
-    }
-  }, [sponsorCarouselLeadText])
-
-  useEffect(() => {
-    const editor = sponsorCarouselBodyEditorRef.current
-
-    if (!editor) {
-      return
-    }
-
-    const normalizedBodyText = sanitizeQuoteHtml(sponsorCarouselBodyText)
-
-    if (sanitizeQuoteHtml(editor.innerHTML) !== normalizedBodyText) {
-      editor.innerHTML = normalizedBodyText
-    }
-  }, [sponsorCarouselBodyText])
-
-  useEffect(() => {
-    const editor = quoteSecondEditorRef.current
-
-    if (!editor) {
-      return
-    }
-
-    const normalizedSecondQuote = sanitizeQuoteHtml(quoteSecondText)
-
-    if (sanitizeQuoteHtml(editor.innerHTML) !== normalizedSecondQuote) {
-      editor.innerHTML = normalizedSecondQuote
-    }
-  }, [quoteSecondText])
+  useSyncContentEditable(quoteEditorRef, quoteText)
+  useSyncContentEditable(articleSecondEditorRef, articleSecondText)
+  useSyncContentEditable(sponsorCarouselLeadEditorRef, sponsorCarouselLeadText)
+  useSyncContentEditable(sponsorCarouselBodyEditorRef, sponsorCarouselBodyText)
+  useSyncContentEditable(quoteSecondEditorRef, quoteSecondText)
 
   useEffect(() => {
     const syncScreenFromHash = () => {
@@ -365,360 +213,46 @@ function App() {
     previewStage.scrollTop = 0
   }, [screen, selectedType, selectedVariation, selectedPlatform])
 
-  const commitState = (updater: EditorState | ((current: EditorState) => EditorState)) => {
-    setEditorState((current) => {
-      const next = typeof updater === 'function' ? updater(current) : updater
+  const {
+    handleSpeakerPhotoUpload,
+    handleSecondSpeakerPhotoUpload,
+    handleThirdSpeakerPhotoUpload,
+    handleFourthSpeakerPhotoUpload,
+    handleSponsorLogoUpload,
+    handleSponsorCarouselImageUpload,
+    handleMeetupBackgroundUpload,
+    handleWorkshopPartnerLogoUpload,
+    handleQuoteBackgroundUpload,
+    handleMeetupPartnerLogoUpload,
+    handleRemoveSpeakerPhoto,
+    handleRemoveSecondSpeakerPhoto,
+    handleRemoveThirdSpeakerPhoto,
+    handleRemoveFourthSpeakerPhoto,
+    handleRemoveSponsorLogo,
+    handleRemoveSponsorCarouselImage,
+    handleRemoveMeetupBackground,
+    handleRemoveWorkshopPartnerLogo,
+    handleRemoveQuoteBackground,
+    handleRemoveMeetupPartnerLogo,
+    handleLiveSecondSpeakerPhotoUpload,
+    handleRemoveLiveSecondSpeakerPhoto,
+    handleLivePartnerLogoUpload,
+    handleRemoveLivePartnerLogo,
+  } = useImageUpload(updateField, setFeedback)
 
-      if (isEditorStateEqual(current, next)) {
-        return current
-      }
-
-      // Coalesce rapid edits (e.g. typing) into a single undo entry so the
-      // history stays word-level instead of per-keystroke.
-      const now = Date.now()
-      if (now - lastHistoryCaptureRef.current > 500) {
-        lastHistoryCaptureRef.current = now
-        setUndoStack((stack) => [...stack, current])
-      }
-      setRedoStack([])
-      setSaveFeedback('')
-      return next
-    })
-  }
-
-  const updateField = <Key extends keyof EditorState>(key: Key, value: EditorState[Key]) => {
-    commitState((current) => {
-      if (current[key] === value) {
-        return current
-      }
-
-      return {
-        ...current,
-        [key]: value,
-      }
-    })
-  }
-
-  const uploadEditorImage = async (
-    event: ChangeEvent<HTMLInputElement>,
-    field:
-      | 'speakerImageUrl'
-      | 'sponsorLogoUrl'
-      | 'sponsorCarouselImageUrl'
-      | 'quoteBackgroundImageUrl'
-      | 'meetupBackgroundImageUrl'
-      | 'workshopPartnerLogoUrl'
-      | 'workshopSecondSpeakerImageUrl'
-      | 'workshopThirdSpeakerImageUrl'
-      | 'workshopFourthSpeakerImageUrl'
-      | 'meetupPartnerLogoPrimaryUrl'
-      | 'meetupPartnerLogoSecondaryUrl'
-      | 'liveSecondSpeakerImageUrl'
-      | 'livePartnerLogoUrl1'
-      | 'livePartnerLogoUrl2',
-    setFeedback: (message: string) => void,
-    successMessage: string,
-  ) => {
-    const file = event.target.files?.[0]
-
-    if (!file) {
-      return
-    }
-
-    if (!file.type.startsWith('image/')) {
-      setFeedback('Selecione apenas arquivos de imagem.')
-      event.target.value = ''
-      return
-    }
-
-    if (file.size > MAX_IMAGE_FILE_SIZE) {
-      setFeedback('A imagem deve ter no máximo 8 MB.')
-      event.target.value = ''
-      return
-    }
-
-    try {
-      const dataUrl = await convertImageFileToDataUrl(file)
-      updateField(field, dataUrl)
-      setFeedback(`${successMessage}: ${file.name}`)
-    } catch (error) {
-      setFeedback(
-        error instanceof Error ? error.message : 'Não foi possível carregar a foto selecionada.',
-      )
-    }
-
-    event.target.value = ''
-  }
-
-  const handleSpeakerPhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    await uploadEditorImage(event, 'speakerImageUrl', setPhotoFeedback, 'Foto carregada')
-  }
-
-  const handleSecondSpeakerPhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    await uploadEditorImage(
-      event,
-      'workshopSecondSpeakerImageUrl',
-      setSecondPhotoFeedback,
-      'Segunda foto carregada',
-    )
-  }
-
-  const handleThirdSpeakerPhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    await uploadEditorImage(
-      event,
-      'workshopThirdSpeakerImageUrl',
-      setThirdPhotoFeedback,
-      'Terceira foto carregada',
-    )
-  }
-
-  const handleFourthSpeakerPhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    await uploadEditorImage(
-      event,
-      'workshopFourthSpeakerImageUrl',
-      setFourthPhotoFeedback,
-      'Quarta foto carregada',
-    )
-  }
-
-  const handleSponsorLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    await uploadEditorImage(event, 'sponsorLogoUrl', setSponsorFeedback, 'Logo do patrocinador carregada')
-  }
-
-  const handleSponsorCarouselImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    await uploadEditorImage(
-      event,
-      'sponsorCarouselImageUrl',
-      setSponsorCarouselImageFeedback,
-      'Imagem da segunda arte carregada',
-    )
-  }
-
-  const handleMeetupBackgroundUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    await uploadEditorImage(event, 'meetupBackgroundImageUrl', setMeetupBackgroundFeedback, 'Fundo carregado')
-  }
-
-  const handleWorkshopPartnerLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    await uploadEditorImage(
-      event,
-      'workshopPartnerLogoUrl',
-      setWorkshopPartnerLogoFeedback,
-      'Marca parceira carregada',
-    )
-  }
-
-  const handleQuoteBackgroundUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    await uploadEditorImage(event, 'quoteBackgroundImageUrl', setQuoteBackgroundFeedback, 'Fundo carregado')
-  }
-
-  const handleMeetupPartnerLogoUpload =
-    (field: 'meetupPartnerLogoPrimaryUrl' | 'meetupPartnerLogoSecondaryUrl', setFeedback: (message: string) => void, label: string) =>
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      await uploadEditorImage(event, field, setFeedback, label)
-    }
-
-  const handleRemoveSpeakerPhoto = () => {
-    updateField('speakerImageUrl', '')
-    setPhotoFeedback('Foto removida.')
-  }
-
-  const handleRemoveSecondSpeakerPhoto = () => {
-    updateField('workshopSecondSpeakerImageUrl', '')
-    setSecondPhotoFeedback('Segunda foto removida.')
-  }
-
-  const handleRemoveThirdSpeakerPhoto = () => {
-    updateField('workshopThirdSpeakerImageUrl', '')
-    setThirdPhotoFeedback('Terceira foto removida.')
-  }
-
-  const handleRemoveFourthSpeakerPhoto = () => {
-    updateField('workshopFourthSpeakerImageUrl', '')
-    setFourthPhotoFeedback('Quarta foto removida.')
-  }
-
-  const handleRemoveSponsorLogo = () => {
-    updateField('sponsorLogoUrl', '')
-    setSponsorFeedback('Logo do patrocinador removida.')
-  }
-
-  const handleRemoveSponsorCarouselImage = () => {
-    updateField('sponsorCarouselImageUrl', '')
-    setSponsorCarouselImageFeedback('Imagem da segunda arte removida.')
-  }
-
-  const handleRemoveMeetupBackground = () => {
-    updateField('meetupBackgroundImageUrl', '')
-    setMeetupBackgroundFeedback('Fundo removido.')
-  }
-
-  const handleRemoveWorkshopPartnerLogo = () => {
-    updateField('workshopPartnerLogoUrl', '')
-    setWorkshopPartnerLogoFeedback('Marca parceira removida.')
-  }
-
-  const handleRemoveQuoteBackground = () => {
-    updateField('quoteBackgroundImageUrl', '')
-    setQuoteBackgroundFeedback('Fundo removido.')
-  }
-
-  const handleRemoveMeetupPartnerLogo = (
-    field: 'meetupPartnerLogoPrimaryUrl' | 'meetupPartnerLogoSecondaryUrl',
-    label: string,
-  ) => {
-    updateField(field, '')
-    setMeetupLogoFeedback(`${label} removida.`)
-  }
-
-  const handleLiveSecondSpeakerPhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    await uploadEditorImage(
-      event,
-      'liveSecondSpeakerImageUrl',
-      setSecondPhotoFeedback,
-      'Segunda foto carregada',
-    )
-  }
-
-  const handleRemoveLiveSecondSpeakerPhoto = () => {
-    updateField('liveSecondSpeakerImageUrl', '')
-    setSecondPhotoFeedback('Segunda foto removida.')
-  }
-
-  const handleLivePartnerLogoUpload =
-    (field: 'livePartnerLogoUrl1' | 'livePartnerLogoUrl2', label: string) =>
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      await uploadEditorImage(event, field, setLivePartnerLogoFeedback, label)
-    }
-
-  const handleRemoveLivePartnerLogo = (
-    field: 'livePartnerLogoUrl1' | 'livePartnerLogoUrl2',
-    label: string,
-  ) => {
-    updateField(field, '')
-    setLivePartnerLogoFeedback(`${label} removida.`)
-  }
-
-  const exportFrameImage = async (frameElement: HTMLDivElement | null) => {
-    if (!frameElement) {
-      throw new Error('Não foi possível localizar a preview para exportação.')
-    }
-
-    const pixelRatio = Math.min(
-      3,
-      Math.max(1, preset.width / Math.max(frameElement.clientWidth, 1)),
-    )
-
-    return toPng(frameElement, {
-      cacheBust: true,
-      pixelRatio,
-    })
-  }
-
-  const exportCurrentBannerImage = async () => {
-    const isStories = editorState.selectedPlatform === 'Instagram Stories (1080x1920)'
-    return exportFrameImage(
-      isStories ? storiesPreviewFrameRef.current : primaryPreviewFrameRef.current,
-    )
-  }
-
-  const handleDownloadFocusedBanner = async () => {
-    setIsExporting(true)
-    try {
-      const isStories = editorState.selectedPlatform === 'Instagram Stories (1080x1920)'
-      const dataUrl = await exportCurrentBannerImage()
-      const fileName = buildBannerFileName(editorState).replace(
-        '.png',
-        isStories ? '-stories.png' : '-feed.png',
-      )
-      downloadImage(dataUrl, fileName)
-      setSaveFeedback('Download iniciado.')
-    } catch (error) {
-      setSaveFeedback(
-        error instanceof Error ? error.message : 'Não foi possível gerar o download da imagem.',
-      )
-    } finally {
-      setIsExporting(false)
-    }
-  }
-
-  const createSavedBannerAsset = async (): Promise<SavedBannerAsset> => {
-    const previewImageDataUrl = await optimizeSavedPreviewDataUrl(await exportCurrentBannerImage())
-
-    return {
-      id: createSavedBannerId(),
-      fileName: buildBannerFileName(editorState),
-      imageDataUrl: previewImageDataUrl,
-      savedAt: new Date().toISOString(),
-      editorState,
-    }
-  }
-
-  const persistSavedBannerAssets = (nextAssets: SavedBannerAsset[]) => {
-    let assetsToPersist = [...nextAssets]
-
-    while (assetsToPersist.length > 0) {
-      try {
-        window.localStorage.setItem(SAVED_EXPORTED_IMAGES_KEY, JSON.stringify(assetsToPersist))
-        return assetsToPersist
-      } catch (error) {
-        if (!isStorageQuotaExceeded(error)) {
-          throw error
-        }
-
-        assetsToPersist = assetsToPersist.slice(0, -1)
-      }
-    }
-
-    throw new Error('Não foi possível salvar a imagem no navegador porque o armazenamento local está cheio.')
-  }
-
-  const handleSaveVersion = async () => {
-    setIsExporting(true)
-
-    try {
-      const nextAsset = await createSavedBannerAsset()
-      const nextAssets = [nextAsset, ...savedBannerAssets].slice(0, MAX_SAVED_EXPORTED_IMAGES)
-      const persistedAssets = persistSavedBannerAssets(nextAssets)
-
-      window.localStorage.setItem(SAVED_EDITOR_STATE_KEY, JSON.stringify(editorState))
-      setSavedBannerAssets(persistedAssets)
-      setSaveFeedback(
-        persistedAssets.length < nextAssets.length
-          ? 'Imagem salva no navegador. Algumas versões antigas foram removidas para liberar espaço.'
-          : 'Imagem e versão salvas no navegador.',
-      )
-    } catch (error) {
-      setSaveFeedback(
-        error instanceof Error
-          ? error.message
-          : 'Não foi possível salvar a imagem. Tente novamente.',
-      )
-    } finally {
-      setIsExporting(false)
-    }
-  }
-
-  const handleDownloadQuoteFrame = async (
-    frameElement: HTMLDivElement | null,
-    fileNameSuffix: string,
-  ) => {
-    setIsExporting(true)
-
-    try {
-      const fileName = buildBannerFileName(editorState).replace('.png', `-${fileNameSuffix}.png`)
-      const imageDataUrl = await exportFrameImage(frameElement)
-      downloadImage(imageDataUrl, fileName)
-      setSaveFeedback('Download iniciado.')
-    } catch (error) {
-      setSaveFeedback(
-        error instanceof Error
-          ? error.message
-          : 'Não foi possível gerar o download da imagem.',
-      )
-    } finally {
-      setIsExporting(false)
-    }
-  }
+  const {
+    handleDownloadFocusedBanner,
+    handleSaveVersion,
+    handleDownloadQuoteFrame,
+  } = useEditorExport({
+    editorState,
+    savedBannerAssets,
+    setSavedBannerAssets,
+    setIsExporting,
+    setFeedback,
+    primaryPreviewFrameRef,
+    storiesPreviewFrameRef,
+  })
 
   const navigateTo = (nextScreen: 'editor' | 'salvos') => {
     const nextHash = nextScreen === 'salvos' ? '#salvos' : '#editor'
@@ -768,7 +302,7 @@ function App() {
   const handleRestoreSavedBanner = (asset: SavedBannerAsset) => {
     commitState(normalizeEditorState(asset.editorState))
     setHasSelectedType(true)
-    setSaveFeedback(`Versão restaurada de ${formatSavedAt(asset.savedAt)}.`)
+    setFeedback('save', `Versão restaurada de ${formatSavedAt(asset.savedAt)}.`)
     goEditor()
   }
 
@@ -806,55 +340,44 @@ function App() {
   }
 
   const handleResetAll = () => {
-    if (isEditorStateEqual(editorState, initialEditorState)) {
+    if (!canReset) {
       return
     }
 
-    setUndoStack((stack) => [...stack, editorState])
-    setRedoStack([])
-    setEditorState(initialEditorState)
+    resetToInitial()
     setHasSelectedType(false)
     setIsBannerMenuOpen(false)
-    setPhotoFeedback('')
-    setSponsorFeedback('')
-    setQuoteBackgroundFeedback('')
-    setMeetupBackgroundFeedback('')
-    setMeetupLogoFeedback('')
-    setSponsorCarouselImageFeedback('')
-    setWorkshopPartnerLogoFeedback('')
-    setSecondPhotoFeedback('')
-    setLivePartnerLogoFeedback('')
+    clearFeedback([
+      'photo',
+      'sponsor',
+      'quoteBackground',
+      'meetupBackground',
+      'meetupLogo',
+      'sponsorCarouselImage',
+      'workshopPartnerLogo',
+      'secondPhoto',
+      'livePartnerLogo',
+    ])
   }
 
   const handleUndo = () => {
-    const previousState = undoStack[undoStack.length - 1]
-
-    if (!previousState) {
+    if (!canUndo) {
       return
     }
 
-    setUndoStack((stack) => stack.slice(0, -1))
-    setRedoStack((stack) => [editorState, ...stack])
-    setEditorState(previousState)
+    undo()
     setIsBannerMenuOpen(false)
   }
 
   const handleRedo = () => {
-    const [nextState, ...remainingStates] = redoStack
-
-    if (!nextState) {
+    if (!canRedo) {
       return
     }
 
-    setRedoStack(remainingStates)
-    setUndoStack((stack) => [...stack, editorState])
-    setEditorState(nextState)
+    redo()
     setIsBannerMenuOpen(false)
   }
 
-  const canUndo = undoStack.length > 0
-  const canRedo = redoStack.length > 0
-  const canReset = !isEditorStateEqual(editorState, initialEditorState)
   const isWorkshopLayout = selectedType === 'Workshop'
   const isWorkshopDualSpeakerLayout = isWorkshopLayout && selectedVariation === 'Palestrantes'
   const isOtherEventLayout =
@@ -868,15 +391,7 @@ function App() {
   const isArticleLayout = selectedType === 'Artigo'
   const isSponsorLayout = (isPocketLayout || isAnnualLayout) && isSponsorVariation(selectedVariation)
   const isSponsorCarouselLayout = isSponsorLayout && selectedVariation === 'Patrocinador Carousel'
-  const isAnnualSponsorLayout = isAnnualLayout && isSponsorVariation(selectedVariation)
   const isAnnualSpeakerLayout = isAnnualLayout && selectedVariation === 'Palestrante'
-  const isPocketSpeakerLayout = isPocketLayout && selectedVariation === 'Palestrante'
-  const hasEventDetails = eventDate.trim() || eventLocation.trim()
-  const hasMeetupSupportText = meetupSupportText.trim().length > 0
-  const hasMeetupCta = meetupCta.trim().length > 0
-  const hasSponsorCarouselCta = sponsorCarouselCta.trim().length > 0
-
-  const preset = platformPresets[selectedPlatform]
   const selectedBannerOption =
     bannerOptions.find(
       (option) =>
@@ -889,804 +404,13 @@ function App() {
   const quoteModule = activeBannerModule?.type === 'Quote' ? activeBannerModule : null
   const workshopModule = activeBannerModule?.type === 'Workshop' ? activeBannerModule : null
   const liveModule = activeBannerModule?.type === 'Live' ? activeBannerModule : null
-  const previewBackgroundAsset =
-    selectedType === 'Encontro Anual' && (selectedVariation === 'Palestrante' || isAnnualSponsorLayout)
-      ? 'bg-matrix.png'
-      : 'bg-code.png'
-  const articleSpeakerName =
-    speakerName.trim() && speakerName !== initialEditorState.speakerName
-      ? speakerName.trim()
-      : articlePreviewDefaults.speakerName
-  const articleSpeakerRole =
-    speakerRole.trim() && speakerRole !== initialEditorState.speakerRole
-      ? speakerRole.trim()
-      : articlePreviewDefaults.speakerRole
-  const articleQuoteText =
-    quoteText.trim() && quoteText !== initialEditorState.quoteText
-      ? quoteText
-      : articlePreviewDefaults.quoteText
-  const articleCta =
-    speakerTalk.trim() && speakerTalk !== initialEditorState.speakerTalk
-      ? speakerTalk.trim()
-      : articlePreviewDefaults.speakerTalk
-  const articleAdviceText =
-    articleSecondText.trim() && articleSecondText !== initialEditorState.articleSecondText
-      ? articleSecondText
-      : articleAdviceDefaults.text
-  const articleAdviceKeyword = articleSecondKeyword.trim() || articleAdviceDefaults.keyword
 
-  const meetupPhotoSectionStyle = {
-    backgroundImage: meetupBackgroundImageUrl
-      ? `linear-gradient(180deg, rgba(4, 4, 4, 0.02) 0%, rgba(4, 4, 4, 0.12) 100%), url(${meetupBackgroundImageUrl})`
-      : 'linear-gradient(180deg, rgba(30, 32, 36, 0.22), rgba(8, 8, 8, 0.38))',
-  } as CSSProperties
-
-  const meetupLogoAssets: MeetupLogoAsset[] = [
-    {
-      id: 'brand',
-      src: `${import.meta.env.BASE_URL}src/assets/themes/brand.png`,
-      alt: 'WoMakers Code',
-      className: 'meetup-brand-logo is-brand',
-    },
-    meetupPartnerLogoPrimaryUrl
-      ? {
-          id: 'partner-primary',
-          src: meetupPartnerLogoPrimaryUrl,
-          alt: 'Logo de parceiro 1',
-          className: 'meetup-brand-logo',
-        }
-      : null,
-    meetupPartnerLogoSecondaryUrl
-      ? {
-          id: 'partner-secondary',
-          src: meetupPartnerLogoSecondaryUrl,
-          alt: 'Logo de parceiro 2',
-          className: 'meetup-brand-logo',
-        }
-      : null,
-  ].filter((logo): logo is MeetupLogoAsset => logo !== null)
-
-  const speakerInitials = speakerName
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-  const articleInitials = articleSpeakerName
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-
-  const renderPlatformPreview = (
-    platform: Platform,
-  ) => {
-    const isStoriesPlatformForPreview = platform === 'Instagram Stories (1080x1920)'
-    const activePrimaryRef = isStoriesPlatformForPreview ? storiesPreviewFrameRef : primaryPreviewFrameRef
-    const activeQuoteSecondaryRef = isStoriesPlatformForPreview ? storiesQuoteSecondaryRef : quoteSecondaryPreviewFrameRef
-    const activeArticleSecondaryRef = isStoriesPlatformForPreview ? storiesArticleSecondaryRef : articleSecondaryPreviewFrameRef
-    const activeSponsorCarouselSecondaryRef = isStoriesPlatformForPreview ? storiesSponsorCarouselSecondaryRef : sponsorCarouselSecondaryPreviewFrameRef
-    const presetForPreview = platformPresets[platform]
-    const activeBannerModuleForPreview = getBannerTypeModule(selectedType)
-    const quoteModuleForPreview = activeBannerModuleForPreview?.type === 'Quote' ? activeBannerModuleForPreview : null
-    const workshopModuleForPreview = activeBannerModuleForPreview?.type === 'Workshop' ? activeBannerModuleForPreview : null
-    const liveModuleForPreview = activeBannerModuleForPreview?.type === 'Live' ? activeBannerModuleForPreview : null
-    const quoteDerivedStateForPreview = quoteModuleForPreview
-      ? quoteModuleForPreview.getDerivedState({
-          initialSpeakerName: initialEditorState.speakerName,
-          isStoriesPlatform: isStoriesPlatformForPreview,
-          preset: presetForPreview,
-          quoteBackgroundImageUrl,
-          quoteSecondText,
-          speakerName,
-          speakerRole,
-        })
-      : null
-    const workshopDerivedStateForPreview = workshopModuleForPreview
-      ? workshopModuleForPreview.getDerivedState({
-          isDualSpeaker: isWorkshopDualSpeakerLayout,
-          preset: presetForPreview,
-          speakerName,
-          speakerRole,
-          speakerImageUrl,
-          workshopAccentColor,
-          workshopBackgroundImageUrl,
-          workshopBadge,
-          workshopBulletCount,
-          workshopBulletOne,
-          workshopBulletThree,
-          workshopBulletTwo,
-          workshopBulletsIntro,
-          workshopDescription,
-          workshopFooterLeftLineOne,
-          workshopFooterLeftLineTwo,
-          workshopFooterTag,
-          workshopHighlight,
-          workshopHighlightColored,
-          workshopPartnerLogoUrl,
-          workshopSpeakerCount,
-          workshopSecondSpeakerImageUrl,
-          workshopSecondSpeakerName,
-          workshopSecondSpeakerRole,
-          workshopThirdSpeakerImageUrl,
-          workshopThirdSpeakerName,
-          workshopThirdSpeakerRole,
-          workshopFourthSpeakerImageUrl,
-          workshopFourthSpeakerName,
-          workshopFourthSpeakerRole,
-          workshopTitle,
-        })
-      : null
-    const liveDerivedStateForPreview = liveModuleForPreview
-      ? liveModuleForPreview.getDerivedState({
-          liveSupportText,
-          liveSupportTextBold,
-          liveSupportTextCapslock,
-          liveSecondSpeakerName,
-          preset: presetForPreview,
-        })
-      : null
-    const previewStyleForPreview = {
-      '--preview-aspect-ratio': `${presetForPreview.width} / ${presetForPreview.height}`,
-      backgroundImage: isArticleLayout || isWorkshopLayout || isOtherEventLayout
-        ? 'none'
-        : `url(${import.meta.env.BASE_URL}src/assets/themes/${previewBackgroundAsset})`,
-      backgroundColor: isOtherEventLayout || isWorkshopLayout
-        ? '#040404'
-        : isArticleLayout
-          ? '#111111'
-          : isAnnualLayout
-            ? '#0f172a'
-            : '#080808',
-    } as CSSProperties
-    const quotePrimaryHtmlForPreview = renderRichText(quoteText, initialEditorState.quoteText).__html
-    const quoteSecondaryHtmlForPreview = renderRichText(quoteSecondText, quoteText || initialEditorState.quoteText).__html
-
-    return (
-      <article className="platform-preview-panel">
-        {quoteModuleForPreview && quoteDerivedStateForPreview ? (
-          <quoteModuleForPreview.Preview
-            hasSecondSlide={quoteDerivedStateForPreview.hasSecondSlide}
-            isExporting={isExporting}
-            showDownloadControls={true}
-            isStoriesPlatform={isStoriesPlatformForPreview}
-            onDownloadFrame={handleDownloadQuoteFrame}
-            primaryPreviewFrameRef={activePrimaryRef}
-            previewStyle={quoteDerivedStateForPreview.previewStyle}
-            primaryQuoteHtml={quotePrimaryHtmlForPreview}
-            quoteDisplayName={quoteDerivedStateForPreview.quoteDisplayName}
-            quoteDisplayRole={quoteDerivedStateForPreview.quoteDisplayRole}
-            quoteSecondaryPreviewFrameRef={activeQuoteSecondaryRef}
-            secondaryQuoteHtml={quoteSecondaryHtmlForPreview}
-            selectedTheme={selectedTheme}
-            speakerImageUrl={speakerImageUrl}
-            speakerInitials={quoteDerivedStateForPreview.speakerInitials}
-          />
-        ) : isArticleLayout ? (
-          <div className="article-preview-stack" aria-label="Imagens do artigo">
-            <article className="article-preview-panel">
-              <div className="article-preview-panel-toolbar">
-                  <div>
-                    <p className="toolbar-kicker">Imagem 1</p>
-                    <p className="toolbar-copy">Download individual desta arte.</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => handleDownloadQuoteFrame(activePrimaryRef.current, 'imagem-1')}
-                    disabled={isExporting}
-                  >
-                    <AppIcon name="download" className="button-icon" />
-                    {isExporting ? 'Gerando...' : 'Baixar PNG'}
-                  </button>
-                </div>
-
-              <div
-                className={`preview-frame theme-${selectedTheme.toLowerCase()} is-article-layout is-article-primary-frame ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
-                style={previewStyleForPreview}
-                ref={activePrimaryRef}
-              >
-                <div className="preview-content">
-                  <article className="article-slide article-slide-primary">
-                    <div className="article-primary-layout">
-                      <div className="article-preview-layout">
-                        <section className="article-copy-column">
-                          <header className="article-heading-block">
-                            <h2 className="article-name">{articleSpeakerName}</h2>
-                            <p className="article-role">{articleSpeakerRole}</p>
-                          </header>
-
-                          <blockquote className="article-quote-block">
-                            <p className="article-quote-copy" dangerouslySetInnerHTML={renderRichText(articleQuoteText, articlePreviewDefaults.quoteText)} />
-                          </blockquote>
-
-                          <footer className="article-footer">
-                            <div className="article-cta-card">
-                              <span className="article-linkedin-badge" aria-hidden="true">
-                                in
-                              </span>
-                              <p>{articleCta}</p>
-                            </div>
-
-                            <img
-                              src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
-                              alt="WoMakers Code"
-                              className="article-brand"
-                            />
-                          </footer>
-                        </section>
-
-                        <section className="article-portrait-column" aria-label={articleSpeakerName}>
-                          <div className="article-photo-shell">
-                            <div className="article-photo-frame">
-                              <div className="article-photo-media">
-                                {speakerImageUrl ? (
-                                  <img src={speakerImageUrl} alt={articleSpeakerName} className="article-photo" />
-                                ) : (
-                                  <div className="article-photo-placeholder" aria-label="Article photo placeholder">
-                                    {articleInitials || 'RP'}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </section>
-                      </div>
-                    </div>
-                  </article>
-                </div>
-              </div>
-            </article>
-
-            <article className="article-preview-panel">
-              <div className="article-preview-panel-toolbar">
-                  <div>
-                    <p className="toolbar-kicker">Imagem 2</p>
-                    <p className="toolbar-copy">Download individual desta arte.</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => handleDownloadQuoteFrame(activeArticleSecondaryRef.current, 'imagem-2')}
-                    disabled={isExporting}
-                  >
-                    <AppIcon name="download" className="button-icon" />
-                    {isExporting ? 'Gerando...' : 'Baixar PNG'}
-                  </button>
-                </div>
-
-              <div
-                className={`preview-frame theme-${selectedTheme.toLowerCase()} is-article-layout is-article-secondary-frame ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
-                style={previewStyleForPreview}
-                ref={activeArticleSecondaryRef}
-              >
-                <div className="preview-content">
-                  <article className="article-slide article-slide-advice">
-                    <div className="article-advice-layout">
-                      <header className="article-advice-header">
-                        <div className="article-advice-title-row">
-                          <h2 className="article-advice-title">{articleAdviceDefaults.title}</h2>
-                        </div>
-                        <p className="article-advice-subtitle">
-                          da <strong>{articleSpeakerName}</strong> para você
-                        </p>
-                      </header>
-
-                      <section className="article-advice-card">
-                        <div className="article-advice-copy" dangerouslySetInnerHTML={renderRichText(articleAdviceText, articleAdviceDefaults.text)} />
-                      </section>
-
-                      <footer className="article-advice-footer">
-                        <p>
-                          Comente <strong>{articleAdviceKeyword}</strong> para receber
-                          <br />
-                          o link da entrevista completa
-                        </p>
-                      </footer>
-                    </div>
-                  </article>
-                </div>
-              </div>
-            </article>
-          </div>
-        ) : isSponsorCarouselLayout ? (
-          <div className="sponsor-carousel-preview-stack" aria-label="Imagens do patrocinador carousel">
-            <article className="sponsor-carousel-preview-panel">
-              <div className="sponsor-carousel-preview-panel-toolbar">
-                  <div>
-                    <p className="toolbar-kicker">Imagem 1</p>
-                    <p className="toolbar-copy">Primeira arte do carousel com a logo do patrocinador.</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => handleDownloadQuoteFrame(activePrimaryRef.current, 'imagem-1')}
-                    disabled={isExporting}
-                  >
-                    <AppIcon name="download" className="button-icon" />
-                    {isExporting ? 'Gerando...' : 'Baixar PNG'}
-                  </button>
-                </div>
-
-              <div
-                className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketLayout ? 'is-pocket-sponsor' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
-                style={previewStyleForPreview}
-                ref={activePrimaryRef}
-              >
-                <div className="preview-content">
-                  <header className="event-header">
-                    <h2 className={`event-title ${isAnnualLayout ? 'is-annual-layout' : ''}`}>
-                      {isAnnualLayout ? (
-                        <span className="event-title-icon-block" aria-hidden="true">
-                          <img
-                            src={`${import.meta.env.BASE_URL}src/assets/icons/arrow.png`}
-                            alt=""
-                            className="event-title-icon"
-                          />
-                        </span>
-                      ) : null}
-                      <span className="event-title-copy">
-                        <span className="event-title-segment">{eventTitle}</span>
-                        {eventCity.trim() ? <span className="event-city event-title-segment"> {eventCity}</span> : null}
-                      </span>
-                    </h2>
-
-                    {(!isAnnualSponsorLayout || isPocketLayout) && hasEventDetails ? (
-                      <div className="event-details-pill">
-                        {eventDate.trim() ? (
-                          <span className="event-detail-item">
-                            <span className="event-dot" aria-hidden="true" />
-                            <span>{eventDate}</span>
-                          </span>
-                        ) : null}
-                        {eventLocation.trim() ? (
-                          <span className="event-detail-item">
-                            <span className="event-dot" aria-hidden="true" />
-                            <span>{eventLocation}</span>
-                          </span>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </header>
-
-                  <section className="pocket-sponsor-section" aria-label={selectedVariation}>
-                    <h3 className="pocket-sponsor-title">
-                      <img
-                        src={`${import.meta.env.BASE_URL}src/assets/icons/spark-pink.png`}
-                        alt=""
-                        aria-hidden="true"
-                        className="pocket-sponsor-spark"
-                      />
-                      <span>{sponsorTitle.trim() || initialEditorState.sponsorTitle}</span>
-                      <img
-                        src={`${import.meta.env.BASE_URL}src/assets/icons/spark-pink.png`}
-                        alt=""
-                        aria-hidden="true"
-                        className="pocket-sponsor-spark"
-                      />
-                    </h3>
-                    <div className="pocket-sponsor-frame">
-                      {sponsorLogoUrl ? (
-                        <img src={sponsorLogoUrl} alt="Logo do patrocinador" className="pocket-sponsor-logo" />
-                      ) : (
-                        <div className="pocket-sponsor-placeholder">Logo do patrocinador</div>
-                      )}
-                    </div>
-                  </section>
-
-                  {isAnnualSponsorLayout && hasEventDetails ? (
-                    <div className="event-details-pill">
-                      {eventDate.trim() ? (
-                        <span className="event-detail-item">
-                          <span className="event-dot" aria-hidden="true" />
-                          <span>{eventDate}</span>
-                        </span>
-                      ) : null}
-                      {eventLocation.trim() ? (
-                        <span className="event-detail-item">
-                          <span className="event-dot" aria-hidden="true" />
-                          <span>{eventLocation}</span>
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
-
-                  <div className="pocket-brand-footer">
-                    <img
-                      src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
-                      alt="WoMakers Code"
-                      className="pocket-brand"
-                    />
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article className="sponsor-carousel-preview-panel">
-              <div className="sponsor-carousel-preview-panel-toolbar">
-                  <div>
-                    <p className="toolbar-kicker">Imagem 2</p>
-                    <p className="toolbar-copy">Segunda arte do carousel com bloco estático, texto, imagem e CTA.</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => handleDownloadQuoteFrame(activeSponsorCarouselSecondaryRef.current, 'imagem-2')}
-                    disabled={isExporting}
-                  >
-                    <AppIcon name="download" className="button-icon" />
-                    {isExporting ? 'Gerando...' : 'Baixar PNG'}
-                  </button>
-                </div>
-
-              <div
-                className={`preview-frame theme-${selectedTheme.toLowerCase()} is-sponsor-carousel-secondary-frame ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
-                style={{
-                  ...previewStyleForPreview,
-                  backgroundImage: 'none',
-                  backgroundColor: '#ffffff',
-                }}
-                ref={activeSponsorCarouselSecondaryRef}
-              >
-                <div className="preview-content">
-                  <article className="sponsor-carousel-slide-secondary">
-                    <section className="sponsor-carousel-card">
-                      <div className="sponsor-carousel-dots" aria-hidden="true">
-                        <span />
-                        <span />
-                        <span />
-                      </div>
-
-                      <div
-                        className="sponsor-carousel-richtext sponsor-carousel-richtext-lead"
-                        dangerouslySetInnerHTML={renderRichText(
-                          sponsorCarouselLeadText,
-                          initialEditorState.sponsorCarouselLeadText,
-                        )}
-                      />
-
-                      <figure className="sponsor-carousel-image-shell">
-                        {sponsorCarouselImageUrl ? (
-                          <img
-                            src={sponsorCarouselImageUrl}
-                            alt="Imagem da segunda arte do patrocinador"
-                            className="sponsor-carousel-image"
-                          />
-                        ) : (
-                          <div className="sponsor-carousel-image-placeholder">
-                            Imagem de destaque do patrocinador
-                          </div>
-                        )}
-                      </figure>
-
-                      <div
-                        className="sponsor-carousel-richtext sponsor-carousel-richtext-body"
-                        dangerouslySetInnerHTML={renderRichText(
-                          sponsorCarouselBodyText,
-                          initialEditorState.sponsorCarouselBodyText,
-                        )}
-                      />
-
-                      <footer className="sponsor-carousel-cta-row">
-                        <p className={`sponsor-carousel-cta-pill ${hasSponsorCarouselCta ? '' : 'is-placeholder'}`.trim()}>
-                          {hasSponsorCarouselCta ? sponsorCarouselCta.trim() : 'CTA'}
-                        </p>
-                      </footer>
-                    </section>
-                  </article>
-                </div>
-              </div>
-            </article>
-          </div>
-        ) : liveModuleForPreview && liveDerivedStateForPreview ? (
-          <>
-            <div className="article-preview-panel-toolbar">
-              <div>
-                <p className="toolbar-kicker">Live</p>
-                <p className="toolbar-copy">Download desta arte.</p>
-              </div>
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => handleDownloadQuoteFrame(activePrimaryRef.current, 'live')}
-                disabled={isExporting}
-              >
-                <AppIcon name="download" className="button-icon" />
-                {isExporting ? 'Gerando...' : 'Baixar PNG'}
-              </button>
-            </div>
-            <div
-              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isLiveLayout ? 'is-live-layout' : ''} ${isOtherEventLayout && !isLiveLayout ? 'is-meetup-layout' : ''} ${isWorkshopLayout ? 'is-workshop-layout' : ''} ${isArticleLayout ? 'is-article-layout' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
-              style={liveDerivedStateForPreview.previewStyle}
-              ref={activePrimaryRef}
-            >
-              <div className="preview-content">
-                <liveModuleForPreview.Preview
-                eventTitle={eventTitle}
-                eventDate={eventDate}
-                speakerName={speakerName}
-                speakerRole={speakerRole}
-                speakerTalk={speakerTalk}
-                speakerImageUrl={speakerImageUrl}
-                supportTextHtml={liveDerivedStateForPreview.supportText}
-                liveFooterLeftText={liveFooterLeftText}
-                liveFooterRightText={liveFooterRightText}
-                liveSecondSpeakerName={liveSecondSpeakerName}
-                liveSecondSpeakerRole={liveSecondSpeakerRole}
-                liveSecondSpeakerImageUrl={liveSecondSpeakerImageUrl}
-                livePartnerLogoUrl1={livePartnerLogoUrl1}
-                livePartnerLogoUrl2={livePartnerLogoUrl2}
-                speakerInitials={speakerInitials}
-                secondSpeakerInitials={liveDerivedStateForPreview.secondSpeakerInitials}
-              />
-            </div>
-          </div>
-          </>
-        ) : workshopModuleForPreview && workshopDerivedStateForPreview ? (
-          <>
-            <div className="article-preview-panel-toolbar">
-              <div>
-                <p className="toolbar-kicker">Workshop</p>
-                <p className="toolbar-copy">Download desta arte.</p>
-              </div>
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => handleDownloadQuoteFrame(activePrimaryRef.current, 'workshop')}
-                disabled={isExporting}
-              >
-                <AppIcon name="download" className="button-icon" />
-                {isExporting ? 'Gerando...' : 'Baixar PNG'}
-              </button>
-            </div>
-            <div
-              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isWorkshopLayout ? 'is-workshop-layout' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
-              style={workshopDerivedStateForPreview.previewStyle}
-              ref={activePrimaryRef}
-            >
-              <div className="preview-content">
-                <workshopModuleForPreview.Preview
-                isDualSpeaker={workshopDerivedStateForPreview.isDualSpeaker}
-                isStoriesPlatform={isStoriesPlatformForPreview}
-                speakerCards={workshopDerivedStateForPreview.speakerCards}
-                workshopBadge={workshopDerivedStateForPreview.workshopBadge}
-                workshopBullets={workshopDerivedStateForPreview.workshopBullets}
-                workshopBulletsIntro={workshopDerivedStateForPreview.workshopBulletsIntro}
-                workshopDescription={workshopDerivedStateForPreview.workshopDescription}
-                workshopFooterLeftLineOne={workshopDerivedStateForPreview.workshopFooterLeftLineOne}
-                workshopFooterLeftLineTwo={workshopDerivedStateForPreview.workshopFooterLeftLineTwo}
-                workshopFooterTag={workshopDerivedStateForPreview.workshopFooterTag}
-                workshopHighlight={workshopDerivedStateForPreview.workshopHighlight}
-                workshopHighlightColored={workshopDerivedStateForPreview.workshopHighlightColored}
-                workshopPartnerLogoUrl={workshopDerivedStateForPreview.workshopPartnerLogoUrl}
-                workshopTitle={workshopDerivedStateForPreview.workshopTitle}
-              />
-            </div>
-          </div>
-          </>
-        ) : (
-          <>
-            <div className="article-preview-panel-toolbar">
-              <div>
-                <p className="toolbar-kicker">{selectedType}</p>
-                <p className="toolbar-copy">Download desta arte.</p>
-              </div>
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => handleDownloadQuoteFrame(activePrimaryRef.current, selectedType.toLowerCase().replace(/\s+/g, '-'))}
-                disabled={isExporting}
-              >
-                <AppIcon name="download" className="button-icon" />
-                {isExporting ? 'Gerando...' : 'Baixar PNG'}
-              </button>
-            </div>
-            <div
-              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualLayout ? 'is-annual-layout' : ''} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isOtherEventLayout && !isLiveLayout ? 'is-meetup-layout' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
-              style={previewStyleForPreview}
-              ref={activePrimaryRef}
-            >
-            <div className="preview-content">
-              {!isOtherEventLayout ? (
-                <header className="event-header">
-                  <h2 className={`event-title ${isAnnualLayout ? 'is-annual-layout' : ''}`}>
-                    {isAnnualLayout ? (
-                      <span className="event-title-icon-block" aria-hidden="true">
-                        <img
-                          src={`${import.meta.env.BASE_URL}src/assets/icons/arrow.png`}
-                          alt=""
-                          className="event-title-icon"
-                        />
-                      </span>
-                    ) : null}
-                    <span className="event-title-copy">
-                      <span className="event-title-segment">{eventTitle}</span>
-                      {eventCity.trim() ? <span className="event-city event-title-segment"> {eventCity}</span> : null}
-                    </span>
-                  </h2>
-
-                  {!isAnnualSpeakerLayout && (!isSponsorLayout || isPocketLayout) && hasEventDetails ? (
-                    <div className="event-details-pill">
-                      {eventDate.trim() ? (
-                        <span className="event-detail-item">
-                          <span className="event-dot" aria-hidden="true" />
-                          <span>{eventDate}</span>
-                        </span>
-                      ) : null}
-                      {eventLocation.trim() ? (
-                        <span className="event-detail-item">
-                          <span className="event-dot" aria-hidden="true" />
-                          <span>{eventLocation}</span>
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </header>
-              ) : null}
-
-              {isSponsorLayout ? (
-                <section className="pocket-sponsor-section" aria-label={selectedVariation}>
-                  <h3 className="pocket-sponsor-title">
-                    <img
-                      src={`${import.meta.env.BASE_URL}src/assets/icons/spark-pink.png`}
-                      alt=""
-                      aria-hidden="true"
-                      className="pocket-sponsor-spark"
-                    />
-                    <span>{sponsorTitle.trim() || initialEditorState.sponsorTitle}</span>
-                    <img
-                      src={`${import.meta.env.BASE_URL}src/assets/icons/spark-pink.png`}
-                      alt=""
-                      aria-hidden="true"
-                      className="pocket-sponsor-spark"
-                    />
-                  </h3>
-                  <div className="pocket-sponsor-frame">
-                    {sponsorLogoUrl ? (
-                      <img src={sponsorLogoUrl} alt="Logo do patrocinador" className="pocket-sponsor-logo" />
-                    ) : (
-                      <div className="pocket-sponsor-placeholder">Logo do patrocinador</div>
-                    )}
-                  </div>
-                </section>
-              ) : !isOtherEventLayout ? (
-                <div className="speaker-section">
-                  <div className="speaker-photo-shell">
-                    <div className="speaker-photo-ring" aria-hidden="true" />
-                    <div className="speaker-photo-frame">
-                      {speakerImageUrl ? (
-                        <img src={speakerImageUrl} alt={speakerName} className="speaker-photo" />
-                      ) : (
-                        <div className="speaker-photo-placeholder" aria-label="Speaker photo placeholder">
-                          {speakerInitials || 'WM'}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="speaker-copy">
-                    {isAnnualSpeakerLayout ? (
-                      <img
-                        src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
-                        alt="WoMakers Code"
-                        className="speaker-brand"
-                      />
-                    ) : null}
-                    <h3 className="speaker-name">{speakerName || 'Nome da palestrante'}</h3>
-                    <p className="speaker-role">{speakerRole || 'Cargo / empresa'}</p>
-                    {speakerTalk.trim() ? <p className="speaker-talk">{speakerTalk.trim()}</p> : null}
-                  </div>
-                </div>
-              ) : null}
-
-              {isOtherEventLayout ? (
-                <section className="meetup-preview-layout">
-                  <section className="meetup-top-section">
-                    <header className="meetup-logos-header">
-                      <div
-                        className="meetup-logo-row"
-                        style={{ '--meetup-logo-count': `${meetupLogoAssets.length}` } as CSSProperties}
-                      >
-                        {meetupLogoAssets.map((logo) => (
-                          <div key={logo.id} className="meetup-logo-slot">
-                            <img src={logo.src} alt={logo.alt} className={logo.className} />
-                          </div>
-                        ))}
-                      </div>
-                    </header>
-
-                    <div className="meetup-copy-block">
-                      <h2 className="meetup-event-name">{eventTitle.trim() || 'Nome do evento'}</h2>
-
-                      {hasEventDetails ? (
-                        <div className="meetup-meta-row">
-                          {eventDate.trim() ? <span>{eventDate.trim()}</span> : null}
-                          {eventDate.trim() && eventLocation.trim() ? <span className="meetup-meta-dot" aria-hidden="true" /> : null}
-                          {eventLocation.trim() ? <span>{eventLocation.trim()}</span> : null}
-                        </div>
-                      ) : null}
-
-                      {hasMeetupSupportText ? (
-                        <p className="meetup-support-text">{meetupSupportText.trim()}</p>
-                      ) : null}
-
-                      {hasMeetupCta ? (
-                        <div className="meetup-cta-row">
-                          <p className="meetup-cta-pill">{meetupCta.trim()}</p>
-                        </div>
-                      ) : null}
-                    </div>
-                  </section>
-
-                  <section className="meetup-bottom-section meetup-photo-section" style={meetupPhotoSectionStyle}>
-                    <div className="meetup-photo-gradient" aria-hidden="true" />
-                  </section>
-                </section>
-              ) : null}
-            </div>
-          </div>
-          </>
-        )}
-      </article>
-    )
-  }
-
-  const syncRichEditorState = (
-    field:
-      | 'quoteText'
-      | 'quoteSecondText'
-      | 'articleSecondText'
-      | 'sponsorCarouselLeadText'
-      | 'sponsorCarouselBodyText',
-    editor: HTMLDivElement | null,
-  ) => {
-    if (!editor) {
-      return
-    }
-
-    const nextValue = sanitizeQuoteHtml(editor.innerHTML)
-    updateField(field, nextValue)
-  }
-
-  const applyRichTextFormatting = (
-    field:
-      | 'quoteText'
-      | 'quoteSecondText'
-      | 'articleSecondText'
-      | 'sponsorCarouselLeadText'
-      | 'sponsorCarouselBodyText',
-    editor: HTMLDivElement | null,
-    command: 'bold',
-  ) => {
-    if (!editor) {
-      return
-    }
-
-    editor.focus()
-    document.execCommand(command)
-    syncRichEditorState(field, editor)
-  }
-
-  const renderRichText = (value: string, fallback = initialEditorState.quoteText) => ({
-    __html: sanitizeQuoteHtml(value.trim() || fallback),
-  })
-
-  const handleRichEditorPaste = (
-    event: ClipboardEvent<HTMLDivElement>,
-    field:
-      | 'quoteText'
-      | 'quoteSecondText'
-      | 'articleSecondText'
-      | 'sponsorCarouselLeadText'
-      | 'sponsorCarouselBodyText',
-    editor: HTMLDivElement | null,
-  ) => {
-    event.preventDefault()
-    const text = event.clipboardData.getData('text/plain')
-    document.execCommand('insertText', false, text)
-    syncRichEditorState(field, editor)
-  }
+  const {
+    syncRichEditorState,
+    applyRichTextFormatting,
+    renderRichText,
+    handleRichEditorPaste,
+  } = useRichTextEditors(updateField)
 
   // Renderização condicional por tela
   if (screen === 'salvos') {
@@ -1704,53 +428,14 @@ function App() {
   // Home/editor
   return (
     <div className="app-root">
-      <header className="app-topbar">
-        <button type="button" className="app-topbar-brand" onClick={goEditor} aria-label="Voltar para o editor">
-          <span className="app-topbar-logo" aria-hidden="true">
-            <AppIcon name="spark" />
-          </span>
-          <div className="app-topbar-brand-text">
-            <strong>WoMakersCode</strong>
-            <span>Social Assets</span>
-          </div>
-        </button>
-        <div className="app-topbar-actions" aria-label="Ações">
-          <button
-            type="button"
-            className="app-topbar-icon-btn"
-            onClick={handleUndo}
-            disabled={!canUndo}
-            aria-label="Desfazer"
-            title="Desfazer"
-          >
-            <AppIcon name="undo" />
-          </button>
-          <button
-            type="button"
-            className="app-topbar-icon-btn"
-            onClick={handleRedo}
-            disabled={!canRedo}
-            aria-label="Refazer"
-            title="Refazer"
-          >
-            <AppIcon name="redo" />
-          </button>
-          <a
-            className="app-topbar-link"
-            href="https://github.com/cyz/womakers-assets"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Repositório no GitHub"
-            title="Repositório no GitHub"
-          >
-            <AppIcon name="github" />
-          </a>
-          <button type="button" className="app-topbar-pill" onClick={goSalvos}>
-            <AppIcon name="history" className="button-icon" />
-            Banners salvos
-          </button>
-        </div>
-      </header>
+      <Topbar
+        onBrandClick={goEditor}
+        onUndo={handleUndo}
+        canUndo={canUndo}
+        onRedo={handleRedo}
+        canRedo={canRedo}
+        onOpenSaved={goSalvos}
+      />
       <div className={`app-shell ${sidebarCollapsed ? 'is-sidebar-collapsed' : ''}`.trim()}>
       <aside className={`control-panel ${sidebarCollapsed ? 'is-collapsed' : ''}`.trim()}>
         <div className="panel-collapse-row">
@@ -2029,8 +714,8 @@ function App() {
               onSpeakerNameChange={(value) => updateField('speakerName', value)}
               onSpeakerPhotoUpload={handleSpeakerPhotoUpload}
               onSpeakerRoleChange={(value) => updateField('speakerRole', value)}
-              photoFeedback={photoFeedback}
-              quoteBackgroundFeedback={quoteBackgroundFeedback}
+              photoFeedback={feedback.photo}
+              quoteBackgroundFeedback={feedback.quoteBackground}
               quoteBackgroundImageUrl={quoteBackgroundImageUrl}
               speakerImageUrl={speakerImageUrl}
               speakerName={speakerName}
@@ -2058,10 +743,10 @@ function App() {
               onFourthSpeakerNameChange={(value) => updateField('workshopFourthSpeakerName', value)}
               onFourthSpeakerPhotoUpload={handleFourthSpeakerPhotoUpload}
               onFourthSpeakerRoleChange={(value) => updateField('workshopFourthSpeakerRole', value)}
-              partnerLogoFeedback={workshopPartnerLogoFeedback}
+              partnerLogoFeedback={feedback.workshopPartnerLogo}
               partnerLogoUrl={workshopPartnerLogoUrl}
-              photoFeedback={photoFeedback}
-              secondPhotoFeedback={secondPhotoFeedback}
+              photoFeedback={feedback.photo}
+              secondPhotoFeedback={feedback.secondPhoto}
               secondSpeakerImageUrl={workshopSecondSpeakerImageUrl}
               secondSpeakerName={workshopSecondSpeakerName}
               secondSpeakerRole={workshopSecondSpeakerRole}
@@ -2069,11 +754,11 @@ function App() {
               speakerImageUrl={speakerImageUrl}
               speakerName={speakerName}
               speakerRole={speakerRole}
-              thirdPhotoFeedback={thirdPhotoFeedback}
+              thirdPhotoFeedback={feedback.thirdPhoto}
               thirdSpeakerImageUrl={workshopThirdSpeakerImageUrl}
               thirdSpeakerName={workshopThirdSpeakerName}
               thirdSpeakerRole={workshopThirdSpeakerRole}
-              fourthPhotoFeedback={fourthPhotoFeedback}
+              fourthPhotoFeedback={feedback.fourthPhoto}
               fourthSpeakerImageUrl={workshopFourthSpeakerImageUrl}
               fourthSpeakerName={workshopFourthSpeakerName}
               fourthSpeakerRole={workshopFourthSpeakerRole}
@@ -2146,7 +831,7 @@ function App() {
                   </button>
                 ) : null}
               </div>
-              {photoFeedback ? <p className="field-hint upload-feedback">{photoFeedback}</p> : null}
+              {feedback.photo ? <p className="field-hint upload-feedback">{feedback.photo}</p> : null}
             </section>
           ) : isLiveLayout && liveModule ? (
             <liveModule.MediaFields
@@ -2158,9 +843,9 @@ function App() {
               liveSecondSpeakerImageUrl={liveSecondSpeakerImageUrl}
               livePartnerLogoUrl1={livePartnerLogoUrl1}
               livePartnerLogoUrl2={livePartnerLogoUrl2}
-              photoFeedback={photoFeedback}
-              secondPhotoFeedback={secondPhotoFeedback}
-              partnerLogoFeedback={livePartnerLogoFeedback}
+              photoFeedback={feedback.photo}
+              secondPhotoFeedback={feedback.secondPhoto}
+              partnerLogoFeedback={feedback.livePartnerLogo}
               onSpeakerNameChange={(value) => updateField('speakerName', value)}
               onSpeakerRoleChange={(value) => updateField('speakerRole', value)}
               onSpeakerPhotoUpload={handleSpeakerPhotoUpload}
@@ -2200,7 +885,7 @@ function App() {
                   </button>
                 ) : null}
               </div>
-              {meetupBackgroundFeedback ? <p className="field-hint upload-feedback">{meetupBackgroundFeedback}</p> : null}
+              {feedback.meetupBackground ? <p className="field-hint upload-feedback">{feedback.meetupBackground}</p> : null}
 
               <label className="field-label" htmlFor="meetup-partner-logo-primary">
                 Logo parceiro 1
@@ -2209,7 +894,7 @@ function App() {
                 id="meetup-partner-logo-primary"
                 type="file"
                 accept="image/*"
-                onChange={handleMeetupPartnerLogoUpload('meetupPartnerLogoPrimaryUrl', setMeetupLogoFeedback, 'Logo parceiro 1 carregada')}
+                onChange={handleMeetupPartnerLogoUpload('meetupPartnerLogoPrimaryUrl', 'meetupLogo', 'Logo parceiro 1 carregada')}
               />
 
               <label className="field-label" htmlFor="meetup-partner-logo-secondary">
@@ -2219,7 +904,7 @@ function App() {
                 id="meetup-partner-logo-secondary"
                 type="file"
                 accept="image/*"
-                onChange={handleMeetupPartnerLogoUpload('meetupPartnerLogoSecondaryUrl', setMeetupLogoFeedback, 'Logo parceiro 2 carregada')}
+                onChange={handleMeetupPartnerLogoUpload('meetupPartnerLogoSecondaryUrl', 'meetupLogo', 'Logo parceiro 2 carregada')}
               />
 
               <div className="photo-actions-row meetup-actions-row">
@@ -2247,7 +932,7 @@ function App() {
                   ) : null}
                 </div>
               </div>
-              {meetupLogoFeedback ? <p className="field-hint upload-feedback">{meetupLogoFeedback}</p> : null}
+              {feedback.meetupLogo ? <p className="field-hint upload-feedback">{feedback.meetupLogo}</p> : null}
             </section>
           ) : isSponsorLayout ? (
             <section className="control-section muted-card">
@@ -2287,7 +972,7 @@ function App() {
                   </button>
                 ) : null}
               </div>
-              {sponsorFeedback ? <p className="field-hint upload-feedback">{sponsorFeedback}</p> : null}
+              {feedback.sponsor ? <p className="field-hint upload-feedback">{feedback.sponsor}</p> : null}
 
               {isSponsorCarouselLayout ? (
                 <>
@@ -2338,8 +1023,8 @@ function App() {
                       </button>
                     ) : null}
                   </div>
-                  {sponsorCarouselImageFeedback ? (
-                    <p className="field-hint upload-feedback">{sponsorCarouselImageFeedback}</p>
+                  {feedback.sponsorCarouselImage ? (
+                    <p className="field-hint upload-feedback">{feedback.sponsorCarouselImage}</p>
                   ) : null}
 
                   <label className="field-label" htmlFor="sponsor-carousel-body-text">
@@ -2441,7 +1126,7 @@ function App() {
                   </button>
                 ) : null}
               </div>
-              {photoFeedback ? <p className="field-hint upload-feedback">{photoFeedback}</p> : null}
+              {feedback.photo ? <p className="field-hint upload-feedback">{feedback.photo}</p> : null}
             </section>
           )}
         </CollapsibleSection>
@@ -2470,7 +1155,7 @@ function App() {
               <AppIcon name="save" className="button-icon" />
               {isExporting ? 'Processando...' : 'Salvar versão'}
             </button>
-            {saveFeedback ? <p className="field-hint upload-feedback">{saveFeedback}</p> : null}
+            {feedback.save ? <p className="field-hint upload-feedback">{feedback.save}</p> : null}
         </CollapsibleSection>
           </>
         ) : (
@@ -2522,7 +1207,21 @@ function App() {
               style={previewFitWidth ? ({ width: `${previewFitWidth}px` } as CSSProperties) : undefined}
             >
               <section className="platform-preview-section">
-                {renderPlatformPreview(selectedPlatform)}
+                <PlatformPreview
+                  platform={selectedPlatform}
+                  isExporting={isExporting}
+                  selectedTheme={selectedTheme}
+                  renderRichText={renderRichText}
+                  onDownloadFrame={handleDownloadQuoteFrame}
+                  primaryPreviewFrameRef={primaryPreviewFrameRef}
+                  storiesPreviewFrameRef={storiesPreviewFrameRef}
+                  quoteSecondaryPreviewFrameRef={quoteSecondaryPreviewFrameRef}
+                  storiesQuoteSecondaryRef={storiesQuoteSecondaryRef}
+                  articleSecondaryPreviewFrameRef={articleSecondaryPreviewFrameRef}
+                  storiesArticleSecondaryRef={storiesArticleSecondaryRef}
+                  sponsorCarouselSecondaryPreviewFrameRef={sponsorCarouselSecondaryPreviewFrameRef}
+                  storiesSponsorCarouselSecondaryRef={storiesSponsorCarouselSecondaryRef}
+                />
               </section>
             </div>
           ) : (
@@ -2537,52 +1236,27 @@ function App() {
         </section>
 
         {hasSelectedType ? (
-          <div className="preview-zoom-toolbar" role="toolbar" aria-label="Zoom da preview">
-            <button
-              type="button"
-              className="preview-zoom-btn"
-              onClick={zoomIn}
-              disabled={zoom >= 2}
-              aria-label="Aproximar"
-              title="Aproximar"
-            >
-              <AppIcon name="zoomIn" />
-            </button>
-            <button
-              type="button"
-              className="preview-zoom-btn"
-              onClick={zoomOut}
-              disabled={zoom <= 0.4}
-              aria-label="Afastar"
-              title="Afastar"
-            >
-              <AppIcon name="zoomOut" />
-            </button>
-            <button
-              type="button"
-              className="preview-zoom-btn"
-              onClick={zoomFit}
-              aria-label="Ajustar zoom"
-              title="Ajustar zoom"
-            >
-              <AppIcon name="fit" />
-            </button>
-            <button
-              type="button"
-              className="preview-zoom-btn"
-              onClick={handleDownloadFocusedBanner}
-              disabled={isExporting}
-              aria-label="Baixar imagem atual"
-              title="Baixar imagem atual"
-            >
-              <AppIcon name="download" />
-            </button>
-        </div>
+          <PreviewZoomToolbar
+            zoom={zoom}
+            onZoomIn={zoomIn}
+            onZoomOut={zoomOut}
+            onZoomFit={zoomFit}
+            onDownload={handleDownloadFocusedBanner}
+            isExporting={isExporting}
+          />
         ) : null}
 
       </main>
       </div>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <EditorProvider>
+      <EditorWorkspace />
+    </EditorProvider>
   )
 }
 

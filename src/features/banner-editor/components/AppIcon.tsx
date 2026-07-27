@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import {
   BookmarkIcon,
   CalendarIcon,
@@ -81,8 +82,8 @@ const iconByName: Record<AppIconName, Icon> = {
   search: SearchIcon,
 }
 
-export function AppIcon({ name, className }: AppIconProps) {
+export const AppIcon = memo(function AppIcon({ name, className }: AppIconProps) {
   const IconComponent = iconByName[name]
 
   return <IconComponent className={className} />
-}
+})
