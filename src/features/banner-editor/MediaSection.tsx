@@ -5,6 +5,7 @@ import { PhotoUploadField } from './components/PhotoUploadField'
 import { RichTextEditor } from './components/RichTextEditor'
 import { useEditor } from './EditorContext'
 import { getBannerTypeModule } from './banner-types/registry'
+import { speakerContentTypes, type SpeakerContentType } from './model'
 import { isSponsorVariation } from './utils'
 import type { useImageUpload } from './hooks/useImageUpload'
 import type { useRichTextEditors } from './hooks/useRichTextEditors'
@@ -36,6 +37,7 @@ export function MediaSection({
     selectedVariation,
     speakerName,
     speakerRole,
+    speakerContentType,
     speakerTalk,
     speakerImageUrl,
     quoteBackgroundImageUrl,
@@ -464,6 +466,28 @@ export function MediaSection({
             value={speakerTalk}
             onChange={(event) => updateField('speakerTalk', event.target.value)}
           />
+
+          <label className="field-label" htmlFor="speaker-content-type">
+            Tipo
+          </label>
+          <div className="select-shell">
+            <select
+              id="speaker-content-type"
+              value={speakerContentType}
+              onChange={(event) =>
+                updateField('speakerContentType', event.target.value as SpeakerContentType)
+              }
+            >
+              {speakerContentTypes.map((typeOption) => (
+                <option key={typeOption} value={typeOption}>
+                  {typeOption}
+                </option>
+              ))}
+            </select>
+            <span className="select-chevron" aria-hidden="true">
+              <AppIcon name="chevronDown" />
+            </span>
+          </div>
 
           <PhotoUploadField
             id="speaker-image-upload"

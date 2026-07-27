@@ -42,6 +42,8 @@ export type ImageType = (typeof imageTypes)[number]
 export type AssetVariation = (typeof assetVariations)[number]
 export type SponsorVariation = (typeof sponsorVariations)[number]
 export type Platform = (typeof platforms)[number]
+export const speakerContentTypes = ['palestra', 'painel', 'workshop', 'mentoria'] as const
+export type SpeakerContentType = (typeof speakerContentTypes)[number]
 
 export const workshopAccentColors = ['Lima', 'Magenta', 'Ciano', 'Laranja'] as const
 
@@ -100,6 +102,7 @@ export type EditorState = {
   quoteBackgroundImageUrl: string
   speakerName: string
   speakerRole: string
+  speakerContentType: SpeakerContentType
   speakerTalk: string
   speakerImageUrl: string
   meetupBackgroundImageUrl: string
@@ -246,6 +249,7 @@ export const initialEditorState: EditorState = {
   quoteBackgroundImageUrl: '',
   speakerName: 'Cynthia Zanoni',
   speakerRole: 'Senior Developer Advocate na Microsoft',
+  speakerContentType: speakerContentTypes[0],
   speakerTalk: 'Painel: O Futuro das Carreiras Tech',
   speakerImageUrl: '',
   meetupBackgroundImageUrl: '',

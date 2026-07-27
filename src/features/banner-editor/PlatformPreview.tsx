@@ -1,6 +1,7 @@
 import type { CSSProperties, RefObject } from 'react'
 
 import { AppIcon } from './components/AppIcon'
+import { EventTitle } from './components/EventTitle'
 import { getBannerTypeModule } from './banner-types/registry'
 import { useEditor } from './EditorContext'
 import {
@@ -58,6 +59,7 @@ export function PlatformPreview({
     sponsorLogoUrl,
     speakerName,
     speakerRole,
+    speakerContentType,
     speakerTalk,
     speakerImageUrl,
     quoteText,
@@ -128,9 +130,11 @@ export function PlatformPreview({
   const isAnnualSpeakerLayout = isAnnualLayout && selectedVariation === 'Palestrante'
   const isPocketSpeakerLayout = isPocketLayout && selectedVariation === 'Palestrante'
   const hasEventDetails = eventDate.trim() || eventLocation.trim()
+  const eventTitleFitKey = `${selectedType}|${selectedVariation}|${platform}`
   const hasMeetupSupportText = meetupSupportText.trim().length > 0
   const hasMeetupCta = meetupCta.trim().length > 0
   const hasSponsorCarouselCta = sponsorCarouselCta.trim().length > 0
+  const hasSpeakerTalk = speakerTalk.trim().length > 0
 
   const previewBackgroundAsset =
     selectedType === 'Encontro Anual' && (selectedVariation === 'Palestrante' || isAnnualSponsorLayout)
@@ -456,21 +460,12 @@ export function PlatformPreview({
             >
               <div className="preview-content">
                 <header className="event-header">
-                  <h2 className={`event-title ${isAnnualLayout ? 'is-annual-layout' : ''}`}>
-                    {isAnnualLayout ? (
-                      <span className="event-title-icon-block" aria-hidden="true">
-                        <img
-                          src={`${import.meta.env.BASE_URL}src/assets/icons/arrow.png`}
-                          alt=""
-                          className="event-title-icon"
-                        />
-                      </span>
-                    ) : null}
-                    <span className="event-title-copy">
-                      <span className="event-title-segment">{eventTitle}</span>
-                      {eventCity.trim() ? <span className="event-city event-title-segment"> {eventCity}</span> : null}
-                    </span>
-                  </h2>
+                  <EventTitle
+                    isAnnual={isAnnualLayout}
+                    eventTitle={eventTitle}
+                    eventCity={eventCity}
+                    fitKey={eventTitleFitKey}
+                  />
 
                   {(!isAnnualSponsorLayout || isPocketLayout) && hasEventDetails ? (
                     <div className="event-details-pill">
@@ -685,21 +680,12 @@ export function PlatformPreview({
           <div className="preview-content">
             {!isOtherEventLayout ? (
               <header className="event-header">
-                <h2 className={`event-title ${isAnnualLayout ? 'is-annual-layout' : ''}`}>
-                  {isAnnualLayout ? (
-                    <span className="event-title-icon-block" aria-hidden="true">
-                      <img
-                        src={`${import.meta.env.BASE_URL}src/assets/icons/arrow.png`}
-                        alt=""
-                        className="event-title-icon"
-                      />
-                    </span>
-                  ) : null}
-                  <span className="event-title-copy">
-                    <span className="event-title-segment">{eventTitle}</span>
-                    {eventCity.trim() ? <span className="event-city event-title-segment"> {eventCity}</span> : null}
-                  </span>
-                </h2>
+                <EventTitle
+                  isAnnual={isAnnualLayout}
+                  eventTitle={eventTitle}
+                  eventCity={eventCity}
+                  fitKey={eventTitleFitKey}
+                />
 
                 {!isAnnualSpeakerLayout && (!isSponsorLayout || isPocketLayout) && hasEventDetails ? (
                   <div className="event-details-pill">
@@ -768,10 +754,34 @@ export function PlatformPreview({
                       className="speaker-brand"
                     />
                   ) : null}
-                  <h3 className="speaker-name">{speakerName || 'Nome da palestrante'}</h3>
-                  <p className="speaker-role">{speakerRole || 'Cargo / empresa'}</p>
-                  {speakerTalk.trim() ? <p className="speaker-talk">{speakerTalk.trim()}</p> : null}
+                  <div className="speaker-identity-block">
+                    <h3 className="speaker-name">{speakerName || 'Nome da palestrante'}</h3>
+                    <p className="speaker-role">{speakerRole || 'Cargo / empresa'}</p>
+                  </div>
+                  {hasSpeakerTalk && !isPocketSpeakerLayout ? <p className="speaker-talk">{speakerTalk.trim()}</p> : null}
                 </div>
+              </div>
+            ) : null}
+
+            {isPocketSpeakerLayout && hasSpeakerTalk ? (
+              <section className="speaker-content-block" aria-label="Conteudo da palestra">
+                <div className="event-details-pill speaker-content-type-pill" aria-label="Tipo do conteudo">
+                  <span className="event-detail-item">
+                    <span className="event-dot" aria-hidden="true" />
+                    <span>{speakerContentType}</span>
+                  </span>
+                </div>
+                <p className="speaker-talk">{speakerTalk.trim()}</p>
+              </section>
+            ) : null}
+
+            {isPocketSpeakerLayout ? (
+              <div className="pocket-brand-footer">
+                <img
+                  src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
+                  alt="WoMakers Code"
+                  className="pocket-brand"
+                />
               </div>
             ) : null}
 

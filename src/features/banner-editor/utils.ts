@@ -9,12 +9,14 @@ import {
   platformPresets,
   platforms,
   sponsorVariations,
+  speakerContentTypes,
   type AssetVariation,
   type BannerOption,
   type EditorState,
   type ImageType,
   type Platform,
   type SavedBannerAsset,
+  type SpeakerContentType,
   type SponsorVariation,
   type WorkshopAccentColor,
   workshopAccentColors,
@@ -43,6 +45,11 @@ export const hasTypeVariations = (type: ImageType) => getTypeVariations(type).le
 
 export const isSponsorVariation = (variation: AssetVariation): variation is SponsorVariation =>
   sponsorVariations.includes(variation as SponsorVariation)
+
+export const shouldIntegrateFeedAndStories = (
+  type: ImageType,
+  variation: AssetVariation,
+) => type === 'Encontro Pocket' && (variation === 'Palestrante' || variation === 'Patrocinador Carousel')
 
 export const getBannerOptionLabel = (
   type: ImageType,
@@ -230,6 +237,7 @@ export const isEditorStateEqual = (left: EditorState, right: EditorState) =>
   left.quoteBackgroundImageUrl === right.quoteBackgroundImageUrl &&
   left.speakerName === right.speakerName &&
   left.speakerRole === right.speakerRole &&
+  left.speakerContentType === right.speakerContentType &&
   left.speakerTalk === right.speakerTalk &&
   left.speakerImageUrl === right.speakerImageUrl &&
   left.meetupBackgroundImageUrl === right.meetupBackgroundImageUrl &&
@@ -245,6 +253,9 @@ export const isPlatform = (value: string): value is Platform => platforms.includ
 
 export const isWorkshopAccentColor = (value: string): value is WorkshopAccentColor =>
   workshopAccentColors.includes(value as WorkshopAccentColor)
+
+export const isSpeakerContentType = (value: string): value is SpeakerContentType =>
+  speakerContentTypes.includes(value as SpeakerContentType)
 
 export const parseEditorStateCandidate = (
   parsed: Partial<EditorState> | null | undefined,
@@ -362,6 +373,9 @@ export const parseEditorStateCandidate = (
     quoteBackgroundImageUrl: parsed.quoteBackgroundImageUrl ?? '',
     speakerName: parsed.speakerName ?? '',
     speakerRole: parsed.speakerRole ?? '',
+    speakerContentType: isSpeakerContentType(parsed.speakerContentType ?? '')
+      ? (parsed.speakerContentType as SpeakerContentType)
+      : initialEditorState.speakerContentType,
     speakerTalk: parsed.speakerTalk ?? '',
     speakerImageUrl: parsed.speakerImageUrl ?? '',
     meetupBackgroundImageUrl: parsed.meetupBackgroundImageUrl ?? '',

@@ -30,8 +30,15 @@ import {
   groupedBannerOptions,
   loadSavedBannerAssets,
   normalizeEditorState,
+  shouldIntegrateFeedAndStories,
 } from './features/banner-editor/utils'
 import './App.css'
+
+const storiesPlatform = 'Instagram Stories (1080x1920)'
+const feedPlatform = 'Instagram Feed (1080x1350)'
+
+const getPreviewKindLabel = (platform: string): 'Stories' | 'Feed' =>
+  platform === storiesPlatform ? 'Stories' : 'Feed'
 
 function EditorWorkspace() {
   // Navegação baseada em hash: #editor, #salvos
@@ -174,6 +181,8 @@ function EditorWorkspace() {
     setFeedback,
     primaryPreviewFrameRef,
     storiesPreviewFrameRef,
+    sponsorCarouselSecondaryPreviewFrameRef,
+    storiesSponsorCarouselSecondaryRef,
   })
 
   const navigateTo = (nextScreen: 'editor' | 'salvos') => {
@@ -211,7 +220,7 @@ function EditorWorkspace() {
     const contentHeight = stack.offsetHeight * zoom
     return {
       maxX: Math.max(0, (contentWidth - availableWidth) / 2),
-      maxY: Math.max(0, (contentHeight - availableHeight) / 2),
+      maxY: Math.max(0, contentHeight - availableHeight),
     }
   }
 
@@ -395,6 +404,9 @@ function EditorWorkspace() {
         option.variation === selectedVariation &&
         option.platform === selectedPlatform,
     ) ?? bannerOptions[0]
+  const shouldExportFeedAndStories = shouldIntegrateFeedAndStories(selectedType, selectedVariation)
+  const secondaryExportPlatform = selectedPlatform === storiesPlatform ? feedPlatform : storiesPlatform
+  const shouldShowSecondaryPreview = hasSelectedType && shouldExportFeedAndStories
 
   const {
     syncRichEditorState,
@@ -504,7 +516,13 @@ function EditorWorkspace() {
                 disabled={isExporting}
               >
                 <AppIcon name="download" className="button-icon" />
-                <span>{isExporting ? 'Gerando...' : 'Baixar'}</span>
+                <span>
+                  {isExporting
+                    ? 'Gerando...'
+                    : shouldExportFeedAndStories
+                      ? 'Baixar feed + stories'
+                      : 'Baixar'}
+                </span>
               </button>
             </div>
           </div>
@@ -543,6 +561,12 @@ function EditorWorkspace() {
               } as CSSProperties}
             >
               <section className="platform-preview-section">
+                <header className="platform-preview-section-header" aria-label="Formato do preview">
+                  <div>
+                    <p className="toolbar-kicker">{getPreviewKindLabel(selectedPlatform)}</p>
+                    <h3>{selectedPlatform}</h3>
+                  </div>
+                </header>
                 <PlatformPreview
                   platform={selectedPlatform}
                   isExporting={isExporting}
@@ -559,6 +583,31 @@ function EditorWorkspace() {
                   storiesSponsorCarouselSecondaryRef={storiesSponsorCarouselSecondaryRef}
                 />
               </section>
+              {shouldShowSecondaryPreview ? (
+                <section className="platform-preview-section">
+                  <header className="platform-preview-section-header" aria-label="Formato do preview">
+                    <div>
+                      <p className="toolbar-kicker">{getPreviewKindLabel(secondaryExportPlatform)}</p>
+                      <h3>{secondaryExportPlatform}</h3>
+                    </div>
+                  </header>
+                  <PlatformPreview
+                    platform={secondaryExportPlatform}
+                    isExporting={isExporting}
+                    selectedTheme={selectedTheme}
+                    renderRichText={renderRichText}
+                    onDownloadFrame={handleDownloadQuoteFrame}
+                    primaryPreviewFrameRef={primaryPreviewFrameRef}
+                    storiesPreviewFrameRef={storiesPreviewFrameRef}
+                    quoteSecondaryPreviewFrameRef={quoteSecondaryPreviewFrameRef}
+                    storiesQuoteSecondaryRef={storiesQuoteSecondaryRef}
+                    articleSecondaryPreviewFrameRef={articleSecondaryPreviewFrameRef}
+                    storiesArticleSecondaryRef={storiesArticleSecondaryRef}
+                    sponsorCarouselSecondaryPreviewFrameRef={sponsorCarouselSecondaryPreviewFrameRef}
+                    storiesSponsorCarouselSecondaryRef={storiesSponsorCarouselSecondaryRef}
+                  />
+                </section>
+              ) : null}
             </div>
           ) : (
             <div className="preview-empty-state">

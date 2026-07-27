@@ -13,7 +13,11 @@ import {
   isStorageQuotaExceeded,
   optimizeSavedPreviewDataUrl,
 } from '../imageProcessing'
-import { buildBannerFileName, createSavedBannerId } from '../utils'
+import {
+  buildBannerFileName,
+  createSavedBannerId,
+  shouldIntegrateFeedAndStories,
+} from '../utils'
 import type { FeedbackKey } from './useFeedback'
 
 type UseEditorExportOptions = {
@@ -24,6 +28,8 @@ type UseEditorExportOptions = {
   setFeedback: (key: FeedbackKey, message: string) => void
   primaryPreviewFrameRef: RefObject<HTMLDivElement | null>
   storiesPreviewFrameRef: RefObject<HTMLDivElement | null>
+  sponsorCarouselSecondaryPreviewFrameRef: RefObject<HTMLDivElement | null>
+  storiesSponsorCarouselSecondaryRef: RefObject<HTMLDivElement | null>
 }
 
 export function useEditorExport({
@@ -34,6 +40,8 @@ export function useEditorExport({
   setFeedback,
   primaryPreviewFrameRef,
   storiesPreviewFrameRef,
+  sponsorCarouselSecondaryPreviewFrameRef,
+  storiesSponsorCarouselSecondaryRef,
 }: UseEditorExportOptions) {
   const preset = platformPresets[editorState.selectedPlatform]
 
@@ -63,9 +71,44 @@ export function useEditorExport({
   const handleDownloadFocusedBanner = async () => {
     setIsExporting(true)
     try {
+      const shouldExportFeedAndStories = shouldIntegrateFeedAndStories(
+        editorState.selectedType,
+        editorState.selectedVariation,
+      )
+      const isSponsorCarousel = editorState.selectedVariation === 'Patrocinador Carousel'
+      const baseFileName = buildBannerFileName(editorState)
+
+      if (shouldExportFeedAndStories) {
+        const exportJobs: Array<{ frame: HTMLDivElement | null; suffix: string }> = [
+          { frame: primaryPreviewFrameRef.current, suffix: isSponsorCarousel ? 'feed-imagem-1' : 'feed' },
+          { frame: storiesPreviewFrameRef.current, suffix: isSponsorCarousel ? 'stories-imagem-1' : 'stories' },
+        ]
+
+        if (isSponsorCarousel) {
+          exportJobs.push(
+            { frame: sponsorCarouselSecondaryPreviewFrameRef.current, suffix: 'feed-imagem-2' },
+            { frame: storiesSponsorCarouselSecondaryRef.current, suffix: 'stories-imagem-2' },
+          )
+        }
+
+        for (const job of exportJobs) {
+          const dataUrl = await exportFrameImage(job.frame)
+          const fileName = baseFileName.replace('.png', `-${job.suffix}.png`)
+          downloadImage(dataUrl, fileName)
+        }
+
+        setFeedback(
+          'save',
+          isSponsorCarousel
+            ? 'Downloads de feed e stories iniciados para as imagens 1 e 2.'
+            : 'Downloads de feed e stories iniciados.',
+        )
+        return
+      }
+
       const isStories = editorState.selectedPlatform === 'Instagram Stories (1080x1920)'
       const dataUrl = await exportCurrentBannerImage()
-      const fileName = buildBannerFileName(editorState).replace(
+      const fileName = baseFileName.replace(
         '.png',
         isStories ? '-stories.png' : '-feed.png',
       )
