@@ -1,4 +1,5 @@
 import type { ChangeEvent } from 'react'
+import { PhotoUploadField } from '../../components/PhotoUploadField'
 
 type WorkshopMediaFieldsProps = {
   isDualSpeaker: boolean
@@ -150,26 +151,16 @@ export function WorkshopMediaFields({
         onChange={(event) => onSpeakerRoleChange(event.target.value)}
       />
 
-      <label className="field-label" htmlFor="workshop-speaker-photo-upload">
-        Foto da palestrante
-      </label>
-      <input
+      <PhotoUploadField
         id="workshop-speaker-photo-upload"
-        type="file"
-        accept="image/*"
-        onChange={onSpeakerPhotoUpload}
+        label="Foto da palestrante"
+        hint="Upload de imagem com até 8 MB. Se ficar vazio, a preview usa placeholder com iniciais."
+        imageUrl={speakerImageUrl}
+        feedback={photoFeedback}
+        removeLabel="Remover foto"
+        onPhotoUpload={onSpeakerPhotoUpload}
+        onRemovePhoto={onRemoveSpeakerPhoto}
       />
-      <div className="photo-actions-row">
-        <p className="field-hint">
-          Upload de imagem com até 8 MB. Se ficar vazio, a preview usa placeholder com iniciais.
-        </p>
-        {speakerImageUrl ? (
-          <button type="button" className="secondary-inline-action" onClick={onRemoveSpeakerPhoto}>
-            Remover foto
-          </button>
-        ) : null}
-      </div>
-      {photoFeedback ? <p className="field-hint upload-feedback">{photoFeedback}</p> : null}
 
       {isDualSpeaker ? (
         <>
@@ -195,26 +186,16 @@ export function WorkshopMediaFields({
                 onChange={(event) => speaker.onRoleChange(event.target.value)}
               />
 
-              <label className="field-label" htmlFor={`workshop-${speaker.key}-speaker-photo-upload`}>
-                Foto da {speaker.ordinal} palestrante
-              </label>
-              <input
+              <PhotoUploadField
                 id={`workshop-${speaker.key}-speaker-photo-upload`}
-                type="file"
-                accept="image/*"
-                onChange={speaker.onPhotoUpload}
+                label={`Foto da ${speaker.ordinal} palestrante`}
+                hint="A foto usa a mesma moldura, ajustada proporcionalmente para acomodar todos os perfis."
+                imageUrl={speaker.imageUrl}
+                feedback={speaker.feedback}
+                removeLabel="Remover foto"
+                onPhotoUpload={speaker.onPhotoUpload}
+                onRemovePhoto={speaker.onRemovePhoto}
               />
-              <div className="photo-actions-row">
-                <p className="field-hint">
-                  A foto usa a mesma moldura, ajustada proporcionalmente para acomodar todos os perfis.
-                </p>
-                {speaker.imageUrl ? (
-                  <button type="button" className="secondary-inline-action" onClick={speaker.onRemovePhoto}>
-                    Remover foto
-                  </button>
-                ) : null}
-              </div>
-              {speaker.feedback ? <p className="field-hint upload-feedback">{speaker.feedback}</p> : null}
             </div>
           ))}
 
@@ -239,26 +220,16 @@ export function WorkshopMediaFields({
         </>
       ) : null}
 
-      <label className="field-label" htmlFor="workshop-partner-logo-upload">
-        Marca parceira
-      </label>
-      <input
+      <PhotoUploadField
         id="workshop-partner-logo-upload"
-        type="file"
-        accept="image/*"
-        onChange={onPartnerLogoUpload}
+        label="Marca parceira"
+        hint="A marca parceira aparece ao lado da WoMakers no footer e se ajusta proporcionalmente."
+        imageUrl={partnerLogoUrl}
+        feedback={partnerLogoFeedback}
+        removeLabel="Remover marca"
+        onPhotoUpload={onPartnerLogoUpload}
+        onRemovePhoto={onRemovePartnerLogo}
       />
-      <div className="photo-actions-row">
-        <p className="field-hint">
-          A marca parceira aparece ao lado da WoMakers no footer e se ajusta proporcionalmente.
-        </p>
-        {partnerLogoUrl ? (
-          <button type="button" className="secondary-inline-action" onClick={onRemovePartnerLogo}>
-            Remover marca
-          </button>
-        ) : null}
-      </div>
-      {partnerLogoFeedback ? <p className="field-hint upload-feedback">{partnerLogoFeedback}</p> : null}
     </section>
   )
 }

@@ -1,3 +1,5 @@
+import { memo } from 'react'
+
 type QuoteCardProps = {
   bodyClassName: string
   cardClassName: string
@@ -7,7 +9,7 @@ type QuoteCardProps = {
   showBadge?: boolean
 }
 
-export function QuoteCard({
+export const QuoteCard = memo(function QuoteCard({
   bodyClassName,
   cardClassName,
   html,
@@ -34,4 +36,4 @@ export function QuoteCard({
       </footer>
     </article>
   )
-}
+})

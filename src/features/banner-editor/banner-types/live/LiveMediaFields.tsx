@@ -1,4 +1,5 @@
 import { AppIcon } from '../../components/AppIcon'
+import { PhotoUploadField } from '../../components/PhotoUploadField'
 
 interface LiveMediaFieldsProps {
   speakerName: string
@@ -78,26 +79,16 @@ export function LiveMediaFields({
         onChange={(event) => onSpeakerRoleChange(event.target.value)}
       />
 
-      <label className="field-label" htmlFor="live-speaker-image">
-        Foto
-      </label>
-      <input
+      <PhotoUploadField
         id="live-speaker-image"
-        type="file"
-        accept="image/*"
-        onChange={onSpeakerPhotoUpload}
+        label="Foto"
+        hint="Upload de imagem com até 8 MB. Se ficar vazio, a preview usa um placeholder com iniciais."
+        imageUrl={speakerImageUrl}
+        feedback={photoFeedback}
+        removeLabel="Remover foto"
+        onPhotoUpload={onSpeakerPhotoUpload}
+        onRemovePhoto={onRemoveSpeakerPhoto}
       />
-      <div className="photo-actions-row">
-        <p className="field-hint">
-          Upload de imagem com até 8 MB. Se ficar vazio, a preview usa um placeholder com iniciais.
-        </p>
-        {speakerImageUrl ? (
-          <button type="button" className="secondary-inline-action" onClick={onRemoveSpeakerPhoto}>
-            Remover foto
-          </button>
-        ) : null}
-      </div>
-      {photoFeedback ? <p className="field-hint upload-feedback">{photoFeedback}</p> : null}
 
       <hr className="section-divider" />
 
@@ -123,26 +114,16 @@ export function LiveMediaFields({
         onChange={(event) => onSecondSpeakerRoleChange(event.target.value)}
       />
 
-      <label className="field-label" htmlFor="live-second-speaker-image">
-        Foto
-      </label>
-      <input
+      <PhotoUploadField
         id="live-second-speaker-image"
-        type="file"
-        accept="image/*"
-        onChange={onSecondSpeakerPhotoUpload}
+        label="Foto"
+        hint="Upload de imagem com até 8 MB. Se ficar vazio, a preview usa um placeholder com iniciais."
+        imageUrl={liveSecondSpeakerImageUrl}
+        feedback={secondPhotoFeedback}
+        removeLabel="Remover foto"
+        onPhotoUpload={onSecondSpeakerPhotoUpload}
+        onRemovePhoto={onRemoveSecondSpeakerPhoto}
       />
-      <div className="photo-actions-row">
-        <p className="field-hint">
-          Upload de imagem com até 8 MB. Se ficar vazio, a preview usa um placeholder com iniciais.
-        </p>
-        {liveSecondSpeakerImageUrl ? (
-          <button type="button" className="secondary-inline-action" onClick={onRemoveSecondSpeakerPhoto}>
-            Remover foto
-          </button>
-        ) : null}
-      </div>
-      {secondPhotoFeedback ? <p className="field-hint upload-feedback">{secondPhotoFeedback}</p> : null}
 
       <hr className="section-divider" />
 

@@ -621,21 +621,6 @@ export function PlatformPreview({
         </div>
       ) : liveModuleForPreview && liveDerivedStateForPreview ? (
         <>
-          <div className="article-preview-panel-toolbar">
-            <div>
-              <p className="toolbar-kicker">Live</p>
-              <p className="toolbar-copy">Download desta arte.</p>
-            </div>
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => handleDownloadQuoteFrame(activePrimaryRef.current, 'live')}
-              disabled={isExporting}
-            >
-              <AppIcon name="download" className="button-icon" />
-              {isExporting ? 'Gerando...' : 'Baixar PNG'}
-            </button>
-          </div>
           <div
             className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isLiveLayout ? 'is-live-layout' : ''} ${isOtherEventLayout && !isLiveLayout ? 'is-meetup-layout' : ''} ${isWorkshopLayout ? 'is-workshop-layout' : ''} ${isArticleLayout ? 'is-article-layout' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
             style={liveDerivedStateForPreview.previewStyle}
@@ -665,21 +650,6 @@ export function PlatformPreview({
         </>
       ) : workshopModuleForPreview && workshopDerivedStateForPreview ? (
         <>
-          <div className="article-preview-panel-toolbar">
-            <div>
-              <p className="toolbar-kicker">Workshop</p>
-              <p className="toolbar-copy">Download desta arte.</p>
-            </div>
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => handleDownloadQuoteFrame(activePrimaryRef.current, 'workshop')}
-              disabled={isExporting}
-            >
-              <AppIcon name="download" className="button-icon" />
-              {isExporting ? 'Gerando...' : 'Baixar PNG'}
-            </button>
-          </div>
           <div
             className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isWorkshopLayout ? 'is-workshop-layout' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
             style={workshopDerivedStateForPreview.previewStyle}
@@ -707,21 +677,6 @@ export function PlatformPreview({
         </>
       ) : (
         <>
-          <div className="article-preview-panel-toolbar">
-            <div>
-              <p className="toolbar-kicker">{selectedType}</p>
-              <p className="toolbar-copy">Download desta arte.</p>
-            </div>
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => handleDownloadQuoteFrame(activePrimaryRef.current, selectedType.toLowerCase().replace(/\s+/g, '-'))}
-              disabled={isExporting}
-            >
-              <AppIcon name="download" className="button-icon" />
-              {isExporting ? 'Gerando...' : 'Baixar PNG'}
-            </button>
-          </div>
           <div
             className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualLayout ? 'is-annual-layout' : ''} ${isAnnualSpeakerLayout ? 'is-annual-speaker' : ''} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketSpeakerLayout ? 'is-pocket-speaker' : ''} ${isPocketLayout && isSponsorLayout ? 'is-pocket-sponsor' : ''} ${isOtherEventLayout && !isLiveLayout ? 'is-meetup-layout' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
             style={previewStyleForPreview}

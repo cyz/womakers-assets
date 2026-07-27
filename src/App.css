@@ -145,11 +145,10 @@
   padding: 1rem;
   overflow: hidden;
   background: var(--app-bg);
-  transition: grid-template-columns 160ms ease;
 }
 
 .app-shell.is-sidebar-collapsed {
-  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .saved-banners-shell {
@@ -188,23 +187,40 @@
   color: var(--soft-text);
 }
 
-.control-panel.is-collapsed .panel-design-label {
-  display: none;
-}
-
 .control-panel.is-collapsed {
-  padding: 0.75rem 0.4rem;
-  gap: 0.75rem;
-  align-items: center;
-  overflow: hidden;
-}
-
-.control-panel.is-collapsed > *:not(.panel-collapse-row) {
   display: none;
 }
 
-.control-panel.is-collapsed .panel-collapse-row {
-  justify-content: center;
+.sidebar-reopen-btn {
+  position: absolute;
+  top: 1.1rem;
+  left: 1.1rem;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  color: var(--strong-text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.sidebar-reopen-btn:hover {
+  background: var(--app-bg);
+  border-color: var(--brand-primary);
+}
+
+.sidebar-reopen-btn svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: currentColor;
 }
 
 .sidebar-collapse-btn {
@@ -485,14 +501,19 @@
 }
 
 .field-label {
-  font-size: 0.98rem;
+  display: block;
+  margin-bottom: -0.25rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   color: var(--strong-text);
 }
 
 .field-hint {
-  margin: -0.15rem 0 0;
+  margin: 0.1rem 0 0;
   color: var(--muted-text);
-  font-size: 0.84rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 
 .checkbox-field {
@@ -600,9 +621,29 @@
 }
 
 .banner-select-value {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
   min-width: 0;
   color: var(--soft-text);
   font-size: 0.88rem;
+}
+
+.banner-select-group-name {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.banner-select-option-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--strong-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1137,7 +1178,7 @@
   position: relative;
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
-  border-radius: var(--radius-xl);
+  /*border-radius: var(--radius-xl);*/
   box-shadow: var(--shadow-soft);
 }
 
@@ -4073,6 +4114,12 @@
   font-weight: 700;
 }
 
+.preview-frame.is-pocket-speaker .speaker-section {
+  flex: 1 1 auto;
+  margin-top: 0;
+  align-content: center;
+}
+
 .preview-frame.is-pocket-speaker .speaker-copy h3 {
   font-size: 48px;
 }
@@ -5698,9 +5745,18 @@
   flex: 1 1 auto;
   align-items: safe center;
   justify-content: safe center;
-  padding: 1.75rem 5rem 1.75rem 1.75rem;
+  padding: 1.75rem;
   border-radius: var(--radius-xl);
   overflow: auto;
+}
+
+.preview-stage.is-preview-stack[data-can-pan='true'] {
+  cursor: grab;
+}
+
+.preview-stage.is-preview-stack.is-panning {
+  cursor: grabbing;
+  user-select: none;
 }
 
 /* Single, fit-to-view preview column, centered on the stage. Width is set
@@ -5839,8 +5895,8 @@
 }
 
 .banner-select-trigger {
-  min-height: 2.5rem;
-  padding: 0.45rem 2.4rem 0.45rem 0.85rem;
+  min-height: 2.9rem;
+  padding: 0.5rem 2.4rem 0.5rem 0.85rem;
 }
 
 .control-panel textarea {
@@ -6004,6 +6060,14 @@
   padding: 0.85rem;
 }
 
+/* Keep each section card at its natural (content) height. Without this the
+   flex-column children shrink to fit the viewport, and because the cards use
+   `overflow: hidden` the fields below the fold get clipped AND the scroll region
+   never overflows — so the panel can't scroll to the remaining/required fields. */
+.control-panel-scroll > * {
+  flex: 0 0 auto;
+}
+
 /* Region 3 — pinned footer (Reset + Download). */
 .control-panel .panel-footer {
   flex: 0 0 auto;
@@ -6041,9 +6105,10 @@
   overflow: hidden;
 }
 
-/* Card summary: comfortable padding + hover highlight (motion: 120ms). */
+/* Card summary: compact padding + hover highlight (motion: 120ms). Kept slim so
+   the section headers don't eat the vertical space the fields need. */
 .control-panel-scroll .collapsible-header {
-  padding: 0.72rem 0.85rem;
+  padding: 0.5rem 0.8rem;
   transition: background-color 120ms ease;
 }
 
@@ -6051,11 +6116,76 @@
   background: var(--app-bg);
 }
 
+/* Slim the section-icon in the header so the summary row stays short. */
+.control-panel-scroll .collapsible-header .section-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.5rem;
+}
+
+.control-panel-scroll .collapsible-header .section-label {
+  font-size: 0.9rem;
+}
+
 /* Card body inset. Chevron rotation motion is inherited from the base rule
    (.collapsible-chevron { transition: transform 160ms ease } + rotate on open). */
 .control-panel-scroll .collapsible-body {
   padding: 0 0.85rem 0.9rem;
   gap: 0.6rem;
+}
+
+/* Right-size text controls so the form stays compact yet comfortable — the base
+   rule made them 3.5rem/56px tall, which produced an unnecessarily long scroll. */
+.control-panel-scroll input:not([type='checkbox']),
+.control-panel-scroll select {
+  min-height: 2.75rem;
+  padding-top: 0.55rem;
+  padding-bottom: 0.55rem;
+}
+
+/* De-nest the per-group "muted-card" panels the banner types render inside a
+   section card. Instead of a heavy card-in-card with a boxed heading, present
+   them as light field groups separated by a subtle top divider. */
+.control-panel-scroll .collapsible-body .muted-card {
+  margin-top: 0.55rem;
+  padding: 0.75rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--panel-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.control-panel-scroll .collapsible-body .muted-card:first-child {
+  margin-top: 0;
+  padding-top: 0.15rem;
+  border-top: 0;
+}
+
+/* Flatten the boxed section icon + title into a plain subgroup label row. */
+.control-panel-scroll .collapsible-body .section-heading {
+  gap: 0.45rem;
+  margin-bottom: 0.1rem;
+}
+
+.control-panel-scroll .collapsible-body .section-heading .section-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--muted-text);
+}
+
+.control-panel-scroll .collapsible-body .section-heading .section-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+
+/* Sub-headings (e.g. Live speakers) read as compact muted group titles. */
+.control-panel-scroll .collapsible-body .subsection-heading {
+  margin: 0.6rem 0 0.15rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--muted-text);
 }
 
 /* Collapsed rail: hide the scrolling + footer regions, centre the toggle. */
@@ -6079,9 +6209,16 @@
    and the divider moves to the bottom. Its inner regions stop being fixed so
    the whole page scrolls naturally on small screens. */
 @media (max-width: 900px) {
+  .app-root {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
   .app-shell,
   .app-shell.is-sidebar-collapsed {
     grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
   }
 
   .control-panel {
@@ -6092,5 +6229,6 @@
 
   .control-panel-scroll {
     overflow: visible;
+    flex: 0 0 auto;
   }
 }

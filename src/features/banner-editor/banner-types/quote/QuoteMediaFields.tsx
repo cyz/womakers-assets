@@ -1,4 +1,5 @@
 import type { ChangeEvent } from 'react'
+import { PhotoUploadField } from '../../components/PhotoUploadField'
 
 type QuoteMediaFieldsProps = {
   onQuoteBackgroundUpload: (event: ChangeEvent<HTMLInputElement>) => void
@@ -56,47 +57,27 @@ export function QuoteMediaFields({
         onChange={(event) => onSpeakerRoleChange(event.target.value)}
       />
 
-      <label className="field-label" htmlFor="quote-image-upload">
-        Foto da aluna
-      </label>
-      <input
+      <PhotoUploadField
         id="quote-image-upload"
-        type="file"
-        accept="image/*"
-        onChange={onSpeakerPhotoUpload}
+        label="Foto da aluna"
+        hint="Upload de imagem com até 8 MB. A foto aparece arredondada acima do bloco do depoimento."
+        imageUrl={speakerImageUrl}
+        feedback={photoFeedback}
+        removeLabel="Remover foto"
+        onPhotoUpload={onSpeakerPhotoUpload}
+        onRemovePhoto={onRemoveSpeakerPhoto}
       />
-      <div className="photo-actions-row">
-        <p className="field-hint">
-          Upload de imagem com até 8 MB. A foto aparece arredondada acima do bloco do depoimento.
-        </p>
-        {speakerImageUrl ? (
-          <button type="button" className="secondary-inline-action" onClick={onRemoveSpeakerPhoto}>
-            Remover foto
-          </button>
-        ) : null}
-      </div>
-      {photoFeedback ? <p className="field-hint upload-feedback">{photoFeedback}</p> : null}
 
-      <label className="field-label" htmlFor="quote-background-upload">
-        Imagem de fundo
-      </label>
-      <input
+      <PhotoUploadField
         id="quote-background-upload"
-        type="file"
-        accept="image/*"
-        onChange={onQuoteBackgroundUpload}
+        label="Imagem de fundo"
+        hint="A imagem cobre o fundo do banner e recebe o layer oficial por cima para manter o enquadramento."
+        imageUrl={quoteBackgroundImageUrl}
+        feedback={quoteBackgroundFeedback}
+        removeLabel="Remover fundo"
+        onPhotoUpload={onQuoteBackgroundUpload}
+        onRemovePhoto={onRemoveQuoteBackground}
       />
-      <div className="photo-actions-row">
-        <p className="field-hint">
-          A imagem cobre o fundo do banner e recebe o layer oficial por cima para manter o enquadramento.
-        </p>
-        {quoteBackgroundImageUrl ? (
-          <button type="button" className="secondary-inline-action" onClick={onRemoveQuoteBackground}>
-            Remover fundo
-          </button>
-        ) : null}
-      </div>
-      {quoteBackgroundFeedback ? <p className="field-hint upload-feedback">{quoteBackgroundFeedback}</p> : null}
     </section>
   )
 }
