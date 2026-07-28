@@ -34,11 +34,8 @@ import {
 } from './features/banner-editor/utils'
 import './App.css'
 
-const storiesPlatform = 'Instagram Stories (1080x1920)'
-const feedPlatform = 'Instagram Feed (1080x1350)'
-
-const getPreviewKindLabel = (platform: string): 'Stories' | 'Feed' =>
-  platform === storiesPlatform ? 'Stories' : 'Feed'
+// Internal platform used only for secondary preview rendering
+const STORIES_PLATFORM_INTERNAL = 'Instagram Stories (1080x1920)'
 
 function EditorWorkspace() {
   // Navegação baseada em hash: #editor, #salvos
@@ -405,7 +402,6 @@ function EditorWorkspace() {
         option.platform === selectedPlatform,
     ) ?? bannerOptions[0]
   const shouldExportFeedAndStories = shouldIntegrateFeedAndStories(selectedType, selectedVariation)
-  const secondaryExportPlatform = selectedPlatform === storiesPlatform ? feedPlatform : storiesPlatform
   const shouldShowSecondaryPreview = hasSelectedType && shouldExportFeedAndStories
 
   const {
@@ -563,7 +559,7 @@ function EditorWorkspace() {
               <section className="platform-preview-section">
                 <header className="platform-preview-section-header" aria-label="Formato do preview">
                   <div>
-                    <p className="toolbar-kicker">{getPreviewKindLabel(selectedPlatform)}</p>
+                    <p className="toolbar-kicker">Desktop</p>
                     <h3>{selectedPlatform}</h3>
                   </div>
                 </header>
@@ -587,12 +583,12 @@ function EditorWorkspace() {
                 <section className="platform-preview-section">
                   <header className="platform-preview-section-header" aria-label="Formato do preview">
                     <div>
-                      <p className="toolbar-kicker">{getPreviewKindLabel(secondaryExportPlatform)}</p>
-                      <h3>{secondaryExportPlatform}</h3>
+                      <p className="toolbar-kicker">Mobile</p>
+                      <h3>Instagram Stories (1080x1920)</h3>
                     </div>
                   </header>
                   <PlatformPreview
-                    platform={secondaryExportPlatform}
+                    platform={STORIES_PLATFORM_INTERNAL}
                     isExporting={isExporting}
                     selectedTheme={selectedTheme}
                     renderRichText={renderRichText}

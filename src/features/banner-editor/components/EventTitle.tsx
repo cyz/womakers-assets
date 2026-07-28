@@ -31,7 +31,7 @@ export function EventTitle({ isAnnual, eventTitle, eventCity, fitKey }: EventTit
       ) : null}
       <span className="event-title-copy">
         <span className="event-title-segment">{eventTitle}</span>
-        {eventCity.trim() ? <span className="event-city event-title-segment"> {eventCity}</span> : null}
+        {!isAnnual && eventCity.trim() ? <span className="event-city event-title-segment"> {eventCity}</span> : null}
       </span>
     </h2>
   )

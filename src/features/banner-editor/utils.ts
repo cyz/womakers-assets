@@ -49,7 +49,34 @@ export const isSponsorVariation = (variation: AssetVariation): variation is Spon
 export const shouldIntegrateFeedAndStories = (
   type: ImageType,
   variation: AssetVariation,
-) => type === 'Encontro Pocket' && (variation === 'Palestrante' || variation === 'Patrocinador Carousel')
+) => {
+  // Quote e Artigo têm download individual de frames
+  if (type === 'Quote' || type === 'Artigo') {
+    return false
+  }
+
+  // Encontro Pocket: Palestrante e Patrocinador Carousel
+  if (type === 'Encontro Pocket') {
+    return variation === 'Palestrante' || variation === 'Patrocinador Carousel'
+  }
+
+  // Encontro Anual: Palestrante e Patrocinador Carousel
+  if (type === 'Encontro Anual') {
+    return variation === 'Palestrante' || variation === 'Patrocinador Carousel'
+  }
+
+  // Live, Workshop, Meetup Presencial, Imersão: todos têm integração
+  if (
+    type === 'Live' ||
+    type === 'Workshop' ||
+    type === 'Meetup Presencial' ||
+    type === 'Imersão'
+  ) {
+    return true
+  }
+
+  return false
+}
 
 export const getBannerOptionLabel = (
   type: ImageType,
@@ -155,36 +182,29 @@ const variationDisplayNames: Partial<Record<AssetVariation, string>> = {
 export const getVariationDisplayName = (variation: AssetVariation) =>
   variationDisplayNames[variation] ?? variation
 
-export const getPlatformShortLabel = (platform: Platform) =>
-  platform.includes('Stories') ? 'Stories' : 'Feed'
-
 // Per-option label shown inside a group. The group header already names the
 // event, so we only append what distinguishes options within it.
 export const getBannerOptionMenuName = (option: BannerOption) => {
   const group = bannerOptionGroups.find((candidate) =>
     candidate.types.some((groupType) => groupType === option.type),
   )
-  const platformShort = getPlatformShortLabel(option.platform)
 
   if (group && group.types.length > 1) {
-    return `${getTypeDisplayName(option.type)} · ${platformShort}`
+    return getTypeDisplayName(option.type)
   }
 
   if (hasTypeVariations(option.type)) {
-    return `${getVariationDisplayName(option.variation)} · ${platformShort}`
+    return getVariationDisplayName(option.variation)
   }
 
-  return platformShort
+  return option.type
 }
-
-const shouldHideSidebarOption = (option: BannerOption) =>
-  option.type === 'Encontro Pocket' && option.platform.includes('Stories')
 
 export const groupedBannerOptions = bannerOptionGroups.map((group) => ({
   label: group.label,
   options: bannerOptions.filter(
     (option) =>
-      group.types.some((groupType) => groupType === option.type) && !shouldHideSidebarOption(option),
+      group.types.some((groupType) => groupType === option.type),
   ),
 }))
 
@@ -226,8 +246,8 @@ export const isEditorStateEqual = (left: EditorState, right: EditorState) =>
   left.eventDate === right.eventDate &&
   left.eventLocation === right.eventLocation &&
   left.showAnnualCta === right.showAnnualCta &&
-  left.annualCtaCaption === right.annualCtaCaption &&
-  left.annualCta === right.annualCta &&
+  left.annualCtaUrl === right.annualCtaUrl &&
+  left.annualCtaUrlBold === right.annualCtaUrlBold &&
   left.sponsorTitle === right.sponsorTitle &&
   left.sponsorLogoUrl === right.sponsorLogoUrl &&
   left.sponsorCarouselLeadText === right.sponsorCarouselLeadText &&
@@ -278,8 +298,8 @@ export const parseEditorStateCandidate = (
 
   const requiredTextFields: Array<keyof EditorState> = [
     'eventTitle',
-    'annualCtaCaption',
-    'annualCta',
+    'annualCtaUrl',
+    'annualCtaUrlBold',
     'sponsorTitle',
     'sponsorLogoUrl',
     'sponsorCarouselLeadText',
@@ -298,6 +318,8 @@ export const parseEditorStateCandidate = (
 
   if (
     typeof parsed.showAnnualCta !== 'boolean' ||
+    typeof parsed.annualCtaUrl !== 'string' ||
+    typeof parsed.annualCtaUrlBold !== 'string' ||
     requiredTextFields.some((field) => typeof parsed[field] !== 'string')
   ) {
     return null
@@ -360,8 +382,8 @@ export const parseEditorStateCandidate = (
     eventDate: parsed.eventDate ?? '',
     eventLocation: parsed.eventLocation ?? '',
     showAnnualCta: parsed.showAnnualCta ?? false,
-    annualCtaCaption: parsed.annualCtaCaption ?? '',
-    annualCta: parsed.annualCta ?? '',
+    annualCtaUrl: parsed.annualCtaUrl ?? '',
+    annualCtaUrlBold: parsed.annualCtaUrlBold ?? '',
     sponsorTitle: parsed.sponsorTitle ?? initialEditorState.sponsorTitle,
     sponsorLogoUrl: parsed.sponsorLogoUrl ?? '',
     sponsorCarouselLeadText:

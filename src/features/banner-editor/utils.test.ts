@@ -20,14 +20,12 @@ import {
 
 describe('platform helpers', () => {
   it('strips the dimensions suffix from the platform label', () => {
-    expect(getPlatformLabel('Instagram Feed (1080x1350)')).toBe('Instagram Feed')
-    expect(getPlatformLabel('Instagram Stories (1080x1920)')).toBe('Instagram Stories')
+    expect(getPlatformLabel('Instagram (1080x1350)')).toBe('Instagram')
   })
 
   it('formats platform dimensions from the presets', () => {
-    expect(getPlatformDimensions('Instagram Feed (1080x1350)')).toBe('1080x1350')
-    expect(getPlatformDimensions('Instagram Stories (1080x1920)')).toBe('1080x1920')
-    expect(platformPresets['Instagram Feed (1080x1350)']).toEqual({ width: 1080, height: 1350 })
+    expect(getPlatformDimensions('Instagram (1080x1350)')).toBe('1080x1350')
+    expect(platformPresets['Instagram (1080x1350)']).toEqual({ width: 1080, height: 1350 })
   })
 })
 
@@ -52,14 +50,14 @@ describe('banner option catalog', () => {
   })
 
   it('omits the variation label when a type has a single variation', () => {
-    expect(getBannerOptionLabel('Meetup Presencial', 'Palestrante', 'Instagram Feed (1080x1350)')).toBe(
-      'Instagram Feed',
+    expect(getBannerOptionLabel('Meetup Presencial', 'Palestrante', 'Instagram (1080x1350)')).toBe(
+      'Instagram',
     )
   })
 
   it('includes the variation label when a type has multiple variations', () => {
-    expect(getBannerOptionLabel('Workshop', 'Palestrantes', 'Instagram Feed (1080x1350)')).toBe(
-      'Palestrantes · Instagram Feed',
+    expect(getBannerOptionLabel('Workshop', 'Palestrantes', 'Instagram (1080x1350)')).toBe(
+      'Palestrantes',
     )
   })
 })
@@ -71,7 +69,7 @@ describe('type guards', () => {
   })
 
   it('validates platforms', () => {
-    expect(isPlatform('Instagram Feed (1080x1350)')).toBe(true)
+    expect(isPlatform('Instagram (1080x1350)')).toBe(true)
     expect(isPlatform('Twitter')).toBe(false)
   })
 

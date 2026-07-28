@@ -29,14 +29,15 @@ export const sidebarReadyVariations = [
 export const defaultAssetVariation = assetVariations[0]
 
 export const platforms = [
-  'Instagram Feed (1080x1350)',
-  'Instagram Stories (1080x1920)',
+  'Instagram (1080x1350)',
 ] as const
 
 export const platformPresets: Record<(typeof platforms)[number], { width: number; height: number }> = {
-  'Instagram Feed (1080x1350)': { width: 1080, height: 1350 },
-  'Instagram Stories (1080x1920)': { width: 1080, height: 1920 },
+  'Instagram (1080x1350)': { width: 1080, height: 1350 },
 }
+
+// Internal preset for Stories rendering in secondary preview
+export const STORIES_PRESET = { width: 1080, height: 1920 } as const
 
 export type ImageType = (typeof imageTypes)[number]
 export type AssetVariation = (typeof assetVariations)[number]
@@ -87,8 +88,8 @@ export type EditorState = {
   eventDate: string
   eventLocation: string
   showAnnualCta: boolean
-  annualCtaCaption: string
-  annualCta: string
+  annualCtaUrl: string
+  annualCtaUrlBold: string
   sponsorTitle: string
   sponsorLogoUrl: string
   sponsorCarouselLeadText: string
@@ -231,8 +232,8 @@ export const initialEditorState: EditorState = {
   eventDate: '28 de março',
   eventLocation: 'Arena CMPC Tecnopuc',
   showAnnualCta: false,
-  annualCtaCaption: 'Legenda CTA',
-  annualCta: 'Inscreva-se',
+  annualCtaUrl: 'Inscreva-se em ',
+  annualCtaUrlBold: 'womakerscode.com',
   sponsorTitle: 'Patrocínio',
   sponsorLogoUrl: '',
   sponsorCarouselLeadText:

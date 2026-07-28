@@ -38,7 +38,7 @@ The first component in this repo is the current editor in `src/App.tsx`. Treat i
 - Banner selection is driven by typed metadata: type, variation, platform and dimensions.
 - Current formats: `Encontro Pocket`, `Encontro Anual`, `Meetup Presencial`, `Live`, `Imersão`.
 - Current variation model: `Palestrante` and `Agenda`, but only Pocket and Anual expose both.
-- Current platform preset: `Instagram Feed (1080x1350)`.
+- Current platform preset: `Instagram (1080x1350)` for the primary preview, with automatic Stories (1080x1920) variation generation.
 - Event inputs: title, city, date, location.
 - Speaker inputs: name, role, talk, optional photo.
 - Preview is DOM-based and exported with `html-to-image` via `toPng`.

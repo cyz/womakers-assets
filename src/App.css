@@ -4629,7 +4629,7 @@
 .preview-frame.is-annual-speaker .speaker-copy h3 {
   max-width: 8ch;
   font-family: var(--mono);
-  font-size: calc(var(--u) * 56);
+  font-size: calc(var(--u) * 68);
   line-height: 0.92;
   letter-spacing: -0.04em;
 }
@@ -4637,7 +4637,7 @@
 .preview-frame.is-annual-speaker .speaker-copy p {
   max-width: 13ch;
   color: #ff609a;
-  font-size: calc(var(--u) * 24);
+  font-size: 14px;
   line-height: 1.04;
   font-weight: 700;
 }
@@ -4685,29 +4685,107 @@
 }
 
 .annual-cta-footer {
-  align-self: center;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
-  margin-top: auto;
-  padding: calc(var(--u) * 12) calc(var(--u) * 18);
   border-radius: calc(var(--u) * 999);
-  background: #3b2e58;
   font-size: calc(var(--u) * 18);
   line-height: 1.2;
-  text-align: center;
+  text-align: left;
 }
 
 .annual-cta-footer p {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 0.3ch;
-  margin: 0;
+  margin: calc(var(--u) * 32) 0 0;
 }
 
 .annual-cta-footer strong {
   font-weight: 800;
+}
+
+.annual-cta-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: calc(var(--u) * 18);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: calc(var(--u) * 18);
+  align-self: center;
+}
+
+.annual-cta-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.3ch;
+  margin-top: calc(var(--u) * 32);
+  padding: calc(var(--u) * 14.4) calc(var(--u) * 22.4);
+  border-radius: calc(var(--u) * 5);
+  background: #1a1a1a;
+  font-size: calc(var(--u) * 18);
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+.annual-cta-text strong {
+  font-weight: 800;
+}
+
+.annual-speaker-content-section {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 10);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  margin-top: calc(var(--u) * 42);
+}
+
+.preview-frame.is-annual-speaker .annual-speaker-content-type-pill {
+  align-self: flex-start;
+  margin: 0 0 calc(var(--u) * 22);
+  border-radius: 5px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+  font-family: 'NextNew', var(--heading);
+  font-size: calc(var(--u) * 14);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.preview-frame.is-annual-speaker .annual-speaker-content-type-pill .event-detail-item {
+  gap: calc(var(--u) * 10);
+}
+
+.preview-frame.is-annual-speaker .annual-speaker-content-type-pill .event-dot {
+  width: calc(var(--u) * 10);
+  height: calc(var(--u) * 10);
+}
+
+.preview-frame.is-annual-speaker .annual-speaker-content-type-pill .event-detail-item span:last-child {
+  text-transform: uppercase;
+}
+
+.annual-speaker-content-section .speaker-talk {
+  margin: 0;
+  font-family: 'NextNew', var(--heading);
+  font-size: calc(var(--u) * 39);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: 0.01em;
 }
 
 .preview-frame.is-annual-speaker .annual-cta-footer {
@@ -4719,6 +4797,72 @@
   flex: 0 0 auto;
   width: calc(var(--u) * 12);
   height: calc(var(--u) * 12);
+}
+
+/* Annual Speaker Layout Restructure */
+.preview-frame.is-annual-speaker {
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-frame.is-annual-speaker .annual-speaker-title-section {
+  width: 100%;
+  padding: calc(var(--u) * 32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(var(--u) * 280);
+  margin-bottom: calc(var(--u) * 8);
+}
+
+.preview-frame.is-annual-speaker .annual-speaker-title-section .event-title,
+.preview-frame.is-annual-speaker .annual-speaker-title-section .event-title.is-annual-layout {
+  font-size: calc(var(--u) * 72);
+  max-width: none;
+  width: 100%;
+  text-align: center;
+}
+
+.preview-frame.is-annual-speaker .annual-speaker-title-section .event-title-copy {
+  display: block;
+  text-align: center;
+}
+
+.preview-frame.is-annual-speaker .speaker-section {
+  grid-template-columns: 1fr 1fr !important;
+  gap: calc(var(--u) * 32);
+  align-items: stretch;
+  margin-top: 0;
+}
+
+.preview-frame.is-annual-speaker .speaker-photo-shell {
+  max-width: none;
+  width: 100%;
+}
+
+.preview-frame.is-annual-speaker .speaker-copy {
+  gap: calc(var(--u) * 16);
+  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.preview-frame.is-annual-speaker .speaker-copy h3 {
+  max-width: none;
+  font-size: calc(var(--u) * 48);
+  line-height: 1.05;
+}
+
+.preview-frame.is-annual-speaker .speaker-copy p {
+  max-width: none;
+  font-size: calc(var(--u) * 35);
+  line-height: 1.1;
 }
 
 @media (max-width: 1180px) {
@@ -5459,6 +5603,16 @@
     padding: 32px 28px 36px;
   }
 
+  .preview-frame.is-annual-speaker .annual-speaker-title-section {
+    padding: calc(var(--u) * 24) calc(var(--u) * 20);
+    min-height: auto;
+    margin-bottom: calc(var(--u) * 8);
+  }
+
+  .preview-frame.is-annual-speaker .annual-speaker-title-section .event-title {
+    font-size: 48px;
+  }
+
   .preview-frame.is-annual-speaker .event-title {
     max-width: none;
     font-size: 38px;
@@ -5471,7 +5625,7 @@
   .preview-frame.is-annual-speaker .speaker-section {
     grid-template-columns: 1fr;
     gap: 28px;
-    margin-top: 32px;
+    margin-top: 0;
   }
 
   .preview-frame.is-annual-speaker .speaker-photo-shell {

@@ -9,6 +9,7 @@ import {
   articlePreviewDefaults,
   initialEditorState,
   platformPresets,
+  STORIES_PRESET,
   type MeetupLogoAsset,
   type Platform,
 } from './model'
@@ -17,7 +18,7 @@ import { isSponsorVariation } from './utils'
 type FrameRef = RefObject<HTMLDivElement | null>
 
 type PlatformPreviewProps = {
-  platform: Platform
+  platform: Platform | 'Instagram Stories (1080x1920)'
   isExporting: boolean
   selectedTheme: string
   renderRichText: (value: string, fallbackValue?: string) => { __html: string }
@@ -112,6 +113,9 @@ export function PlatformPreview({
     liveSecondSpeakerImageUrl,
     livePartnerLogoUrl1,
     livePartnerLogoUrl2,
+    showAnnualCta,
+    annualCtaUrl,
+    annualCtaUrlBold,
   } = editorState
 
   const isWorkshopLayout = selectedType === 'Workshop'
@@ -211,7 +215,7 @@ export function PlatformPreview({
   const activeQuoteSecondaryRef = isStoriesPlatformForPreview ? storiesQuoteSecondaryRef : quoteSecondaryPreviewFrameRef
   const activeArticleSecondaryRef = isStoriesPlatformForPreview ? storiesArticleSecondaryRef : articleSecondaryPreviewFrameRef
   const activeSponsorCarouselSecondaryRef = isStoriesPlatformForPreview ? storiesSponsorCarouselSecondaryRef : sponsorCarouselSecondaryPreviewFrameRef
-  const presetForPreview = platformPresets[platform]
+  const presetForPreview = isStoriesPlatformForPreview ? STORIES_PRESET : platformPresets[platform]
   const activeBannerModuleForPreview = getBannerTypeModule(selectedType)
   const quoteModuleForPreview = activeBannerModuleForPreview?.type === 'Quote' ? activeBannerModuleForPreview : null
   const workshopModuleForPreview = activeBannerModuleForPreview?.type === 'Workshop' ? activeBannerModuleForPreview : null
@@ -678,7 +682,16 @@ export function PlatformPreview({
             ref={activePrimaryRef}
           >
           <div className="preview-content">
-            {!isOtherEventLayout ? (
+            {isAnnualSpeakerLayout ? (
+              <section className="annual-speaker-title-section">
+                <EventTitle
+                  isAnnual={isAnnualLayout}
+                  eventTitle={eventTitle}
+                  eventCity={eventCity}
+                  fitKey={eventTitleFitKey}
+                />
+              </section>
+            ) : !isOtherEventLayout ? (
               <header className="event-header">
                 <EventTitle
                   isAnnual={isAnnualLayout}
@@ -687,7 +700,7 @@ export function PlatformPreview({
                   fitKey={eventTitleFitKey}
                 />
 
-                {!isAnnualSpeakerLayout && (!isSponsorLayout || isPocketLayout) && hasEventDetails ? (
+                {(!isSponsorLayout || isPocketLayout) && hasEventDetails ? (
                   <div className="event-details-pill">
                     {eventDate.trim() ? (
                       <span className="event-detail-item">
@@ -758,7 +771,6 @@ export function PlatformPreview({
                     <h3 className="speaker-name">{speakerName || 'Nome da palestrante'}</h3>
                     <p className="speaker-role">{speakerRole || 'Cargo / empresa'}</p>
                   </div>
-                  {hasSpeakerTalk && !isPocketSpeakerLayout ? <p className="speaker-talk">{speakerTalk.trim()}</p> : null}
                 </div>
               </div>
             ) : null}
@@ -783,6 +795,45 @@ export function PlatformPreview({
                   className="pocket-brand"
                 />
               </div>
+            ) : null}
+
+            {isAnnualSpeakerLayout && hasSpeakerTalk ? (
+              <section className="annual-speaker-content-section" aria-label="Conteúdo da apresentação">
+                <div className="event-details-pill annual-speaker-content-type-pill" aria-label="Tipo do conteudo">
+                  <span className="event-detail-item">
+                    <span className="event-dot" aria-hidden="true" />
+                    <span>{speakerContentType}</span>
+                  </span>
+                </div>
+                <p className="speaker-talk">{speakerTalk.trim()}</p>
+              </section>
+            ) : null}
+
+            {isAnnualSpeakerLayout && showAnnualCta ? (
+              <section className="annual-cta-footer">
+                {(eventDate.trim() || eventLocation.trim()) ? (
+                  <div className="event-details-pill annual-cta-pill">
+                    {eventDate.trim() ? (
+                      <span className="event-detail-item">
+                        <span className="event-dot" aria-hidden="true" />
+                        <span>{eventDate}</span>
+                      </span>
+                    ) : null}
+                    {eventLocation.trim() ? (
+                      <span className="event-detail-item">
+                        <span className="event-dot" aria-hidden="true" />
+                        <span>{eventLocation}</span>
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+                {(annualCtaUrl.trim() || annualCtaUrlBold.trim()) ? (
+                  <p className="annual-cta-text">
+                    <span>{annualCtaUrl.trim()}</span>
+                    {annualCtaUrlBold.trim() ? <strong>{annualCtaUrlBold.trim()}</strong> : null}
+                  </p>
+                ) : null}
+              </section>
             ) : null}
 
             {isOtherEventLayout ? (

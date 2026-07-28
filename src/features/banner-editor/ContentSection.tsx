@@ -30,7 +30,6 @@ export function ContentSection({
   const {
     selectedType,
     selectedVariation,
-    selectedPlatform,
     eventTitle,
     eventCity,
     eventDate,
@@ -38,8 +37,8 @@ export function ContentSection({
     meetupSupportText,
     meetupCta,
     showAnnualCta,
-    annualCtaCaption,
-    annualCta,
+    annualCtaUrl,
+    annualCtaUrlBold,
     workshopTitle,
     workshopBadge,
     workshopHighlight,
@@ -69,7 +68,6 @@ export function ContentSection({
     selectedType === 'Imersão'
   const isAnnualLayout = selectedType === 'Encontro Anual'
   const isAnnualSpeakerLayout = isAnnualLayout && selectedVariation === 'Palestrante'
-  const isStoriesPlatform = selectedPlatform === 'Instagram Stories (1080x1920)'
   const activeBannerModule = getBannerTypeModule(selectedType)
   const quoteModule = activeBannerModule?.type === 'Quote' ? activeBannerModule : null
   const workshopModule = activeBannerModule?.type === 'Workshop' ? activeBannerModule : null
@@ -85,7 +83,7 @@ export function ContentSection({
         <>
           {quoteModule ? (
             <quoteModule.ContentFields
-              isStoriesPlatform={isStoriesPlatform}
+              isStoriesPlatform={false}
               onQuoteBold={() => applyRichTextFormatting('quoteText', quoteEditorRef.current, 'bold')}
               onQuoteInput={() => syncRichEditorState('quoteText', quoteEditorRef.current)}
               onQuotePaste={(event) => handleRichEditorPaste(event, 'quoteText', quoteEditorRef.current)}
@@ -222,15 +220,19 @@ export function ContentSection({
             onChange={(event) => updateField('eventTitle', event.target.value)}
           />
 
-          <label className="field-label" htmlFor="event-city">
-            Cidade em destaque
-          </label>
-          <input
-            id="event-city"
-            type="text"
-            value={eventCity}
-            onChange={(event) => updateField('eventCity', event.target.value)}
-          />
+          {!isAnnualSpeakerLayout ? (
+            <>
+              <label className="field-label" htmlFor="event-city">
+                Cidade em destaque
+              </label>
+              <input
+                id="event-city"
+                type="text"
+                value={eventCity}
+                onChange={(event) => updateField('eventCity', event.target.value)}
+              />
+            </>
+          ) : null}
 
           <label className="field-label" htmlFor="event-date">
             Data
@@ -270,24 +272,24 @@ export function ContentSection({
 
               {showAnnualCta ? (
                 <>
-                  <label className="field-label" htmlFor="annual-cta-caption">
-                    Legenda CTA
+                  <label className="field-label" htmlFor="annual-cta-url">
+                    CTA URL
                   </label>
                   <input
-                    id="annual-cta-caption"
+                    id="annual-cta-url"
                     type="text"
-                    value={annualCtaCaption}
-                    onChange={(event) => updateField('annualCtaCaption', event.target.value)}
+                    value={annualCtaUrl}
+                    onChange={(event) => updateField('annualCtaUrl', event.target.value)}
                   />
 
-                  <label className="field-label" htmlFor="annual-cta">
-                    CTA
+                  <label className="field-label" htmlFor="annual-cta-url-bold">
+                    CTA URL Bold
                   </label>
                   <input
-                    id="annual-cta"
+                    id="annual-cta-url-bold"
                     type="text"
-                    value={annualCta}
-                    onChange={(event) => updateField('annualCta', event.target.value)}
+                    value={annualCtaUrlBold}
+                    onChange={(event) => updateField('annualCtaUrlBold', event.target.value)}
                   />
                 </>
               ) : null}

@@ -62,10 +62,7 @@ export function useEditorExport({
   }
 
   const exportCurrentBannerImage = async () => {
-    const isStories = editorState.selectedPlatform === 'Instagram Stories (1080x1920)'
-    return exportFrameImage(
-      isStories ? storiesPreviewFrameRef.current : primaryPreviewFrameRef.current,
-    )
+    return exportFrameImage(primaryPreviewFrameRef.current)
   }
 
   const handleDownloadFocusedBanner = async () => {
@@ -106,12 +103,8 @@ export function useEditorExport({
         return
       }
 
-      const isStories = editorState.selectedPlatform === 'Instagram Stories (1080x1920)'
       const dataUrl = await exportCurrentBannerImage()
-      const fileName = baseFileName.replace(
-        '.png',
-        isStories ? '-stories.png' : '-feed.png',
-      )
+      const fileName = baseFileName.replace('.png', '-feed.png')
       downloadImage(dataUrl, fileName)
       setFeedback('save', 'Download iniciado.')
     } catch (error) {
