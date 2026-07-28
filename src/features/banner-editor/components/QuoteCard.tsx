@@ -7,6 +7,7 @@ type QuoteCardProps = {
   quoteDisplayName: string
   quoteDisplayRole: string
   showBadge?: boolean
+  showSource?: boolean
 }
 
 export const QuoteCard = memo(function QuoteCard({
@@ -16,6 +17,7 @@ export const QuoteCard = memo(function QuoteCard({
   quoteDisplayName,
   quoteDisplayRole,
   showBadge = true,
+  showSource = true,
 }: QuoteCardProps) {
   return (
     <article className={cardClassName}>
@@ -30,10 +32,12 @@ export const QuoteCard = memo(function QuoteCard({
 
       <p className={bodyClassName} dangerouslySetInnerHTML={{ __html: html }} />
 
-      <footer className="quote-source">
-        <strong>{quoteDisplayName}</strong>
-        {quoteDisplayRole ? <span>{quoteDisplayRole}</span> : null}
-      </footer>
+      {showSource ? (
+        <footer className="quote-source">
+          <strong>{quoteDisplayName}</strong>
+          {quoteDisplayRole ? <span>{quoteDisplayRole}</span> : null}
+        </footer>
+      ) : null}
     </article>
   )
 })

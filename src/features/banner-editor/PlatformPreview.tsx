@@ -203,12 +203,6 @@ export function PlatformPreview({
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('')
-  const articleInitials = articleSpeakerName
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
 
   const isStoriesPlatformForPreview = platform === 'Instagram Stories (1080x1920)'
   const activePrimaryRef = isStoriesPlatformForPreview ? storiesPreviewFrameRef : primaryPreviewFrameRef
@@ -338,31 +332,15 @@ export function PlatformPreview({
               <div className="preview-content">
                 <article className="article-slide article-slide-primary">
                   <div className="article-primary-layout">
+                      <header className="article-heading-block">
+                        <h2 className="article-name">{articleSpeakerName}</h2>
+                        <p className="article-role">{articleSpeakerRole}</p>
+                      </header>
                     <div className="article-preview-layout">
                       <section className="article-copy-column">
-                        <header className="article-heading-block">
-                          <h2 className="article-name">{articleSpeakerName}</h2>
-                          <p className="article-role">{articleSpeakerRole}</p>
-                        </header>
-
                         <blockquote className="article-quote-block">
                           <p className="article-quote-copy" dangerouslySetInnerHTML={renderRichText(articleQuoteText, articlePreviewDefaults.quoteText)} />
                         </blockquote>
-
-                        <footer className="article-footer">
-                          <div className="article-cta-card">
-                            <span className="article-linkedin-badge" aria-hidden="true">
-                              in
-                            </span>
-                            <p>{articleCta}</p>
-                          </div>
-
-                          <img
-                            src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
-                            alt="WoMakers Code"
-                            className="article-brand"
-                          />
-                        </footer>
                       </section>
 
                       <section className="article-portrait-column" aria-label={articleSpeakerName}>
@@ -373,14 +351,39 @@ export function PlatformPreview({
                                 <img src={speakerImageUrl} alt={articleSpeakerName} className="article-photo" />
                               ) : (
                                 <div className="article-photo-placeholder" aria-label="Article photo placeholder">
-                                  {articleInitials || 'RP'}
+                                  {speakerInitials || 'RP'}
                                 </div>
                               )}
                             </div>
+                            <img
+                              src={`${import.meta.env.BASE_URL}src/assets/themes/newsletter-moldura.png`}
+                              alt=""
+                              aria-hidden="true"
+                              className="article-photo-mask"
+                            />
                           </div>
                         </div>
                       </section>
                     </div>
+
+                    <footer className="article-footer article-footer-split article-primary-footer">
+                      <section className="article-footer-half article-footer-cta" aria-label="Leia a entrevista completa">
+                        <div className="article-cta-card">
+                          <span className="article-linkedin-badge" aria-hidden="true">
+                            in
+                          </span>
+                          <p>{articleCta}</p>
+                        </div>
+                      </section>
+
+                      <section className="article-footer-half article-footer-brand" aria-label="Logo da ONG">
+                        <img
+                          src={`${import.meta.env.BASE_URL}src/assets/themes/brand.png`}
+                          alt="WoMakers Code"
+                          className="article-brand"
+                        />
+                      </section>
+                    </footer>
                   </div>
                 </article>
               </div>
@@ -458,12 +461,12 @@ export function PlatformPreview({
               </div>
 
             <div
-              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketLayout ? 'is-pocket-sponsor' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
+              className={`preview-frame theme-${selectedTheme.toLowerCase()} ${isAnnualSponsorLayout ? 'is-annual-sponsor' : ''} ${isAnnualSponsorLayout ? 'is-annual-speaker' : ''} ${isPocketLayout ? 'is-pocket-layout' : ''} ${isPocketLayout ? 'is-pocket-sponsor' : ''} ${isStoriesPlatformForPreview ? 'is-stories-platform' : ''}`}
               style={previewStyleForPreview}
               ref={activePrimaryRef}
             >
               <div className="preview-content">
-                <header className="event-header">
+                <section className="annual-speaker-title-section">
                   <EventTitle
                     isAnnual={isAnnualLayout}
                     eventTitle={eventTitle}
@@ -487,7 +490,7 @@ export function PlatformPreview({
                       ) : null}
                     </div>
                   ) : null}
-                </header>
+                </section>
 
                 <section className="pocket-sponsor-section" aria-label={selectedVariation}>
                   <h3 className="pocket-sponsor-title">

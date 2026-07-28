@@ -75,23 +75,31 @@ export function QuotePreview({
           />
           <div className="preview-content">
             <div className="quote-preview-layout">
-              <div className="quote-avatar-shell">
-                {speakerImageUrl ? (
-                  <img src={speakerImageUrl} alt={quoteDisplayName || 'Foto da aluna'} className="quote-avatar" />
-                ) : (
-                  <div className="quote-avatar-placeholder" aria-label="Placeholder da foto da aluna">
-                    {speakerInitials || 'WM'}
-                  </div>
-                )}
-              </div>
+              <header className="quote-speaker-header">
+                <strong className="quote-speaker-name">{quoteDisplayName}</strong>
+                {quoteDisplayRole ? <span className="quote-speaker-role">{quoteDisplayRole}</span> : null}
+              </header>
 
-              <QuoteCard
-                bodyClassName="quote-body"
-                cardClassName="quote-card"
-                html={primaryQuoteHtml}
-                quoteDisplayName={quoteDisplayName}
-                quoteDisplayRole={quoteDisplayRole}
-              />
+              <div className="quote-primary-columns">
+                <QuoteCard
+                  bodyClassName="quote-body"
+                  cardClassName="quote-card"
+                  html={primaryQuoteHtml}
+                  quoteDisplayName={quoteDisplayName}
+                  quoteDisplayRole={quoteDisplayRole}
+                  showSource={false}
+                />
+
+                <div className="quote-avatar-shell">
+                  {speakerImageUrl ? (
+                    <img src={speakerImageUrl} alt={quoteDisplayName || 'Foto da aluna'} className="quote-avatar" />
+                  ) : (
+                    <div className="quote-avatar-placeholder" aria-label="Placeholder da foto da aluna">
+                      {speakerInitials || 'WM'}
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <footer className="quote-brand-footer">
                 <img src={brandAssetUrl} alt="WoMakers Code" className="quote-brand" />
