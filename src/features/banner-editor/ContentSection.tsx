@@ -166,6 +166,20 @@ export function ContentSection({
         ) : null
       ) : isOtherEventLayout ? (
         <>
+          {selectedType === 'Meetup Presencial' ? (
+            <>
+              <label className="field-label" htmlFor="event-title">
+                Nome do evento
+              </label>
+              <input
+                id="event-title"
+                type="text"
+                value={eventTitle}
+                onChange={(event) => updateField('eventTitle', event.target.value)}
+              />
+            </>
+          ) : null}
+
           <label className="field-label" htmlFor="event-date">
             Data e horário
           </label>

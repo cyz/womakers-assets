@@ -3886,7 +3886,7 @@
   max-width: 100%;
   font-size: calc(var(--u) * 48);
   line-height: 1.1;
-  font-family: 'NextNew', var(--heading);
+  font-family: var(--barlow);
   font-weight: 800;
   text-transform: none;
   text-shadow: none;
