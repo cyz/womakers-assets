@@ -43,6 +43,7 @@ export function ContentSection({
     workshopBadge,
     workshopHighlight,
     workshopHighlightColored,
+    workshopSpeakerCount,
     workshopAccentColor,
     workshopBackgroundImageUrl,
     workshopBulletsIntro,
@@ -61,7 +62,7 @@ export function ContentSection({
   const isQuoteLayout = selectedType === 'Quote'
   const isArticleLayout = selectedType === 'Artigo'
   const isWorkshopLayout = selectedType === 'Workshop'
-  const isWorkshopDualSpeakerLayout = isWorkshopLayout && selectedVariation === 'Palestrantes'
+  const isWorkshopDualSpeakerLayout = isWorkshopLayout && workshopSpeakerCount > 1
   const isOtherEventLayout =
     selectedType === 'Meetup Presencial' ||
     selectedType === 'Live' ||

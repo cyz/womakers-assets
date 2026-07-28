@@ -128,7 +128,7 @@ export const getWorkshopDerivedState = ({
       .map((part) => part[0]?.toUpperCase())
       .join('')
 
-  const clampedSpeakerCount = Math.min(Math.max(workshopSpeakerCount ?? 2, 2), 4)
+  const clampedSpeakerCount = Math.min(Math.max(workshopSpeakerCount ?? 1, 1), 4)
   const additionalSpeakers = [
     {
       imageUrl: workshopSecondSpeakerImageUrl,

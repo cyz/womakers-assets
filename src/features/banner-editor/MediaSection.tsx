@@ -96,8 +96,6 @@ export function MediaSection({
 
   const { applyRichTextFormatting, syncRichEditorState, handleRichEditorPaste } = richText
 
-  const isWorkshopLayout = selectedType === 'Workshop'
-  const isWorkshopDualSpeakerLayout = isWorkshopLayout && selectedVariation === 'Palestrantes'
   const isOtherEventLayout =
     selectedType === 'Meetup Presencial' ||
     selectedType === 'Live' ||
@@ -132,7 +130,6 @@ export function MediaSection({
         />
       ) : workshopModule ? (
         <workshopModule.MediaFields
-          isDualSpeaker={isWorkshopDualSpeakerLayout}
           onPartnerLogoUpload={handleWorkshopPartnerLogoUpload}
           onRemovePartnerLogo={handleRemoveWorkshopPartnerLogo}
           onRemoveSpeakerPhoto={handleRemoveSpeakerPhoto}

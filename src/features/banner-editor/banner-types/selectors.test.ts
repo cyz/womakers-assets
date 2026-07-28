@@ -139,12 +139,21 @@ describe('getWorkshopDerivedState', () => {
     expect(state.speakerCards[2].name).toBe('Carla Dias')
   })
 
-  it('clamps the speaker count to the 2-4 range', () => {
+  it('clamps the speaker count to the 1-4 range', () => {
     const state = getWorkshopDerivedState({
       ...baseArgs,
       isDualSpeaker: true,
       workshopSpeakerCount: 9,
     })
     expect(state.speakerCards).toHaveLength(4)
+  })
+
+  it('keeps a single speaker when dual layout is enabled but count is below minimum', () => {
+    const state = getWorkshopDerivedState({
+      ...baseArgs,
+      isDualSpeaker: true,
+      workshopSpeakerCount: 0,
+    })
+    expect(state.speakerCards).toHaveLength(1)
   })
 })

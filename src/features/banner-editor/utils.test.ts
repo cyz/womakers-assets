@@ -56,8 +56,8 @@ describe('banner option catalog', () => {
   })
 
   it('includes the variation label when a type has multiple variations', () => {
-    expect(getBannerOptionLabel('Workshop', 'Palestrantes', 'Instagram (1080x1350)')).toBe(
-      'Palestrantes',
+    expect(getBannerOptionLabel('Encontro Pocket', 'Palestrante', 'Instagram (1080x1350)')).toBe(
+      'Palestrante · Instagram',
     )
   })
 })

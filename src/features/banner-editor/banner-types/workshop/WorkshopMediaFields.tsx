@@ -2,7 +2,6 @@ import type { ChangeEvent } from 'react'
 import { PhotoUploadField } from '../../components/PhotoUploadField'
 
 type WorkshopMediaFieldsProps = {
-  isDualSpeaker: boolean
   onRemovePartnerLogo: () => void
   onRemoveSpeakerPhoto: () => void
   onRemoveSecondSpeakerPhoto: () => void
@@ -44,7 +43,6 @@ type WorkshopMediaFieldsProps = {
 }
 
 export function WorkshopMediaFields({
-  isDualSpeaker,
   onRemovePartnerLogo,
   onRemoveSpeakerPhoto,
   onRemoveSecondSpeakerPhoto,
@@ -84,7 +82,7 @@ export function WorkshopMediaFields({
   fourthSpeakerName,
   fourthSpeakerRole,
 }: WorkshopMediaFieldsProps) {
-  const clampedSpeakerCount = Math.min(Math.max(speakerCount ?? 2, 2), 4)
+  const clampedSpeakerCount = Math.min(Math.max(speakerCount ?? 1, 1), 4)
   const additionalSpeakers = [
     {
       key: 'second',
@@ -122,7 +120,7 @@ export function WorkshopMediaFields({
       onPhotoUpload: onFourthSpeakerPhotoUpload,
       onRemovePhoto: onRemoveFourthSpeakerPhoto,
     },
-  ].slice(0, clampedSpeakerCount - 1)
+  ].slice(0, Math.max(clampedSpeakerCount - 1, 0))
 
   return (
     <section className="control-section muted-card">
@@ -162,63 +160,59 @@ export function WorkshopMediaFields({
         onRemovePhoto={onRemoveSpeakerPhoto}
       />
 
-      {isDualSpeaker ? (
-        <>
-          {additionalSpeakers.map((speaker) => (
-            <div key={speaker.key} className="workshop-extra-speaker">
-              <label className="field-label" htmlFor={`workshop-${speaker.key}-speaker-name`}>
-                Nome da {speaker.ordinal} palestrante
-              </label>
-              <input
-                id={`workshop-${speaker.key}-speaker-name`}
-                type="text"
-                value={speaker.name}
-                onChange={(event) => speaker.onNameChange(event.target.value)}
-              />
+      {additionalSpeakers.map((speaker) => (
+        <div key={speaker.key} className="workshop-extra-speaker">
+          <label className="field-label" htmlFor={`workshop-${speaker.key}-speaker-name`}>
+            Nome da {speaker.ordinal} palestrante
+          </label>
+          <input
+            id={`workshop-${speaker.key}-speaker-name`}
+            type="text"
+            value={speaker.name}
+            onChange={(event) => speaker.onNameChange(event.target.value)}
+          />
 
-              <label className="field-label" htmlFor={`workshop-${speaker.key}-speaker-role`}>
-                Cargo da {speaker.ordinal} palestrante
-              </label>
-              <input
-                id={`workshop-${speaker.key}-speaker-role`}
-                type="text"
-                value={speaker.role}
-                onChange={(event) => speaker.onRoleChange(event.target.value)}
-              />
+          <label className="field-label" htmlFor={`workshop-${speaker.key}-speaker-role`}>
+            Cargo da {speaker.ordinal} palestrante
+          </label>
+          <input
+            id={`workshop-${speaker.key}-speaker-role`}
+            type="text"
+            value={speaker.role}
+            onChange={(event) => speaker.onRoleChange(event.target.value)}
+          />
 
-              <PhotoUploadField
-                id={`workshop-${speaker.key}-speaker-photo-upload`}
-                label={`Foto da ${speaker.ordinal} palestrante`}
-                hint="A foto usa a mesma moldura, ajustada proporcionalmente para acomodar todos os perfis."
-                imageUrl={speaker.imageUrl}
-                feedback={speaker.feedback}
-                removeLabel="Remover foto"
-                onPhotoUpload={speaker.onPhotoUpload}
-                onRemovePhoto={speaker.onRemovePhoto}
-              />
-            </div>
-          ))}
+          <PhotoUploadField
+            id={`workshop-${speaker.key}-speaker-photo-upload`}
+            label={`Foto da ${speaker.ordinal} palestrante`}
+            hint="A foto usa a mesma moldura, ajustada proporcionalmente para acomodar todos os perfis."
+            imageUrl={speaker.imageUrl}
+            feedback={speaker.feedback}
+            removeLabel="Remover foto"
+            onPhotoUpload={speaker.onPhotoUpload}
+            onRemovePhoto={speaker.onRemovePhoto}
+          />
+        </div>
+      ))}
 
-          <div className="workshop-speaker-count-actions">
-            <button
-              type="button"
-              className="secondary-inline-action"
-              disabled={clampedSpeakerCount <= 2}
-              onClick={() => onSpeakerCountChange(Math.max(clampedSpeakerCount - 1, 2))}
-            >
-              Remover palestrante
-            </button>
-            <button
-              type="button"
-              className="secondary-inline-action"
-              disabled={clampedSpeakerCount >= 4}
-              onClick={() => onSpeakerCountChange(Math.min(clampedSpeakerCount + 1, 4))}
-            >
-              Adicionar palestrante
-            </button>
-          </div>
-        </>
-      ) : null}
+      <div className="workshop-speaker-count-actions">
+        <button
+          type="button"
+          className="secondary-inline-action"
+          disabled={clampedSpeakerCount <= 1}
+          onClick={() => onSpeakerCountChange(Math.max(clampedSpeakerCount - 1, 1))}
+        >
+          Remover speaker
+        </button>
+        <button
+          type="button"
+          className="secondary-inline-action"
+          disabled={clampedSpeakerCount >= 4}
+          onClick={() => onSpeakerCountChange(Math.min(clampedSpeakerCount + 1, 4))}
+        >
+          Adicionar speaker
+        </button>
+      </div>
 
       <PhotoUploadField
         id="workshop-partner-logo-upload"
