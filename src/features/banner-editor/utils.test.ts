@@ -16,6 +16,7 @@ import {
   normalizeEditorState,
   parseEditorStateCandidate,
   sanitizeQuoteHtml,
+  shouldIntegrateFeedAndStories,
 } from './utils'
 
 describe('platform helpers', () => {
@@ -26,6 +27,10 @@ describe('platform helpers', () => {
   it('formats platform dimensions from the presets', () => {
     expect(getPlatformDimensions('Instagram (1080x1350)')).toBe('1080x1350')
     expect(platformPresets['Instagram (1080x1350)']).toEqual({ width: 1080, height: 1350 })
+  })
+
+  it('exports Quote in feed and Stories formats', () => {
+    expect(shouldIntegrateFeedAndStories('Quote', 'Palestrante')).toBe(true)
   })
 })
 

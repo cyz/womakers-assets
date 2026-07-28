@@ -243,7 +243,7 @@ export const initialEditorState: EditorState = {
     'Use este segundo trecho para complementar a mensagem com detalhes, benefícios, contexto da parceria ou convite para conhecer mais.',
   sponsorCarouselCta: '',
   quoteText:
-    'A maternidade traz uma camada essencial para o exercicio da lideranca, <strong>especialmente na forma como organizamos prioridades e tomamos decisoes.</strong> O tempo passa a ser um recurso ainda mais valioso.',
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. <strong>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</strong>',
   quoteSecondText: '',
   articleSecondText: articleAdviceDefaults.text,
   articleSecondKeyword: articleAdviceDefaults.keyword,

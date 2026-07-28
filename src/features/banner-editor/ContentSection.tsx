@@ -13,7 +13,6 @@ interface ContentSectionProps {
     'applyRichTextFormatting' | 'syncRichEditorState' | 'handleRichEditorPaste'
   >
   quoteEditorRef: RefObject<HTMLDivElement | null>
-  quoteSecondEditorRef: RefObject<HTMLDivElement | null>
   articleSecondEditorRef: RefObject<HTMLDivElement | null>
 }
 
@@ -22,7 +21,6 @@ export function ContentSection({
   onToggle,
   richText,
   quoteEditorRef,
-  quoteSecondEditorRef,
   articleSecondEditorRef,
 }: ContentSectionProps) {
   const { editorState, updateField } = useEditor()
@@ -83,15 +81,10 @@ export function ContentSection({
         <>
           {quoteModule ? (
             <quoteModule.ContentFields
-              isStoriesPlatform={false}
               onQuoteBold={() => applyRichTextFormatting('quoteText', quoteEditorRef.current, 'bold')}
               onQuoteInput={() => syncRichEditorState('quoteText', quoteEditorRef.current)}
               onQuotePaste={(event) => handleRichEditorPaste(event, 'quoteText', quoteEditorRef.current)}
-              onQuoteSecondBold={() => applyRichTextFormatting('quoteSecondText', quoteSecondEditorRef.current, 'bold')}
-              onQuoteSecondInput={() => syncRichEditorState('quoteSecondText', quoteSecondEditorRef.current)}
-              onQuoteSecondPaste={(event) => handleRichEditorPaste(event, 'quoteSecondText', quoteSecondEditorRef.current)}
               quoteEditorRef={quoteEditorRef}
-              quoteSecondEditorRef={quoteSecondEditorRef}
             />
           ) : null}
 

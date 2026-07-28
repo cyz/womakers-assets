@@ -50,8 +50,12 @@ export const shouldIntegrateFeedAndStories = (
   type: ImageType,
   variation: AssetVariation,
 ) => {
-  // Quote e Artigo têm download individual de frames
-  if (type === 'Quote' || type === 'Artigo') {
+  if (type === 'Quote') {
+    return true
+  }
+
+  // Artigo mantém download individual de frames
+  if (type === 'Artigo') {
     return false
   }
 

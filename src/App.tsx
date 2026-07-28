@@ -85,14 +85,11 @@ function EditorWorkspace() {
   const previewStageRef = useRef<HTMLElement | null>(null)
   const primaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const storiesPreviewFrameRef = useRef<HTMLDivElement | null>(null)
-  const quoteSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const articleSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
   const sponsorCarouselSecondaryPreviewFrameRef = useRef<HTMLDivElement | null>(null)
-  const storiesQuoteSecondaryRef = useRef<HTMLDivElement | null>(null)
   const storiesArticleSecondaryRef = useRef<HTMLDivElement | null>(null)
   const storiesSponsorCarouselSecondaryRef = useRef<HTMLDivElement | null>(null)
   const quoteEditorRef = useRef<HTMLDivElement | null>(null)
-  const quoteSecondEditorRef = useRef<HTMLDivElement | null>(null)
   const articleSecondEditorRef = useRef<HTMLDivElement | null>(null)
   const sponsorCarouselLeadEditorRef = useRef<HTMLDivElement | null>(null)
   const sponsorCarouselBodyEditorRef = useRef<HTMLDivElement | null>(null)
@@ -104,7 +101,6 @@ function EditorWorkspace() {
     sponsorCarouselLeadText,
     sponsorCarouselBodyText,
     quoteText,
-    quoteSecondText,
     articleSecondText,
   } = editorState
 
@@ -138,7 +134,6 @@ function EditorWorkspace() {
   useSyncContentEditable(articleSecondEditorRef, articleSecondText)
   useSyncContentEditable(sponsorCarouselLeadEditorRef, sponsorCarouselLeadText)
   useSyncContentEditable(sponsorCarouselBodyEditorRef, sponsorCarouselBodyText)
-  useSyncContentEditable(quoteSecondEditorRef, quoteSecondText)
 
   useEffect(() => {
     const syncScreenFromHash = () => {
@@ -470,7 +465,6 @@ function EditorWorkspace() {
           onToggle={() => toggleSection('conteudo')}
           richText={{ applyRichTextFormatting, syncRichEditorState, handleRichEditorPaste }}
           quoteEditorRef={quoteEditorRef}
-          quoteSecondEditorRef={quoteSecondEditorRef}
           articleSecondEditorRef={articleSecondEditorRef}
         />
 
@@ -571,8 +565,6 @@ function EditorWorkspace() {
                   onDownloadFrame={handleDownloadQuoteFrame}
                   primaryPreviewFrameRef={primaryPreviewFrameRef}
                   storiesPreviewFrameRef={storiesPreviewFrameRef}
-                  quoteSecondaryPreviewFrameRef={quoteSecondaryPreviewFrameRef}
-                  storiesQuoteSecondaryRef={storiesQuoteSecondaryRef}
                   articleSecondaryPreviewFrameRef={articleSecondaryPreviewFrameRef}
                   storiesArticleSecondaryRef={storiesArticleSecondaryRef}
                   sponsorCarouselSecondaryPreviewFrameRef={sponsorCarouselSecondaryPreviewFrameRef}
@@ -595,8 +587,6 @@ function EditorWorkspace() {
                     onDownloadFrame={handleDownloadQuoteFrame}
                     primaryPreviewFrameRef={primaryPreviewFrameRef}
                     storiesPreviewFrameRef={storiesPreviewFrameRef}
-                    quoteSecondaryPreviewFrameRef={quoteSecondaryPreviewFrameRef}
-                    storiesQuoteSecondaryRef={storiesQuoteSecondaryRef}
                     articleSecondaryPreviewFrameRef={articleSecondaryPreviewFrameRef}
                     storiesArticleSecondaryRef={storiesArticleSecondaryRef}
                     sponsorCarouselSecondaryPreviewFrameRef={sponsorCarouselSecondaryPreviewFrameRef}

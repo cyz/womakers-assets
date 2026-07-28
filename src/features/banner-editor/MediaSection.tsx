@@ -40,7 +40,6 @@ export function MediaSection({
     speakerContentType,
     speakerTalk,
     speakerImageUrl,
-    quoteBackgroundImageUrl,
     workshopSpeakerCount,
     workshopSecondSpeakerImageUrl,
     workshopSecondSpeakerName,
@@ -70,8 +69,6 @@ export function MediaSection({
   const {
     handleSpeakerPhotoUpload,
     handleRemoveSpeakerPhoto,
-    handleQuoteBackgroundUpload,
-    handleRemoveQuoteBackground,
     handleSecondSpeakerPhotoUpload,
     handleRemoveSecondSpeakerPhoto,
     handleThirdSpeakerPhotoUpload,
@@ -115,15 +112,11 @@ export function MediaSection({
     <CollapsibleSection icon="image" title="Palestrante" open={open} onToggle={onToggle}>
       {quoteModule ? (
         <quoteModule.MediaFields
-          onQuoteBackgroundUpload={handleQuoteBackgroundUpload}
-          onRemoveQuoteBackground={handleRemoveQuoteBackground}
           onRemoveSpeakerPhoto={handleRemoveSpeakerPhoto}
           onSpeakerNameChange={(value) => updateField('speakerName', value)}
           onSpeakerPhotoUpload={handleSpeakerPhotoUpload}
           onSpeakerRoleChange={(value) => updateField('speakerRole', value)}
           photoFeedback={feedback.photo}
-          quoteBackgroundFeedback={feedback.quoteBackground}
-          quoteBackgroundImageUrl={quoteBackgroundImageUrl}
           speakerImageUrl={speakerImageUrl}
           speakerName={speakerName}
           speakerRole={speakerRole}

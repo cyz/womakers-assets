@@ -25,8 +25,6 @@ type PlatformPreviewProps = {
   onDownloadFrame: (frameElement: HTMLDivElement | null, fileNameSuffix: string) => void
   primaryPreviewFrameRef: FrameRef
   storiesPreviewFrameRef: FrameRef
-  quoteSecondaryPreviewFrameRef: FrameRef
-  storiesQuoteSecondaryRef: FrameRef
   articleSecondaryPreviewFrameRef: FrameRef
   storiesArticleSecondaryRef: FrameRef
   sponsorCarouselSecondaryPreviewFrameRef: FrameRef
@@ -41,8 +39,6 @@ export function PlatformPreview({
   onDownloadFrame: handleDownloadQuoteFrame,
   primaryPreviewFrameRef,
   storiesPreviewFrameRef,
-  quoteSecondaryPreviewFrameRef,
-  storiesQuoteSecondaryRef,
   articleSecondaryPreviewFrameRef,
   storiesArticleSecondaryRef,
   sponsorCarouselSecondaryPreviewFrameRef,
@@ -206,7 +202,6 @@ export function PlatformPreview({
 
   const isStoriesPlatformForPreview = platform === 'Instagram Stories (1080x1920)'
   const activePrimaryRef = isStoriesPlatformForPreview ? storiesPreviewFrameRef : primaryPreviewFrameRef
-  const activeQuoteSecondaryRef = isStoriesPlatformForPreview ? storiesQuoteSecondaryRef : quoteSecondaryPreviewFrameRef
   const activeArticleSecondaryRef = isStoriesPlatformForPreview ? storiesArticleSecondaryRef : articleSecondaryPreviewFrameRef
   const activeSponsorCarouselSecondaryRef = isStoriesPlatformForPreview ? storiesSponsorCarouselSecondaryRef : sponsorCarouselSecondaryPreviewFrameRef
   const presetForPreview = isStoriesPlatformForPreview ? STORIES_PRESET : platformPresets[platform]
@@ -283,24 +278,17 @@ export function PlatformPreview({
           : '#080808',
   } as CSSProperties
   const quotePrimaryHtmlForPreview = renderRichText(quoteText, initialEditorState.quoteText).__html
-  const quoteSecondaryHtmlForPreview = renderRichText(quoteSecondText, quoteText || initialEditorState.quoteText).__html
 
   return (
     <article className="platform-preview-panel">
       {quoteModuleForPreview && quoteDerivedStateForPreview ? (
         <quoteModuleForPreview.Preview
-          hasSecondSlide={quoteDerivedStateForPreview.hasSecondSlide}
-          isExporting={isExporting}
-          showDownloadControls={true}
           isStoriesPlatform={isStoriesPlatformForPreview}
-          onDownloadFrame={handleDownloadQuoteFrame}
           primaryPreviewFrameRef={activePrimaryRef}
           previewStyle={quoteDerivedStateForPreview.previewStyle}
           primaryQuoteHtml={quotePrimaryHtmlForPreview}
           quoteDisplayName={quoteDerivedStateForPreview.quoteDisplayName}
           quoteDisplayRole={quoteDerivedStateForPreview.quoteDisplayRole}
-          quoteSecondaryPreviewFrameRef={activeQuoteSecondaryRef}
-          secondaryQuoteHtml={quoteSecondaryHtmlForPreview}
           selectedTheme={selectedTheme}
           speakerImageUrl={speakerImageUrl}
           speakerInitials={quoteDerivedStateForPreview.speakerInitials}

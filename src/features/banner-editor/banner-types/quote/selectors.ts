@@ -25,7 +25,6 @@ export const getQuoteDerivedState = ({
   initialSpeakerName,
   isStoriesPlatform,
   preset,
-  quoteBackgroundImageUrl,
   quoteSecondText,
   speakerName,
   speakerRole,
@@ -33,8 +32,8 @@ export const getQuoteDerivedState = ({
   hasSecondSlide: Boolean(quoteSecondText.trim()) && !isStoriesPlatform,
   previewStyle: {
     '--preview-aspect-ratio': `${preset.width} / ${preset.height}`,
-    backgroundColor: quoteBackgroundImageUrl ? undefined : '#16181b',
-    backgroundImage: quoteBackgroundImageUrl ? `url(${quoteBackgroundImageUrl})` : 'none',
+    backgroundColor: '#f8f4ef',
+    backgroundImage: 'none',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
     backgroundSize: 'cover',
