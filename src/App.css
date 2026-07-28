@@ -3525,6 +3525,12 @@
   gap: calc(var(--u) * 18.4);
 }
 
+.workshop-preview-layout:not(.is-stories-platform) .workshop-speaker-grid.is-dual.count-4 .workshop-speaker-card.is-dual {
+  flex-direction: row;
+  align-items: center;
+  gap: calc(var(--u) * 22.4);
+}
+
 .workshop-speaker-card {
   display: flex;
   flex-direction: column;
@@ -3549,19 +3555,25 @@
 }
 
 .workshop-speaker-grid.is-dual .workshop-speaker-photo-shell {
-  width: min(100%, calc(var(--u) * 232));
-  max-width: calc(var(--u) * 232);
+  width: min(100%, calc(var(--u) * 464));
+  max-width: calc(var(--u) * 464);
   justify-self: center;
 }
 
 .workshop-speaker-grid.is-dual.count-3 .workshop-speaker-photo-shell {
-  width: min(100%, calc(var(--u) * 190));
-  max-width: calc(var(--u) * 190);
+  width: min(100%, calc(var(--u) * 380));
+  max-width: calc(var(--u) * 380);
 }
 
 .workshop-speaker-grid.is-dual.count-4 .workshop-speaker-photo-shell {
-  width: min(100%, calc(var(--u) * 206));
-  max-width: calc(var(--u) * 206);
+  width: min(100%, calc(var(--u) * 412));
+  max-width: calc(var(--u) * 412);
+}
+
+.workshop-preview-layout:not(.is-stories-platform) .workshop-speaker-grid.is-dual.count-4 .workshop-speaker-photo-shell {
+  width: min(100%, calc(var(--u) * 376));
+  max-width: calc(var(--u) * 376);
+  flex: 0 0 auto;
 }
 
 .workshop-speaker-photo-frame {
@@ -3633,6 +3645,10 @@
   line-height: 1.2;
 }
 
+.workshop-speaker-copy p {
+  font-weight: 700;
+}
+
 .workshop-speaker-copy strong {
   display: block;
   margin-top: calc(var(--u) * 3.2);
@@ -3652,8 +3668,19 @@
 
 .workshop-speaker-grid.is-dual .workshop-speaker-copy p,
 .workshop-speaker-grid.is-dual .workshop-speaker-copy strong {
-  font-size: calc(var(--u) * 23.68);
+  font-size: calc(var(--u) * 47.36);
   line-height: 1.2;
+}
+
+.workshop-preview-layout:not(.is-stories-platform) .workshop-speaker-grid.is-dual.count-4 .workshop-speaker-copy {
+  margin-top: 0;
+  padding-inline: 0;
+}
+
+.workshop-preview-layout:not(.is-stories-platform) .workshop-speaker-grid.is-dual.count-4 .workshop-speaker-copy p,
+.workshop-preview-layout:not(.is-stories-platform) .workshop-speaker-grid.is-dual.count-4 .workshop-speaker-copy strong {
+  font-size: calc(var(--u) * 44.8);
+  line-height: 1.12;
 }
 
 .workshop-footer-section {
@@ -5298,13 +5325,13 @@
 
   .workshop-speaker-column.is-dual,
   .workshop-speaker-column.is-dual .workshop-speaker-photo-shell {
-    width: min(100%, 210px);
-    max-width: 210px;
+    width: min(100%, 420px);
+    max-width: 420px;
   }
 
   .workshop-speaker-grid.is-dual .workshop-speaker-photo-shell {
-    width: min(100%, 188px);
-    max-width: 188px;
+    width: min(100%, 376px);
+    max-width: 376px;
   }
 
   .workshop-title,
@@ -5335,6 +5362,15 @@
 
   .workshop-speaker-grid.is-dual {
     gap: 1rem;
+  }
+
+  .workshop-preview-layout:not(.is-stories-platform) .workshop-speaker-grid.is-dual.count-4 .workshop-speaker-card.is-dual {
+    gap: 1rem;
+  }
+
+  .workshop-preview-layout:not(.is-stories-platform) .workshop-speaker-grid.is-dual.count-4 .workshop-speaker-photo-shell {
+    width: min(100%, 296px);
+    max-width: 296px;
   }
 
   .workshop-footer-copy-grid {
@@ -5753,18 +5789,27 @@
   }
 
   .workshop-speaker-column.is-dual .workshop-speaker-photo-shell {
-    width: min(100%, 176px);
-    max-width: 176px;
+    width: min(100%, 352px);
+    max-width: 352px;
   }
 
   .workshop-speaker-grid.is-dual .workshop-speaker-photo-shell {
-    width: min(100%, 168px);
-    max-width: 168px;
+    width: min(100%, 336px);
+    max-width: 336px;
   }
 
   .workshop-speaker-grid.is-dual {
     grid-template-columns: 1fr;
     gap: 0.9rem;
+  }
+
+  .workshop-preview-layout:not(.is-stories-platform) .workshop-speaker-grid.is-dual.count-4 .workshop-speaker-card.is-dual {
+    gap: 1.05rem;
+  }
+
+  .workshop-preview-layout:not(.is-stories-platform) .workshop-speaker-grid.is-dual.count-4 .workshop-speaker-photo-shell {
+    width: min(100%, 320px);
+    max-width: 320px;
   }
 
   .workshop-speaker-copy {
