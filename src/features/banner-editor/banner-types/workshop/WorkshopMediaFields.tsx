@@ -128,7 +128,7 @@ export function WorkshopMediaFields({
     <section className="control-section muted-card">
       <div className="section-heading">
         <span className="section-icon" aria-hidden="true" />
-        <p className="section-label">Palestrante</p>
+        <p className="section-label">Imagens</p>
       </div>
 
       <label className="field-label" htmlFor="workshop-speaker-name">
