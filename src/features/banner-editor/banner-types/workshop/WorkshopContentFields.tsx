@@ -1,5 +1,12 @@
 import { workshopAccentColors, type WorkshopAccentColor } from '../../model'
 
+const workshopAccentPalette: Record<WorkshopAccentColor, string> = {
+  Lima: '#e8f300',
+  Magenta: '#ff4fa3',
+  Ciano: '#35d7ff',
+  Laranja: '#ffb347',
+}
+
 type WorkshopContentFieldsProps = {
   isDualSpeaker: boolean
   onWorkshopAccentColorChange: (value: WorkshopAccentColor) => void
@@ -10,7 +17,6 @@ type WorkshopContentFieldsProps = {
   onWorkshopBulletThreeChange: (value: string) => void
   onWorkshopBulletTwoChange: (value: string) => void
   onWorkshopBulletsIntroChange: (value: string) => void
-  onWorkshopDescriptionChange: (value: string) => void
   onWorkshopFooterLeftLineOneChange: (value: string) => void
   onWorkshopFooterLeftLineTwoChange: (value: string) => void
   onWorkshopFooterTagChange: (value: string) => void
@@ -25,7 +31,6 @@ type WorkshopContentFieldsProps = {
   workshopBulletThree: string
   workshopBulletTwo: string
   workshopBulletsIntro: string
-  workshopDescription: string
   workshopFooterLeftLineOne: string
   workshopFooterLeftLineTwo: string
   workshopFooterTag: string
@@ -44,7 +49,6 @@ export function WorkshopContentFields({
   onWorkshopBulletThreeChange,
   onWorkshopBulletTwoChange,
   onWorkshopBulletsIntroChange,
-  onWorkshopDescriptionChange,
   onWorkshopFooterLeftLineOneChange,
   onWorkshopFooterLeftLineTwoChange,
   onWorkshopFooterTagChange,
@@ -59,7 +63,6 @@ export function WorkshopContentFields({
   workshopBulletThree,
   workshopBulletTwo,
   workshopBulletsIntro,
-  workshopDescription,
   workshopFooterLeftLineOne,
   workshopFooterLeftLineTwo,
   workshopFooterTag,
@@ -68,6 +71,7 @@ export function WorkshopContentFields({
   workshopTitle,
 }: WorkshopContentFieldsProps) {
   const workshopBackgroundAssetUrl = `${import.meta.env.BASE_URL}src/assets/themes/fundo.png`
+  const accentPreviewColor = workshopAccentPalette[workshopAccentColor]
   const bulletValues = [workshopBulletOne, workshopBulletTwo, workshopBulletThree]
   const bulletChangeHandlers = [
     onWorkshopBulletOneChange,
@@ -137,26 +141,27 @@ export function WorkshopContentFields({
         </span>
       </button>
 
-      <fieldset className="workshop-accent-picker">
-        <legend className="field-label">Cor de destaque</legend>
-        <div className="workshop-accent-options" role="radiogroup" aria-label="Cor de destaque do workshop">
+      <label className="field-label" htmlFor="workshop-accent-color">
+        Cor de destaque
+      </label>
+      <div className="workshop-accent-select-row">
+        <span
+          className="workshop-accent-preview"
+          style={{ backgroundColor: accentPreviewColor }}
+          aria-hidden="true"
+        />
+        <select
+          id="workshop-accent-color"
+          value={workshopAccentColor}
+          onChange={(event) => onWorkshopAccentColorChange(event.target.value as WorkshopAccentColor)}
+        >
           {workshopAccentColors.map((accentColor) => (
-            <label
-              key={accentColor}
-              className={`workshop-accent-option ${workshopAccentColor === accentColor ? 'is-selected' : ''}`}
-            >
-              <input
-                type="radio"
-                name="workshop-accent-color"
-                value={accentColor}
-                checked={workshopAccentColor === accentColor}
-                onChange={() => onWorkshopAccentColorChange(accentColor)}
-              />
-              <span>{accentColor}</span>
-            </label>
+            <option key={accentColor} value={accentColor}>
+              {accentColor}
+            </option>
           ))}
-        </div>
-      </fieldset>
+        </select>
+      </div>
 
       <label className="field-label" htmlFor="workshop-background-image">
         Fundo do banner
@@ -169,19 +174,6 @@ export function WorkshopContentFields({
         <option value="">Padrão</option>
         <option value={workshopBackgroundAssetUrl}>fundo.png</option>
       </select>
-
-      {!isDualSpeaker ? (
-        <>
-          <label className="field-label" htmlFor="workshop-description">
-            Texto de apoio
-          </label>
-          <textarea
-            id="workshop-description"
-            value={workshopDescription}
-            onChange={(event) => onWorkshopDescriptionChange(event.target.value)}
-          />
-        </>
-      ) : null}
 
       {isDualSpeaker ? (
         <>
@@ -228,7 +220,11 @@ export function WorkshopContentFields({
         ) : null}
 
         {bulletCount < 3 ? (
-          <button type="button" className="secondary-inline-action" onClick={handleAddBullet}>
+          <button
+            type="button"
+            className="secondary-inline-action workshop-primary-add-action"
+            onClick={handleAddBullet}
+          >
             Adicionar bullet
           </button>
         ) : null}

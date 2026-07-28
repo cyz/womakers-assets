@@ -51,7 +51,6 @@ export function ContentSection({
     workshopBulletOne,
     workshopBulletTwo,
     workshopBulletThree,
-    workshopDescription,
     workshopFooterLeftLineOne,
     workshopFooterLeftLineTwo,
     workshopFooterTag,
@@ -143,7 +142,6 @@ export function ContentSection({
             onWorkshopBulletThreeChange={(value) => updateField('workshopBulletThree', value)}
             onWorkshopBulletTwoChange={(value) => updateField('workshopBulletTwo', value)}
             onWorkshopBulletsIntroChange={(value) => updateField('workshopBulletsIntro', value)}
-            onWorkshopDescriptionChange={(value) => updateField('workshopDescription', value)}
             onWorkshopFooterLeftLineOneChange={(value) => updateField('workshopFooterLeftLineOne', value)}
             onWorkshopFooterLeftLineTwoChange={(value) => updateField('workshopFooterLeftLineTwo', value)}
             onWorkshopFooterTagChange={(value) => updateField('workshopFooterTag', value)}
@@ -158,7 +156,6 @@ export function ContentSection({
             workshopBulletThree={workshopBulletThree}
             workshopBulletTwo={workshopBulletTwo}
             workshopBulletsIntro={workshopBulletsIntro}
-            workshopDescription={workshopDescription}
             workshopFooterLeftLineOne={workshopFooterLeftLineOne}
             workshopFooterLeftLineTwo={workshopFooterLeftLineTwo}
             workshopFooterTag={workshopFooterTag}

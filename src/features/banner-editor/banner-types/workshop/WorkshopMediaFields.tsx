@@ -206,7 +206,7 @@ export function WorkshopMediaFields({
         </button>
         <button
           type="button"
-          className="secondary-inline-action"
+          className="secondary-inline-action workshop-primary-add-action"
           disabled={clampedSpeakerCount >= 4}
           onClick={() => onSpeakerCountChange(Math.min(clampedSpeakerCount + 1, 4))}
         >
