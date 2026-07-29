@@ -14,6 +14,7 @@ interface ContentSectionProps {
   >
   quoteEditorRef: RefObject<HTMLDivElement | null>
   articleSecondEditorRef: RefObject<HTMLDivElement | null>
+  workshopBulletsIntroEditorRef: RefObject<HTMLDivElement | null>
 }
 
 export function ContentSection({
@@ -22,6 +23,7 @@ export function ContentSection({
   richText,
   quoteEditorRef,
   articleSecondEditorRef,
+  workshopBulletsIntroEditorRef,
 }: ContentSectionProps) {
   const { editorState, updateField } = useEditor()
 
@@ -44,7 +46,6 @@ export function ContentSection({
     workshopSpeakerCount,
     workshopAccentColor,
     workshopBackgroundImageUrl,
-    workshopBulletsIntro,
     workshopBulletCount,
     workshopBulletOne,
     workshopBulletTwo,
@@ -127,6 +128,24 @@ export function ContentSection({
         workshopModule ? (
           <workshopModule.ContentFields
             isDualSpeaker={isWorkshopDualSpeakerLayout}
+            workshopBulletsIntroEditorRef={workshopBulletsIntroEditorRef}
+            onWorkshopBulletsIntroBold={() =>
+              applyRichTextFormatting(
+                'workshopBulletsIntro',
+                workshopBulletsIntroEditorRef.current,
+                'bold',
+              )
+            }
+            onWorkshopBulletsIntroInput={() =>
+              syncRichEditorState('workshopBulletsIntro', workshopBulletsIntroEditorRef.current)
+            }
+            onWorkshopBulletsIntroPaste={(event) =>
+              handleRichEditorPaste(
+                event,
+                'workshopBulletsIntro',
+                workshopBulletsIntroEditorRef.current,
+              )
+            }
             onWorkshopAccentColorChange={(value) => updateField('workshopAccentColor', value)}
             onWorkshopBackgroundImageChange={(value) => updateField('workshopBackgroundImageUrl', value)}
             onWorkshopBadgeChange={(value) => updateField('workshopBadge', value)}
@@ -134,7 +153,6 @@ export function ContentSection({
             onWorkshopBulletOneChange={(value) => updateField('workshopBulletOne', value)}
             onWorkshopBulletThreeChange={(value) => updateField('workshopBulletThree', value)}
             onWorkshopBulletTwoChange={(value) => updateField('workshopBulletTwo', value)}
-            onWorkshopBulletsIntroChange={(value) => updateField('workshopBulletsIntro', value)}
             onWorkshopFooterLeftLineOneChange={(value) => updateField('workshopFooterLeftLineOne', value)}
             onWorkshopFooterLeftLineTwoChange={(value) => updateField('workshopFooterLeftLineTwo', value)}
             onWorkshopFooterTagChange={(value) => updateField('workshopFooterTag', value)}
@@ -148,7 +166,6 @@ export function ContentSection({
             workshopBulletOne={workshopBulletOne}
             workshopBulletThree={workshopBulletThree}
             workshopBulletTwo={workshopBulletTwo}
-            workshopBulletsIntro={workshopBulletsIntro}
             workshopFooterLeftLineOne={workshopFooterLeftLineOne}
             workshopFooterLeftLineTwo={workshopFooterLeftLineTwo}
             workshopFooterTag={workshopFooterTag}

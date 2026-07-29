@@ -10,6 +10,7 @@ type WorkshopPreviewProps = {
   workshopBadge: string
   workshopBullets: string[]
   workshopBulletsIntro: string
+  workshopBulletsIntroHtml: { __html: string }
   workshopDescription: string
   workshopFooterLeftLineOne: string
   workshopFooterLeftLineTwo: string
@@ -27,6 +28,7 @@ export function WorkshopPreview({
   workshopBadge,
   workshopBullets,
   workshopBulletsIntro,
+  workshopBulletsIntroHtml,
   workshopDescription,
   workshopFooterLeftLineOne,
   workshopFooterLeftLineTwo,
@@ -82,7 +84,10 @@ export function WorkshopPreview({
           </section>
 
           {workshopBulletsIntro ? (
-            <p className="workshop-dual-bullets-intro">{workshopBulletsIntro}</p>
+            <p
+              className="workshop-dual-bullets-intro"
+              dangerouslySetInnerHTML={workshopBulletsIntroHtml}
+            />
           ) : null}
 
           {workshopBullets.length > 0 ? (

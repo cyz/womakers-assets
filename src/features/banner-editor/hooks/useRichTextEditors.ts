@@ -9,6 +9,7 @@ type RichTextField =
   | 'articleSecondText'
   | 'sponsorCarouselLeadText'
   | 'sponsorCarouselBodyText'
+  | 'workshopBulletsIntro'
 
 type UpdateField = <Key extends keyof EditorState>(key: Key, value: EditorState[Key]) => void
 

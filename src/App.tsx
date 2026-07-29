@@ -93,6 +93,7 @@ function EditorWorkspace() {
   const articleSecondEditorRef = useRef<HTMLDivElement | null>(null)
   const sponsorCarouselLeadEditorRef = useRef<HTMLDivElement | null>(null)
   const sponsorCarouselBodyEditorRef = useRef<HTMLDivElement | null>(null)
+  const workshopBulletsIntroEditorRef = useRef<HTMLDivElement | null>(null)
   const selectedTheme = 'WoMakers'
   const {
     selectedType,
@@ -102,6 +103,7 @@ function EditorWorkspace() {
     sponsorCarouselBodyText,
     quoteText,
     articleSecondText,
+    workshopBulletsIntro,
   } = editorState
 
   useEffect(() => {
@@ -134,6 +136,7 @@ function EditorWorkspace() {
   useSyncContentEditable(articleSecondEditorRef, articleSecondText)
   useSyncContentEditable(sponsorCarouselLeadEditorRef, sponsorCarouselLeadText)
   useSyncContentEditable(sponsorCarouselBodyEditorRef, sponsorCarouselBodyText)
+  useSyncContentEditable(workshopBulletsIntroEditorRef, workshopBulletsIntro)
 
   useEffect(() => {
     const syncScreenFromHash = () => {
@@ -466,6 +469,7 @@ function EditorWorkspace() {
           richText={{ applyRichTextFormatting, syncRichEditorState, handleRichEditorPaste }}
           quoteEditorRef={quoteEditorRef}
           articleSecondEditorRef={articleSecondEditorRef}
+          workshopBulletsIntroEditorRef={workshopBulletsIntroEditorRef}
         />
 
         <MediaSection

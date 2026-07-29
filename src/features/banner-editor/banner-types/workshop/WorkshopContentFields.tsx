@@ -1,4 +1,6 @@
+import type { ClipboardEvent, RefObject } from 'react'
 import { workshopAccentColors, type WorkshopAccentColor } from '../../model'
+import { RichTextEditor } from '../../components/RichTextEditor'
 
 const workshopAccentPalette: Record<WorkshopAccentColor, string> = {
   Lima: '#e8f300',
@@ -16,7 +18,9 @@ type WorkshopContentFieldsProps = {
   onWorkshopBulletOneChange: (value: string) => void
   onWorkshopBulletThreeChange: (value: string) => void
   onWorkshopBulletTwoChange: (value: string) => void
-  onWorkshopBulletsIntroChange: (value: string) => void
+  onWorkshopBulletsIntroBold: () => void
+  onWorkshopBulletsIntroInput: () => void
+  onWorkshopBulletsIntroPaste: (event: ClipboardEvent<HTMLDivElement>) => void
   onWorkshopFooterLeftLineOneChange: (value: string) => void
   onWorkshopFooterLeftLineTwoChange: (value: string) => void
   onWorkshopFooterTagChange: (value: string) => void
@@ -30,7 +34,7 @@ type WorkshopContentFieldsProps = {
   workshopBulletOne: string
   workshopBulletThree: string
   workshopBulletTwo: string
-  workshopBulletsIntro: string
+  workshopBulletsIntroEditorRef: RefObject<HTMLDivElement | null>
   workshopFooterLeftLineOne: string
   workshopFooterLeftLineTwo: string
   workshopFooterTag: string
@@ -48,7 +52,9 @@ export function WorkshopContentFields({
   onWorkshopBulletOneChange,
   onWorkshopBulletThreeChange,
   onWorkshopBulletTwoChange,
-  onWorkshopBulletsIntroChange,
+  onWorkshopBulletsIntroBold,
+  onWorkshopBulletsIntroInput,
+  onWorkshopBulletsIntroPaste,
   onWorkshopFooterLeftLineOneChange,
   onWorkshopFooterLeftLineTwoChange,
   onWorkshopFooterTagChange,
@@ -62,7 +68,7 @@ export function WorkshopContentFields({
   workshopBulletOne,
   workshopBulletThree,
   workshopBulletTwo,
-  workshopBulletsIntro,
+  workshopBulletsIntroEditorRef,
   workshopFooterLeftLineOne,
   workshopFooterLeftLineTwo,
   workshopFooterTag,
@@ -163,27 +169,54 @@ export function WorkshopContentFields({
         </select>
       </div>
 
-      <label className="field-label" htmlFor="workshop-background-image">
+      <p className="field-label" id="workshop-background-image-label">
         Fundo do banner
-      </label>
-      <select
-        id="workshop-background-image"
-        value={workshopBackgroundImageUrl}
-        onChange={(event) => onWorkshopBackgroundImageChange(event.target.value)}
+      </p>
+      <div
+        className="workshop-background-options"
+        role="radiogroup"
+        aria-labelledby="workshop-background-image-label"
       >
-        <option value="">Padrão</option>
-        <option value={workshopBackgroundAssetUrl}>fundo.png</option>
-      </select>
+        {[
+          { label: 'Padrão escuro', value: '' },
+          { label: 'Código colorido', value: workshopBackgroundAssetUrl },
+        ].map((option) => {
+          const isSelected = workshopBackgroundImageUrl === option.value
+
+          return (
+            <button
+              key={option.label}
+              type="button"
+              className={`workshop-background-option ${isSelected ? 'is-selected' : ''}`.trim()}
+              role="radio"
+              aria-checked={isSelected}
+              onClick={() => onWorkshopBackgroundImageChange(option.value)}
+            >
+              <span
+                className={`workshop-background-thumbnail ${option.value ? 'has-image' : ''}`.trim()}
+                style={option.value ? { backgroundImage: `url(${option.value})` } : undefined}
+                aria-hidden="true"
+              />
+              <span>{option.label}</span>
+            </button>
+          )
+        })}
+      </div>
 
       {isDualSpeaker ? (
         <>
           <label className="field-label" htmlFor="workshop-bullets-intro">
             Texto antes dos bullets
           </label>
-          <textarea
+          <RichTextEditor
+            editorClassName="workshop-bullets-intro-editor"
+            editorRef={workshopBulletsIntroEditorRef}
             id="workshop-bullets-intro"
-            value={workshopBulletsIntro}
-            onChange={(event) => onWorkshopBulletsIntroChange(event.target.value)}
+            onBold={onWorkshopBulletsIntroBold}
+            onInput={onWorkshopBulletsIntroInput}
+            onPaste={onWorkshopBulletsIntroPaste}
+            placeholder="Digite o texto antes dos bullets"
+            toolbarLabel="Formatação do texto antes dos bullets"
           />
         </>
       ) : null}

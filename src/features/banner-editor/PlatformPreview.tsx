@@ -653,6 +653,10 @@ export function PlatformPreview({
               workshopBadge={workshopDerivedStateForPreview.workshopBadge}
               workshopBullets={workshopDerivedStateForPreview.workshopBullets}
               workshopBulletsIntro={workshopDerivedStateForPreview.workshopBulletsIntro}
+              workshopBulletsIntroHtml={renderRichText(
+                workshopDerivedStateForPreview.workshopBulletsIntro,
+                '',
+              )}
               workshopDescription={workshopDerivedStateForPreview.workshopDescription}
               workshopFooterLeftLineOne={workshopDerivedStateForPreview.workshopFooterLeftLineOne}
               workshopFooterLeftLineTwo={workshopDerivedStateForPreview.workshopFooterLeftLineTwo}
