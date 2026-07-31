@@ -647,6 +647,7 @@ export function PlatformPreview({
           >
             <div className="preview-content">
               <workshopModuleForPreview.Preview
+              hasColorfulBackground={workshopDerivedStateForPreview.hasColorfulBackground}
               isDualSpeaker={workshopDerivedStateForPreview.isDualSpeaker}
               isStoriesPlatform={isStoriesPlatformForPreview}
               speakerCards={workshopDerivedStateForPreview.speakerCards}

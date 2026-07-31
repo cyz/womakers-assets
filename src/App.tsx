@@ -511,11 +511,7 @@ function EditorWorkspace() {
               >
                 <AppIcon name="download" className="button-icon" />
                 <span>
-                  {isExporting
-                    ? 'Gerando...'
-                    : shouldExportFeedAndStories
-                      ? 'Baixar feed + stories'
-                      : 'Baixar'}
+                  {isExporting ? 'Gerando...' : 'Baixar'}
                 </span>
               </button>
             </div>

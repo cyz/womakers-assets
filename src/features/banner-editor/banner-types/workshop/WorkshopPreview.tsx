@@ -1,4 +1,5 @@
 type WorkshopPreviewProps = {
+  hasColorfulBackground: boolean
   isDualSpeaker: boolean
   isStoriesPlatform: boolean
   speakerCards: Array<{
@@ -22,6 +23,7 @@ type WorkshopPreviewProps = {
 }
 
 export function WorkshopPreview({
+  hasColorfulBackground,
   isDualSpeaker,
   isStoriesPlatform,
   speakerCards,
@@ -42,7 +44,7 @@ export function WorkshopPreview({
   const hasHighlight = workshopHighlight.trim().length > 0
 
   return (
-    <article className={`workshop-preview-layout ${isDualSpeaker ? 'is-dual' : ''} ${isStoriesPlatform ? 'is-stories-platform' : ''}`}>
+    <article className={`workshop-preview-layout ${hasColorfulBackground ? 'has-colorful-background' : ''} ${isDualSpeaker ? 'is-dual' : ''} ${isStoriesPlatform ? 'is-stories-platform' : ''}`}>
       <header className="workshop-hero-row">
         <p className="workshop-badge">{workshopBadge}</p>
 
@@ -106,23 +108,10 @@ export function WorkshopPreview({
         </>
       ) : (
         <div className="workshop-body-grid">
-          <div className="workshop-copy-column">
-            <p className="workshop-description">{workshopDescription}</p>
-
-            <ul className="workshop-bullet-list" aria-label="Principais temas do workshop">
-              {workshopBullets.map((item, index) => (
-                <li key={`${index}-${item}`} className="workshop-bullet-item">
-                  <span className="workshop-bullet-dot" aria-hidden="true" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
           <aside className="workshop-speaker-column">
             <div className="workshop-speaker-stack">
               {speakerCards.map((speaker) => (
-                <article key={`${speaker.name}-${speaker.role}`} className="workshop-speaker-card">
+                <article key={`${speaker.name}-${speaker.role}`} className="workshop-speaker-card is-single">
                   <div className="workshop-speaker-photo-shell">
                     <div className="workshop-speaker-photo-frame">
                       {speaker.imageUrl ? (
@@ -143,6 +132,19 @@ export function WorkshopPreview({
               ))}
             </div>
           </aside>
+
+          <div className="workshop-copy-column">
+            <p className="workshop-description">{workshopDescription}</p>
+
+            <ul className="workshop-bullet-list" aria-label="Principais temas do workshop">
+              {workshopBullets.map((item, index) => (
+                <li key={`${index}-${item}`} className="workshop-bullet-item">
+                  <span className="workshop-bullet-dot" aria-hidden="true" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 

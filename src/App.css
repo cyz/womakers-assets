@@ -3310,12 +3310,19 @@
 }
 
 .workshop-preview-layout {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
   min-height: 100%;
   gap: calc(var(--u) * 41.6);
+  padding: calc(var(--u) * 24);
+}
+
+.workshop-preview-layout.has-colorful-background {
+  border-radius: calc(var(--u) * 20);
+  background: rgba(0, 0, 0, 0.68);
 }
 
 .workshop-preview-layout.is-dual {
@@ -3343,17 +3350,15 @@
 }
 
 .workshop-body-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(calc(var(--u) * 250), 0.78fr);
-  align-items: end;
-  gap: calc(var(--u) * 41.6);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: calc(var(--u) * 30.4);
   min-height: 0;
   width: 100%;
 }
 
 .workshop-preview-layout.is-stories-platform .workshop-body-grid {
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
   gap: calc(var(--u) * 22.4);
 }
 
@@ -3361,8 +3366,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  min-height: 100%;
-  padding-right: calc(var(--u) * 25);
+  width: 100%;
 }
 
 .workshop-preview-layout.is-stories-platform .workshop-copy-column {
@@ -3528,10 +3532,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  align-self: start;
-  justify-self: end;
-  width: min(100%, calc(var(--u) * 372));
-  padding-top: calc(var(--u) * 19.2);
+  width: 100%;
 }
 
 .workshop-preview-layout.is-stories-platform .workshop-speaker-column {
@@ -3619,8 +3620,19 @@
   flex-direction: column;
 }
 
+.workshop-speaker-card.is-single {
+  display: grid;
+  grid-template-columns: minmax(calc(var(--u) * 240), calc(var(--u) * 320)) minmax(0, 1fr);
+  align-items: center;
+  gap: calc(var(--u) * 36);
+}
+
 .workshop-speaker-card.is-dual {
   width: 100%;
+}
+
+.workshop-speaker-card.is-single .workshop-speaker-photo-shell {
+  max-width: calc(var(--u) * 320);
 }
 
 .workshop-speaker-photo-shell {
@@ -3713,6 +3725,23 @@
   text-align: left;
 }
 
+.workshop-speaker-card.is-single .workshop-speaker-copy {
+  min-width: 0;
+  margin-top: 0;
+  padding-inline: 0;
+}
+
+.workshop-speaker-card.is-single .workshop-speaker-copy p {
+  font-size: calc(var(--u) * 38.4);
+  line-height: 1.08;
+}
+
+.workshop-speaker-card.is-single .workshop-speaker-copy strong {
+  margin-top: calc(var(--u) * 8);
+  font-size: calc(var(--u) * 28.8);
+  line-height: 1.16;
+}
+
 .workshop-preview-layout.is-stories-platform .workshop-speaker-copy {
   margin-top: 0;
   padding-inline: 0;
@@ -3730,6 +3759,26 @@
 
 .workshop-preview-layout.is-stories-platform .workshop-speaker-copy strong {
   margin-top: calc(var(--u) * 4.8);
+}
+
+.workshop-preview-layout.is-stories-platform .workshop-speaker-card.is-single {
+  grid-template-columns: minmax(calc(var(--u) * 220), calc(var(--u) * 280)) minmax(0, 1fr);
+  gap: calc(var(--u) * 32);
+}
+
+.workshop-preview-layout.is-stories-platform .workshop-speaker-card.is-single .workshop-speaker-photo-shell {
+  max-width: calc(var(--u) * 280);
+}
+
+.workshop-preview-layout.is-stories-platform .workshop-speaker-card.is-single .workshop-speaker-copy p {
+  font-size: calc(var(--u) * 38.4);
+  line-height: 1.08;
+}
+
+.workshop-preview-layout.is-stories-platform .workshop-speaker-card.is-single .workshop-speaker-copy strong {
+  margin-top: calc(var(--u) * 8);
+  font-size: calc(var(--u) * 28.8);
+  line-height: 1.16;
 }
 
 .workshop-speaker-copy p,
@@ -5330,6 +5379,12 @@
     max-width: 260px;
   }
 
+  .workshop-speaker-column:has(.workshop-speaker-card.is-single),
+  .workshop-speaker-card.is-single .workshop-speaker-photo-shell {
+    width: 100%;
+    max-width: none;
+  }
+
   .workshop-speaker-column.is-dual,
   .workshop-speaker-column.is-dual .workshop-speaker-photo-shell {
     width: min(100%, 420px);
@@ -5686,6 +5741,11 @@
   .workshop-speaker-photo-shell {
     width: min(100%, 220px);
     max-width: 220px;
+  }
+
+  .workshop-speaker-card.is-single .workshop-speaker-photo-shell {
+    width: 100%;
+    max-width: none;
   }
 
   .workshop-speaker-column.is-dual .workshop-speaker-photo-shell {

@@ -55,6 +55,7 @@ type WorkshopSpeakerCard = {
 
 export type WorkshopDerivedState = {
   previewStyle: CSSProperties
+  hasColorfulBackground: boolean
   isDualSpeaker: boolean
   speakerCards: WorkshopSpeakerCard[]
   workshopBadge: string
@@ -161,6 +162,7 @@ export const getWorkshopDerivedState = ({
       backgroundRepeat: 'no-repeat',
       backgroundSize: 'cover',
     } as CSSProperties,
+    hasColorfulBackground: workshopBackgroundImageUrl === workshopBackgroundAssetUrl,
     isDualSpeaker,
     speakerCards: [
       {
