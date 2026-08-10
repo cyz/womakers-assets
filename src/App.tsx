@@ -167,6 +167,7 @@ function EditorWorkspace() {
 
   const {
     handleDownloadFocusedBanner,
+    handleSaveVersion,
     handleDownloadQuoteFrame,
   } = useEditorExport({
     editorState,
@@ -502,6 +503,15 @@ function EditorWorkspace() {
               >
                 <AppIcon name="refresh" className="button-icon" />
                 Resetar
+              </button>
+              <button
+                type="button"
+                className="ghost-button panel-footer-save"
+                onClick={handleSaveVersion}
+                disabled={isExporting}
+              >
+                <AppIcon name="save" className="button-icon" />
+                Salvar versão
               </button>
               <button
                 type="button"

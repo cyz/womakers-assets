@@ -76,6 +76,7 @@ export function useEditorExport({
       const baseFileName = buildBannerFileName(editorState)
 
       if (shouldExportFeedAndStories) {
+        let savedPreviewDataUrl = ''
         const exportJobs: Array<{ frame: HTMLDivElement | null; suffix: string }> = [
           { frame: primaryPreviewFrameRef.current, suffix: isSponsorCarousel ? 'feed-imagem-1' : 'feed' },
           { frame: storiesPreviewFrameRef.current, suffix: isSponsorCarousel ? 'stories-imagem-1' : 'stories' },
@@ -90,15 +91,17 @@ export function useEditorExport({
 
         for (const job of exportJobs) {
           const dataUrl = await exportFrameImage(job.frame)
+          savedPreviewDataUrl ||= dataUrl
           const fileName = baseFileName.replace('.png', `-${job.suffix}.png`)
           downloadImage(dataUrl, fileName)
         }
 
+        const removedOldVersions = await saveCurrentVersion(savedPreviewDataUrl)
         setFeedback(
           'save',
           isSponsorCarousel
-            ? 'Downloads de feed e stories iniciados para as imagens 1 e 2.'
-            : 'Downloads de feed e stories iniciados.',
+            ? `Downloads de feed e stories iniciados para as imagens 1 e 2. Versão salva no navegador${removedOldVersions ? ' e versões antigas foram removidas para liberar espaço' : ''}.`
+            : `Downloads de feed e stories iniciados. Versão salva no navegador${removedOldVersions ? ' e versões antigas foram removidas para liberar espaço' : ''}.`,
         )
         return
       }
@@ -106,7 +109,11 @@ export function useEditorExport({
       const dataUrl = await exportCurrentBannerImage()
       const fileName = baseFileName.replace('.png', '-feed.png')
       downloadImage(dataUrl, fileName)
-      setFeedback('save', 'Download iniciado.')
+      const removedOldVersions = await saveCurrentVersion(dataUrl)
+      setFeedback(
+        'save',
+        `Download iniciado e versão salva no navegador${removedOldVersions ? '. Versões antigas foram removidas para liberar espaço' : ''}.`,
+      )
     } catch (error) {
       setFeedback(
         'save',
@@ -117,8 +124,10 @@ export function useEditorExport({
     }
   }
 
-  const createSavedBannerAsset = async (): Promise<SavedBannerAsset> => {
-    const previewImageDataUrl = await optimizeSavedPreviewDataUrl(await exportCurrentBannerImage())
+  const createSavedBannerAsset = async (exportedImageDataUrl?: string): Promise<SavedBannerAsset> => {
+    const previewImageDataUrl = await optimizeSavedPreviewDataUrl(
+      exportedImageDataUrl ?? await exportCurrentBannerImage(),
+    )
 
     return {
       id: createSavedBannerId(),
@@ -148,19 +157,25 @@ export function useEditorExport({
     throw new Error('Não foi possível salvar a imagem no navegador porque o armazenamento local está cheio.')
   }
 
+  const saveCurrentVersion = async (exportedImageDataUrl?: string) => {
+    const nextAsset = await createSavedBannerAsset(exportedImageDataUrl)
+    const nextAssets = [nextAsset, ...savedBannerAssets].slice(0, MAX_SAVED_EXPORTED_IMAGES)
+    const persistedAssets = persistSavedBannerAssets(nextAssets)
+
+    window.localStorage.setItem(SAVED_EDITOR_STATE_KEY, JSON.stringify(editorState))
+    setSavedBannerAssets(persistedAssets)
+
+    return persistedAssets.length < nextAssets.length
+  }
+
   const handleSaveVersion = async () => {
     setIsExporting(true)
 
     try {
-      const nextAsset = await createSavedBannerAsset()
-      const nextAssets = [nextAsset, ...savedBannerAssets].slice(0, MAX_SAVED_EXPORTED_IMAGES)
-      const persistedAssets = persistSavedBannerAssets(nextAssets)
-
-      window.localStorage.setItem(SAVED_EDITOR_STATE_KEY, JSON.stringify(editorState))
-      setSavedBannerAssets(persistedAssets)
+      const removedOldVersions = await saveCurrentVersion()
       setFeedback(
         'save',
-        persistedAssets.length < nextAssets.length
+        removedOldVersions
           ? 'Imagem salva no navegador. Algumas versões antigas foram removidas para liberar espaço.'
           : 'Imagem e versão salvas no navegador.',
       )
@@ -186,7 +201,11 @@ export function useEditorExport({
       const fileName = buildBannerFileName(editorState).replace('.png', `-${fileNameSuffix}.png`)
       const imageDataUrl = await exportFrameImage(frameElement)
       downloadImage(imageDataUrl, fileName)
-      setFeedback('save', 'Download iniciado.')
+      const removedOldVersions = await saveCurrentVersion(imageDataUrl)
+      setFeedback(
+        'save',
+        `Download iniciado e versão salva no navegador${removedOldVersions ? '. Versões antigas foram removidas para liberar espaço' : ''}.`,
+      )
     } catch (error) {
       setFeedback(
         'save',

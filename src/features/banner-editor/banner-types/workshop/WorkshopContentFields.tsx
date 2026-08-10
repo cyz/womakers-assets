@@ -1,5 +1,12 @@
 import type { ClipboardEvent, RefObject } from 'react'
-import { workshopAccentColors, type WorkshopAccentColor } from '../../model'
+import {
+  workshopAccentColors,
+  workshopBackgroundCompositions,
+  workshopFooterIcons,
+  type WorkshopAccentColor,
+  type WorkshopBackgroundComposition,
+  type WorkshopFooterIcon,
+} from '../../model'
 import { RichTextEditor } from '../../components/RichTextEditor'
 
 const workshopAccentPalette: Record<WorkshopAccentColor, string> = {
@@ -12,7 +19,7 @@ const workshopAccentPalette: Record<WorkshopAccentColor, string> = {
 type WorkshopContentFieldsProps = {
   isDualSpeaker: boolean
   onWorkshopAccentColorChange: (value: WorkshopAccentColor) => void
-  onWorkshopBackgroundImageChange: (value: string) => void
+  onWorkshopBackgroundImageChange: (value: WorkshopBackgroundComposition) => void
   onWorkshopBadgeChange: (value: string) => void
   onWorkshopBulletCountChange: (value: number) => void
   onWorkshopBulletOneChange: (value: string) => void
@@ -23,12 +30,13 @@ type WorkshopContentFieldsProps = {
   onWorkshopBulletsIntroPaste: (event: ClipboardEvent<HTMLDivElement>) => void
   onWorkshopFooterLeftLineOneChange: (value: string) => void
   onWorkshopFooterLeftLineTwoChange: (value: string) => void
+  onWorkshopFooterIconChange: (value: WorkshopFooterIcon) => void
   onWorkshopFooterTagChange: (value: string) => void
   onWorkshopHighlightChange: (value: string) => void
   onWorkshopHighlightColoredChange: (value: boolean) => void
   onWorkshopTitleChange: (value: string) => void
   workshopAccentColor: WorkshopAccentColor
-  workshopBackgroundImageUrl: string
+  workshopBackgroundImageUrl: WorkshopBackgroundComposition
   workshopBadge: string
   workshopBulletCount: number
   workshopBulletOne: string
@@ -37,6 +45,7 @@ type WorkshopContentFieldsProps = {
   workshopBulletsIntroEditorRef: RefObject<HTMLDivElement | null>
   workshopFooterLeftLineOne: string
   workshopFooterLeftLineTwo: string
+  workshopFooterIcon: WorkshopFooterIcon
   workshopFooterTag: string
   workshopHighlight: string
   workshopHighlightColored: boolean
@@ -57,6 +66,7 @@ export function WorkshopContentFields({
   onWorkshopBulletsIntroPaste,
   onWorkshopFooterLeftLineOneChange,
   onWorkshopFooterLeftLineTwoChange,
+  onWorkshopFooterIconChange,
   onWorkshopFooterTagChange,
   onWorkshopHighlightChange,
   onWorkshopHighlightColoredChange,
@@ -71,6 +81,7 @@ export function WorkshopContentFields({
   workshopBulletsIntroEditorRef,
   workshopFooterLeftLineOne,
   workshopFooterLeftLineTwo,
+  workshopFooterIcon,
   workshopFooterTag,
   workshopHighlight,
   workshopHighlightColored,
@@ -177,27 +188,24 @@ export function WorkshopContentFields({
         role="radiogroup"
         aria-labelledby="workshop-background-image-label"
       >
-        {[
-          { label: 'Padrão escuro', value: '' },
-          { label: 'Código colorido', value: workshopBackgroundAssetUrl },
-        ].map((option) => {
-          const isSelected = workshopBackgroundImageUrl === option.value
+        {workshopBackgroundCompositions.map((composition) => {
+          const isSelected = workshopBackgroundImageUrl === composition
 
           return (
             <button
-              key={option.label}
+              key={composition}
               type="button"
               className={`workshop-background-option ${isSelected ? 'is-selected' : ''}`.trim()}
               role="radio"
               aria-checked={isSelected}
-              onClick={() => onWorkshopBackgroundImageChange(option.value)}
+              onClick={() => onWorkshopBackgroundImageChange(composition)}
             >
               <span
-                className={`workshop-background-thumbnail ${option.value ? 'has-image' : ''}`.trim()}
-                style={option.value ? { backgroundImage: `url(${option.value})` } : undefined}
+                className={`workshop-background-thumbnail is-${composition.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-')}`}
+                style={composition === 'Código' ? { backgroundImage: `url(${workshopBackgroundAssetUrl})` } : undefined}
                 aria-hidden="true"
               />
-              <span>{option.label}</span>
+              <span>{composition}</span>
             </button>
           )
         })}
@@ -282,6 +290,21 @@ export function WorkshopContentFields({
         value={workshopFooterLeftLineTwo}
         onChange={(event) => onWorkshopFooterLeftLineTwoChange(event.target.value)}
       />
+
+      <label className="field-label" htmlFor="workshop-footer-icon">
+        Ícone à esquerda do rodapé
+      </label>
+      <select
+        id="workshop-footer-icon"
+        value={workshopFooterIcon}
+        onChange={(event) => onWorkshopFooterIconChange(event.target.value as WorkshopFooterIcon)}
+      >
+        {workshopFooterIcons.map((icon) => (
+          <option key={icon} value={icon}>
+            {icon}
+          </option>
+        ))}
+      </select>
 
       <label className="field-label" htmlFor="workshop-footer-tag">
         Rodapé direito

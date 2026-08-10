@@ -1,6 +1,8 @@
 import { memo } from 'react'
 import {
   BookmarkIcon,
+  BellIcon,
+  BroadcastIcon,
   CalendarIcon,
   ChevronDownIcon,
   ColumnsIcon,
@@ -28,6 +30,8 @@ import {
 
 export type AppIconName =
   | 'spark'
+  | 'bell'
+  | 'broadcast'
   | 'calendar'
   | 'layout'
   | 'swatch'
@@ -58,6 +62,8 @@ type AppIconProps = {
 
 const iconByName: Record<AppIconName, Icon> = {
   spark: SparkleFillIcon,
+  bell: BellIcon,
+  broadcast: BroadcastIcon,
   calendar: CalendarIcon,
   layout: ColumnsIcon,
   swatch: PaintbrushIcon,

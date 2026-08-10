@@ -19,10 +19,15 @@ import {
   type SpeakerContentType,
   type SponsorVariation,
   type WorkshopAccentColor,
+  type WorkshopBackgroundComposition,
+  type WorkshopFooterIcon,
   workshopAccentColors,
+  workshopBackgroundCompositions,
+  workshopFooterIcons,
 } from './model'
 
 const LEGACY_SPONSOR_SINGLE_VARIATION = 'Patrocinador Single Image'
+const LEGACY_WORKSHOP_BACKGROUND_URL = `${import.meta.env.BASE_URL}src/assets/themes/fundo.png`
 
 const normalizeAssetVariation = (variation: string): AssetVariation | null => {
   if (variation === LEGACY_SPONSOR_SINGLE_VARIATION) {
@@ -231,6 +236,7 @@ export const isEditorStateEqual = (left: EditorState, right: EditorState) =>
   left.workshopBulletThree === right.workshopBulletThree &&
   left.workshopFooterLeftLineOne === right.workshopFooterLeftLineOne &&
   left.workshopFooterLeftLineTwo === right.workshopFooterLeftLineTwo &&
+  left.workshopFooterIcon === right.workshopFooterIcon &&
   left.workshopFooterTag === right.workshopFooterTag &&
   left.workshopPartnerLogoUrl === right.workshopPartnerLogoUrl &&
   left.workshopSpeakerCount === right.workshopSpeakerCount &&
@@ -281,6 +287,12 @@ export const isPlatform = (value: string): value is Platform => platforms.includ
 
 export const isWorkshopAccentColor = (value: string): value is WorkshopAccentColor =>
   workshopAccentColors.includes(value as WorkshopAccentColor)
+
+export const isWorkshopBackgroundComposition = (value: string): value is WorkshopBackgroundComposition =>
+  workshopBackgroundCompositions.includes(value as WorkshopBackgroundComposition)
+
+export const isWorkshopFooterIcon = (value: string): value is WorkshopFooterIcon =>
+  workshopFooterIcons.includes(value as WorkshopFooterIcon)
 
 export const isSpeakerContentType = (value: string): value is SpeakerContentType =>
   speakerContentTypes.includes(value as SpeakerContentType)
@@ -337,7 +349,11 @@ export const parseEditorStateCandidate = (
     workshopAccentColor:
       (parsed.workshopAccentColor as WorkshopAccentColor | undefined) ??
       initialEditorState.workshopAccentColor,
-    workshopBackgroundImageUrl: parsed.workshopBackgroundImageUrl ?? '',
+    workshopBackgroundImageUrl: isWorkshopBackgroundComposition(parsed.workshopBackgroundImageUrl ?? '')
+      ? (parsed.workshopBackgroundImageUrl as WorkshopBackgroundComposition)
+      : parsed.workshopBackgroundImageUrl === LEGACY_WORKSHOP_BACKGROUND_URL
+        ? 'Código'
+        : initialEditorState.workshopBackgroundImageUrl,
     workshopBadge: parsed.workshopBadge ?? initialEditorState.workshopBadge,
     workshopTitle: parsed.workshopTitle ?? initialEditorState.workshopTitle,
     workshopHighlight: parsed.workshopHighlight ?? initialEditorState.workshopHighlight,
@@ -358,6 +374,9 @@ export const parseEditorStateCandidate = (
       parsed.workshopFooterLeftLineOne ?? initialEditorState.workshopFooterLeftLineOne,
     workshopFooterLeftLineTwo:
       parsed.workshopFooterLeftLineTwo ?? initialEditorState.workshopFooterLeftLineTwo,
+    workshopFooterIcon: isWorkshopFooterIcon(parsed.workshopFooterIcon ?? '')
+      ? (parsed.workshopFooterIcon as WorkshopFooterIcon)
+      : initialEditorState.workshopFooterIcon,
     workshopFooterTag: parsed.workshopFooterTag ?? initialEditorState.workshopFooterTag,
     workshopPartnerLogoUrl: parsed.workshopPartnerLogoUrl ?? '',
     workshopSpeakerCount:

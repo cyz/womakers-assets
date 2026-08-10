@@ -52,6 +52,7 @@ export function ContentSection({
     workshopBulletThree,
     workshopFooterLeftLineOne,
     workshopFooterLeftLineTwo,
+    workshopFooterIcon,
     workshopFooterTag,
   } = editorState
 
@@ -155,6 +156,7 @@ export function ContentSection({
             onWorkshopBulletTwoChange={(value) => updateField('workshopBulletTwo', value)}
             onWorkshopFooterLeftLineOneChange={(value) => updateField('workshopFooterLeftLineOne', value)}
             onWorkshopFooterLeftLineTwoChange={(value) => updateField('workshopFooterLeftLineTwo', value)}
+            onWorkshopFooterIconChange={(value) => updateField('workshopFooterIcon', value)}
             onWorkshopFooterTagChange={(value) => updateField('workshopFooterTag', value)}
             onWorkshopHighlightChange={(value) => updateField('workshopHighlight', value)}
             onWorkshopHighlightColoredChange={(value) => updateField('workshopHighlightColored', value)}
@@ -168,6 +170,7 @@ export function ContentSection({
             workshopBulletTwo={workshopBulletTwo}
             workshopFooterLeftLineOne={workshopFooterLeftLineOne}
             workshopFooterLeftLineTwo={workshopFooterLeftLineTwo}
+            workshopFooterIcon={workshopFooterIcon}
             workshopFooterTag={workshopFooterTag}
             workshopHighlight={workshopHighlight}
             workshopHighlightColored={workshopHighlightColored}

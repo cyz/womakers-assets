@@ -84,6 +84,7 @@ export function PlatformPreview({
     workshopDescription,
     workshopFooterLeftLineOne,
     workshopFooterLeftLineTwo,
+    workshopFooterIcon,
     workshopFooterTag,
     workshopHighlight,
     workshopHighlightColored,
@@ -238,6 +239,7 @@ export function PlatformPreview({
         workshopDescription,
         workshopFooterLeftLineOne,
         workshopFooterLeftLineTwo,
+        workshopFooterIcon,
         workshopFooterTag,
         workshopHighlight,
         workshopHighlightColored,
@@ -661,6 +663,7 @@ export function PlatformPreview({
               workshopDescription={workshopDerivedStateForPreview.workshopDescription}
               workshopFooterLeftLineOne={workshopDerivedStateForPreview.workshopFooterLeftLineOne}
               workshopFooterLeftLineTwo={workshopDerivedStateForPreview.workshopFooterLeftLineTwo}
+              workshopFooterIcon={workshopDerivedStateForPreview.workshopFooterIcon}
               workshopFooterTag={workshopDerivedStateForPreview.workshopFooterTag}
               workshopHighlight={workshopDerivedStateForPreview.workshopHighlight}
               workshopHighlightColored={workshopDerivedStateForPreview.workshopHighlightColored}

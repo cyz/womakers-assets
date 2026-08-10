@@ -47,8 +47,12 @@ export const speakerContentTypes = ['palestra', 'painel', 'workshop', 'mentoria'
 export type SpeakerContentType = (typeof speakerContentTypes)[number]
 
 export const workshopAccentColors = ['Lima', 'Magenta', 'Ciano', 'Laranja'] as const
+export const workshopBackgroundCompositions = ['Escuro', 'Código', 'Foco lateral', 'Faixa'] as const
+export const workshopFooterIcons = ['Nenhum', 'Sininho', 'Calendário', 'Vídeo', 'Localização'] as const
 
 export type WorkshopAccentColor = (typeof workshopAccentColors)[number]
+export type WorkshopBackgroundComposition = (typeof workshopBackgroundCompositions)[number]
+export type WorkshopFooterIcon = (typeof workshopFooterIcons)[number]
 
 export type EditorState = {
   selectedType: ImageType
@@ -56,7 +60,7 @@ export type EditorState = {
   selectedPlatform: Platform
   eventTitle: string
   workshopAccentColor: WorkshopAccentColor
-  workshopBackgroundImageUrl: string
+  workshopBackgroundImageUrl: WorkshopBackgroundComposition
   workshopBadge: string
   workshopTitle: string
   workshopHighlight: string
@@ -69,6 +73,7 @@ export type EditorState = {
   workshopBulletThree: string
   workshopFooterLeftLineOne: string
   workshopFooterLeftLineTwo: string
+  workshopFooterIcon: WorkshopFooterIcon
   workshopFooterTag: string
   workshopPartnerLogoUrl: string
   workshopSpeakerCount: number
@@ -200,7 +205,7 @@ export const initialEditorState: EditorState = {
   selectedPlatform: platforms[0],
   eventTitle: 'Encontro de Mulheres na Tecnologia:',
   workshopAccentColor: workshopPreviewDefaults.accentColor,
-  workshopBackgroundImageUrl: '',
+  workshopBackgroundImageUrl: workshopBackgroundCompositions[0],
   workshopBadge: workshopPreviewDefaults.badge,
   workshopTitle: workshopPreviewDefaults.title,
   workshopHighlight: workshopPreviewDefaults.highlight,
@@ -213,6 +218,7 @@ export const initialEditorState: EditorState = {
   workshopBulletThree: workshopPreviewDefaults.bulletThree,
   workshopFooterLeftLineOne: workshopPreviewDefaults.footerLeftLineOne,
   workshopFooterLeftLineTwo: workshopPreviewDefaults.footerLeftLineTwo,
+  workshopFooterIcon: workshopFooterIcons[0],
   workshopFooterTag: workshopPreviewDefaults.footerTag,
   workshopPartnerLogoUrl: '',
   workshopSpeakerCount: 1,

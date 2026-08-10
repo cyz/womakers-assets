@@ -1,6 +1,11 @@
 import type { CSSProperties } from 'react'
 
-import { workshopPreviewDefaults, type WorkshopAccentColor } from '../../model'
+import {
+  workshopPreviewDefaults,
+  type WorkshopAccentColor,
+  type WorkshopBackgroundComposition,
+  type WorkshopFooterIcon,
+} from '../../model'
 
 const workshopAccentPalette: Record<WorkshopAccentColor, { color: string; rgb: string }> = {
   Lima: { color: '#e8f300', rgb: '232, 243, 0' },
@@ -19,7 +24,7 @@ type WorkshopDerivedStateArgs = {
   speakerRole: string
   speakerImageUrl: string
   workshopAccentColor: WorkshopAccentColor
-  workshopBackgroundImageUrl: string
+  workshopBackgroundImageUrl: WorkshopBackgroundComposition
   workshopBadge: string
   workshopBulletCount: number
   workshopBulletOne: string
@@ -29,6 +34,7 @@ type WorkshopDerivedStateArgs = {
   workshopDescription: string
   workshopFooterLeftLineOne: string
   workshopFooterLeftLineTwo: string
+  workshopFooterIcon: WorkshopFooterIcon
   workshopFooterTag: string
   workshopHighlight: string
   workshopHighlightColored: boolean
@@ -64,6 +70,7 @@ export type WorkshopDerivedState = {
   workshopDescription: string
   workshopFooterLeftLineOne: string
   workshopFooterLeftLineTwo: string
+  workshopFooterIcon: WorkshopFooterIcon
   workshopFooterTag: string
   workshopHighlight: string
   workshopHighlightColored: boolean
@@ -88,6 +95,7 @@ export const getWorkshopDerivedState = ({
   workshopDescription,
   workshopFooterLeftLineOne,
   workshopFooterLeftLineTwo,
+  workshopFooterIcon,
   workshopFooterTag,
   workshopHighlight,
   workshopHighlightColored,
@@ -148,6 +156,12 @@ export const getWorkshopDerivedState = ({
     },
   ].slice(0, clampedSpeakerCount - 1)
   const clampedBulletCount = Math.min(Math.max(workshopBulletCount ?? 0, 0), 3)
+  const backgroundImageByComposition: Record<WorkshopBackgroundComposition, string> = {
+    Escuro: 'none',
+    Código: `url(${workshopBackgroundAssetUrl})`,
+    'Foco lateral': `radial-gradient(circle at 88% 28%, rgba(${accent.rgb}, 0.28), transparent 34%), linear-gradient(145deg, #050505 0%, #111111 62%, #050505 100%)`,
+    Faixa: `linear-gradient(135deg, transparent 0 54%, rgba(${accent.rgb}, 0.2) 54% 72%, transparent 72%), linear-gradient(160deg, #050505, #121212)`,
+  }
 
   return {
     previewStyle: {
@@ -156,13 +170,12 @@ export const getWorkshopDerivedState = ({
       '--workshop-accent-rgb': accent.rgb,
       '--workshop-accent-foreground': accentForeground,
       backgroundColor: '#050505',
-      backgroundImage:
-        workshopBackgroundImageUrl === workshopBackgroundAssetUrl ? `url(${workshopBackgroundAssetUrl})` : 'none',
+      backgroundImage: backgroundImageByComposition[workshopBackgroundImageUrl],
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
       backgroundSize: 'cover',
     } as CSSProperties,
-    hasColorfulBackground: workshopBackgroundImageUrl === workshopBackgroundAssetUrl,
+    hasColorfulBackground: workshopBackgroundImageUrl === 'Código',
     isDualSpeaker,
     speakerCards: [
       {
@@ -191,6 +204,7 @@ export const getWorkshopDerivedState = ({
       workshopFooterLeftLineOne.trim() || workshopPreviewDefaults.footerLeftLineOne,
     workshopFooterLeftLineTwo:
       workshopFooterLeftLineTwo.trim() || workshopPreviewDefaults.footerLeftLineTwo,
+    workshopFooterIcon,
     workshopFooterTag: workshopFooterTag.trim() || workshopPreviewDefaults.footerTag,
     workshopHighlight: workshopHighlight.trim(),
     workshopHighlightColored,

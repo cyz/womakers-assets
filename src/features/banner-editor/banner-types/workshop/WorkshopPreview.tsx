@@ -1,3 +1,7 @@
+import type { AppIconName } from '../../components/AppIcon'
+import { AppIcon } from '../../components/AppIcon'
+import type { WorkshopFooterIcon } from '../../model'
+
 type WorkshopPreviewProps = {
   hasColorfulBackground: boolean
   isDualSpeaker: boolean
@@ -15,6 +19,7 @@ type WorkshopPreviewProps = {
   workshopDescription: string
   workshopFooterLeftLineOne: string
   workshopFooterLeftLineTwo: string
+  workshopFooterIcon: WorkshopFooterIcon
   workshopFooterTag: string
   workshopHighlight: string
   workshopHighlightColored: boolean
@@ -34,6 +39,7 @@ export function WorkshopPreview({
   workshopDescription,
   workshopFooterLeftLineOne,
   workshopFooterLeftLineTwo,
+  workshopFooterIcon,
   workshopFooterTag,
   workshopHighlight,
   workshopHighlightColored,
@@ -42,6 +48,15 @@ export function WorkshopPreview({
 }: WorkshopPreviewProps) {
   const brandAssetUrl = `${import.meta.env.BASE_URL}src/assets/themes/brand.png`
   const hasHighlight = workshopHighlight.trim().length > 0
+  const footerIconByOption: Partial<Record<WorkshopFooterIcon, AppIconName>> = {
+    Sininho: 'bell',
+    Calendário: 'calendar',
+    Vídeo: 'broadcast',
+    Localização: 'pin',
+  }
+  const footerIcon = footerIconByOption[workshopFooterIcon]
+  const supportingCopy = isDualSpeaker ? workshopBulletsIntro : workshopDescription
+  const supportingCopyHtml = isDualSpeaker ? workshopBulletsIntroHtml : undefined
 
   return (
     <article className={`workshop-preview-layout ${hasColorfulBackground ? 'has-colorful-background' : ''} ${isDualSpeaker ? 'is-dual' : ''} ${isStoriesPlatform ? 'is-stories-platform' : ''}`}>
@@ -58,101 +73,62 @@ export function WorkshopPreview({
         </div>
       </header>
 
-      {isDualSpeaker ? (
-        <>
-          <section className="workshop-speaker-section is-dual" aria-label="Palestrantes do workshop">
-            <div className={`workshop-speaker-grid is-dual count-${speakerCards.length}`}>
-              {speakerCards.map((speaker) => (
-                <article key={`${speaker.name}-${speaker.role}`} className="workshop-speaker-card is-dual">
-                  <div className="workshop-speaker-photo-shell">
-                    <div className="workshop-speaker-photo-frame">
-                      {speaker.imageUrl ? (
-                        <img src={speaker.imageUrl} alt={speaker.name} className="workshop-speaker-photo" />
-                      ) : (
-                        <div className="workshop-speaker-placeholder" aria-label="Workshop speaker placeholder">
-                          {speaker.initials || 'WM'}
-                        </div>
-                      )}
+      <section className="workshop-speaker-section is-dual" aria-label="Palestrantes do workshop">
+        <div className={`workshop-speaker-grid is-dual count-${speakerCards.length}`}>
+          {speakerCards.map((speaker, index) => (
+            <article key={`${index}-${speaker.name}-${speaker.role}`} className="workshop-speaker-card is-dual">
+              <div className="workshop-speaker-photo-shell">
+                <div className="workshop-speaker-photo-frame">
+                  {speaker.imageUrl ? (
+                    <img src={speaker.imageUrl} alt={speaker.name} className="workshop-speaker-photo" />
+                  ) : (
+                    <div className="workshop-speaker-placeholder" aria-label="Workshop speaker placeholder">
+                      {speaker.initials || 'WM'}
                     </div>
-                  </div>
+                  )}
+                </div>
+              </div>
 
-                  <div className="workshop-speaker-copy">
-                    <p>{speaker.name}</p>
-                    <strong>{speaker.role}</strong>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          {workshopBulletsIntro ? (
-            <p
-              className="workshop-dual-bullets-intro"
-              dangerouslySetInnerHTML={workshopBulletsIntroHtml}
-            />
-          ) : null}
-
-          {workshopBullets.length > 0 ? (
-            <section
-              className={`workshop-bullet-section is-dual columns-${Math.min(workshopBullets.length, 3)}`}
-              aria-label="Principais temas do workshop"
-            >
-              {workshopBullets.map((item, index) => (
-                <article key={`${index}-${item}`} className="workshop-bullet-card">
-                  <span className="workshop-bullet-dot" aria-hidden="true" />
-                  <p>{item}</p>
-                </article>
-              ))}
-            </section>
-          ) : null}
-        </>
-      ) : (
-        <div className="workshop-body-grid">
-          <aside className="workshop-speaker-column">
-            <div className="workshop-speaker-stack">
-              {speakerCards.map((speaker) => (
-                <article key={`${speaker.name}-${speaker.role}`} className="workshop-speaker-card is-single">
-                  <div className="workshop-speaker-photo-shell">
-                    <div className="workshop-speaker-photo-frame">
-                      {speaker.imageUrl ? (
-                        <img src={speaker.imageUrl} alt={speaker.name} className="workshop-speaker-photo" />
-                      ) : (
-                        <div className="workshop-speaker-placeholder" aria-label="Workshop speaker placeholder">
-                          {speaker.initials || 'WM'}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="workshop-speaker-copy">
-                    <p>{speaker.name}</p>
-                    <strong>{speaker.role}</strong>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </aside>
-
-          <div className="workshop-copy-column">
-            <p className="workshop-description">{workshopDescription}</p>
-
-            <ul className="workshop-bullet-list" aria-label="Principais temas do workshop">
-              {workshopBullets.map((item, index) => (
-                <li key={`${index}-${item}`} className="workshop-bullet-item">
-                  <span className="workshop-bullet-dot" aria-hidden="true" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+              <div className="workshop-speaker-copy">
+                <p>{speaker.name}</p>
+                <strong>{speaker.role}</strong>
+              </div>
+            </article>
+          ))}
         </div>
-      )}
+      </section>
+
+      {supportingCopy ? (
+        <p
+          className="workshop-dual-bullets-intro"
+          {...(supportingCopyHtml ? { dangerouslySetInnerHTML: supportingCopyHtml } : {})}
+        >
+          {supportingCopyHtml ? undefined : supportingCopy}
+        </p>
+      ) : null}
+
+      {workshopBullets.length > 0 ? (
+        <section
+          className={`workshop-bullet-section is-dual columns-${Math.min(workshopBullets.length, 3)}`}
+          aria-label="Principais temas do workshop"
+        >
+          {workshopBullets.map((item, index) => (
+            <article key={`${index}-${item}`} className="workshop-bullet-card">
+              <span className="workshop-bullet-dot" aria-hidden="true" />
+              <p>{item}</p>
+            </article>
+          ))}
+        </section>
+      ) : null}
 
       <footer className="workshop-footer-section">
         <section className="workshop-footer-copy-grid">
-          <div className="workshop-footer-copy-column">
-            <p>{workshopFooterLeftLineOne}</p>
-            <p>{workshopFooterLeftLineTwo}</p>
+          <div className="workshop-footer-left-group">
+            {footerIcon ? <AppIcon name={footerIcon} className="workshop-footer-icon" /> : null}
+            <div className="workshop-footer-copy-column">
+              <p>{workshopFooterLeftLineOne}</p>
+              <p>{workshopFooterLeftLineTwo}</p>
+            </div>
           </div>
 
           <div className="workshop-footer-tag-column">
