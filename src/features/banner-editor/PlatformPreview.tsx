@@ -4,6 +4,7 @@ import { AppIcon } from './components/AppIcon'
 import { EventTitle } from './components/EventTitle'
 import { getBannerTypeModule } from './banner-types/registry'
 import { useEditor } from './EditorContext'
+import { useFitText } from './hooks/useFitText'
 import {
   articleAdviceDefaults,
   articlePreviewDefaults,
@@ -136,6 +137,16 @@ export function PlatformPreview({
   const hasMeetupCta = meetupCta.trim().length > 0
   const hasSponsorCarouselCta = sponsorCarouselCta.trim().length > 0
   const hasSpeakerTalk = speakerTalk.trim().length > 0
+  const annualSpeakerNameRef = useFitText<HTMLHeadingElement>({
+    maxLines: 2,
+    minScale: 0.65,
+    deps: [speakerName, isAnnualSpeakerLayout, platform],
+  })
+  const annualSpeakerRoleRef = useFitText<HTMLParagraphElement>({
+    maxLines: 3,
+    minScale: 0.65,
+    deps: [speakerRole, isAnnualSpeakerLayout, platform],
+  })
 
   const previewBackgroundAsset =
     selectedType === 'Encontro Anual' && (selectedVariation === 'Palestrante' || isAnnualSponsorLayout)
@@ -767,8 +778,18 @@ export function PlatformPreview({
                     />
                   ) : null}
                   <div className="speaker-identity-block">
-                    <h3 className="speaker-name">{speakerName || 'Nome da palestrante'}</h3>
-                    <p className="speaker-role">{speakerRole || 'Cargo / empresa'}</p>
+                    <h3
+                      className="speaker-name"
+                      ref={isAnnualSpeakerLayout ? annualSpeakerNameRef : undefined}
+                    >
+                      {speakerName || 'Nome da palestrante'}
+                    </h3>
+                    <p
+                      className="speaker-role"
+                      ref={isAnnualSpeakerLayout ? annualSpeakerRoleRef : undefined}
+                    >
+                      {speakerRole || 'Cargo / empresa'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -826,7 +847,7 @@ export function PlatformPreview({
                     ) : null}
                   </div>
                 ) : null}
-                {(annualCtaUrl.trim() || annualCtaUrlBold.trim()) ? (
+                {!isStoriesPlatformForPreview && (annualCtaUrl.trim() || annualCtaUrlBold.trim()) ? (
                   <p className="annual-cta-text">
                     <span>{annualCtaUrl.trim()}</span>
                     {annualCtaUrlBold.trim() ? <strong>{annualCtaUrlBold.trim()}</strong> : null}
